@@ -50,7 +50,7 @@ export async function notificationRoutes(app: FastifyInstance) {
   app.post('/:id/read', { preHandler: [requireAuth] }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const [result] = await pool.query<any>(
-      'UPDATE notifications SET is_read = true, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
+      'UPDATE notifications SET is_read = true WHERE id = ? AND user_id = ?',
       [id, request.userId]
     );
     if (result.affectedRows === 0) return reply.status(404).send({ error: 'Notification not found' });
@@ -60,7 +60,7 @@ export async function notificationRoutes(app: FastifyInstance) {
   // Mark all as read
   app.post('/mark-all-read', { preHandler: [requireAuth] }, async (request) => {
     const [result] = await pool.query<any>(
-      'UPDATE notifications SET is_read = true, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND is_read = false',
+      'UPDATE notifications SET is_read = true WHERE user_id = ? AND is_read = false',
       [request.userId]
     );
     return { success: true, message: `${result.affectedRows} notifications marked as read`, data: { count: result.affectedRows } };

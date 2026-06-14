@@ -14,7 +14,7 @@ export interface CourseStudent {
 
 export class CourseStudentRepository extends BaseRepository<CourseStudent> {
   constructor() {
-    super('course_students', null); // No org column — scoped via course_request
+    super('course_students', null, false); // No org column — scoped via course_request
   }
 
   async findByCourse(courseRequestId: number): Promise<CourseStudent[]> {

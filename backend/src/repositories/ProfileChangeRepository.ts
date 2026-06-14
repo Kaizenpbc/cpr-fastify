@@ -22,7 +22,7 @@ export interface ProfileChangeWithUser extends ProfileChange {
 
 export class ProfileChangeRepository extends BaseRepository<ProfileChange> {
   constructor() {
-    super('profile_changes', null);
+    super('profile_changes', null, false);
   }
 
   async findPendingWithUsers(options: { limit: number; offset: number }): Promise<{ rows: ProfileChangeWithUser[]; total: number }> {
