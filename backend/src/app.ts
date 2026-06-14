@@ -1,3 +1,5 @@
+import { readFileSync, existsSync } from 'fs';
+import { resolve } from 'path';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
@@ -35,6 +37,19 @@ export async function buildApp() {
 
   // Health check (outside /api/v1)
   app.get('/health', async () => ({ status: 'UP', timestamp: new Date().toISOString() }));
+
+  // SPA fallback: serve index.html for non-API routes (frontend routing)
+  const publicDir = resolve(process.cwd(), '../public');
+  const indexPath = resolve(publicDir, 'index.html');
+  if (existsSync(indexPath)) {
+    const indexHtml = readFileSync(indexPath, 'utf-8');
+    app.setNotFoundHandler((request, reply) => {
+      if (request.url.startsWith('/api/')) {
+        return reply.status(404).send({ error: 'Not Found' });
+      }
+      reply.type('text/html').send(indexHtml);
+    });
+  }
 
   return app;
 }
