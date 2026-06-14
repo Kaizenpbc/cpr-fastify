@@ -23,6 +23,24 @@ import { collegeRoutes } from './colleges.js';
 import { miscRoutes } from './misc.js';
 
 export async function registerRoutes(app: FastifyInstance) {
+  // SSE endpoint for real-time updates (keeps connection open)
+  app.get('/events', async (request, reply) => {
+    reply.raw.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    });
+    reply.raw.write('data: {"type":"connected"}\n\n');
+
+    const keepAlive = setInterval(() => {
+      reply.raw.write(': keepalive\n\n');
+    }, 30000);
+
+    request.raw.on('close', () => {
+      clearInterval(keepAlive);
+    });
+  });
+
   await app.register(authRoutes, { prefix: '/auth' });
   await app.register(healthRoutes, { prefix: '/health' });
   await app.register(courseRoutes, { prefix: '/courses' });
