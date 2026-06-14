@@ -71,11 +71,11 @@ export class AuthService {
     const payload = { userId: user.id, role: user.role, orgId: user.organization_id };
 
     const accessToken = jwt.sign(payload, env.JWT_ACCESS_SECRET, {
-      expiresIn: env.ACCESS_TOKEN_EXPIRY,
+      expiresIn: env.ACCESS_TOKEN_EXPIRY as jwt.SignOptions['expiresIn'],
     });
 
     const refreshToken = jwt.sign(payload, env.JWT_REFRESH_SECRET, {
-      expiresIn: env.REFRESH_TOKEN_EXPIRY,
+      expiresIn: env.REFRESH_TOKEN_EXPIRY as jwt.SignOptions['expiresIn'],
     });
 
     return { accessToken, refreshToken };

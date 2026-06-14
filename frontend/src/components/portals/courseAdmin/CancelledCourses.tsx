@@ -1,0 +1,82 @@
+import React from 'react';
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+} from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
+import api from '../../../services/api';
+import { formatDateWithoutTimezone } from '../../../utils/dateUtils';
+
+const CancelledCourses: React.FC = () => {
+  const { data: cancelledCourses, isLoading, error } = useQuery({
+    queryKey: ['cancelledCourses'],
+    queryFn: async () => {
+      const response = await api.get('/courses/cancelled');
+      return response.data;
+    },
+  });
+
+  if (isLoading) {
+    return <Typography>Loading cancelled courses...</Typography>;
+  }
+
+  if (error) {
+    return <Typography color="error">Error loading cancelled courses</Typography>;
+  }
+
+  return (
+    <Box>
+      <Typography variant="h5" gutterBottom>
+        Cancelled Courses
+      </Typography>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Course Name</TableCell>
+              <TableCell>Organization</TableCell>
+              <TableCell>Date Scheduled</TableCell>
+              <TableCell>Cancelled Date</TableCell>
+              <TableCell>Reason</TableCell>
+              <TableCell>Location</TableCell>
+              <TableCell>Students</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {cancelledCourses?.data?.map((course: { id: number; courseTypeName: string; organizationName: string; scheduledDate: string; cancelledAt: string; cancellationReason: string; location: string; registeredStudents: number }) => (
+              <TableRow key={course.id}>
+                <TableCell>{course.courseTypeName}</TableCell>
+                <TableCell>{course.organizationName}</TableCell>
+                <TableCell>{formatDateWithoutTimezone(course.scheduledDate)}</TableCell>
+                <TableCell>{formatDateWithoutTimezone(course.cancelledAt)}</TableCell>
+                <TableCell>{course.cancellationReason}</TableCell>
+                <TableCell>{course.location}</TableCell>
+                <TableCell>{course.registeredStudents}</TableCell>
+              </TableRow>
+            ))}
+            {(!cancelledCourses?.data || cancelledCourses.data.length === 0) && (
+              <TableRow>
+                <TableCell colSpan={7} align="center">
+                  <Typography variant="body2" color="textSecondary">
+                    No cancelled courses found
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
+  );
+};
+
+export default CancelledCourses; 

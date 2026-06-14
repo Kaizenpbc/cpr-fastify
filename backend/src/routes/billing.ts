@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { BillingService, BillingError } from '../services/BillingService.js';
 import { InvoiceRepository } from '../repositories/InvoiceRepository.js';
 import { CoursePricingRepository } from '../repositories/CoursePricingRepository.js';
+import { getPool } from '../config/database.js';
 import { requireAuth, requireRole } from '../plugins/auth.js';
 
 // --- Schemas ---
@@ -49,7 +50,7 @@ export async function billingRoutes(app: FastifyInstance) {
   });
 
   // ===== Pricing =====
-  app.get('/pricing', { preHandler: [requireAuth] }, async (request) => {
+  app.get('/course-pricing', { preHandler: [requireAuth] }, async (request) => {
     const isAdmin = ['accountant', 'admin', 'sysadmin'].includes(request.userRole);
     const data = isAdmin
       ? await service.getAllPricing()
@@ -57,7 +58,7 @@ export async function billingRoutes(app: FastifyInstance) {
     return { success: true, data };
   });
 
-  app.post('/pricing', { preHandler: acctRole }, async (request, reply) => {
+  app.post('/course-pricing', { preHandler: acctRole }, async (request, reply) => {
     const { organizationId, courseTypeId, pricePerStudent } = createPricingSchema.parse(request.body);
     try {
       const pricing = await service.upsertPricing(organizationId, courseTypeId, pricePerStudent);
@@ -65,7 +66,7 @@ export async function billingRoutes(app: FastifyInstance) {
     } catch (err) { return handleError(err, reply); }
   });
 
-  app.put('/pricing/:id', { preHandler: acctRole }, async (request, reply) => {
+  app.put('/course-pricing/:id', { preHandler: acctRole }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const { pricePerStudent } = updatePricingSchema.parse(request.body);
     try {
@@ -74,7 +75,7 @@ export async function billingRoutes(app: FastifyInstance) {
     } catch (err) { return handleError(err, reply); }
   });
 
-  app.delete('/pricing/:id', { preHandler: acctRole }, async (request, reply) => {
+  app.delete('/course-pricing/:id', { preHandler: acctRole }, async (request, reply) => {
     const { id } = request.params as { id: string };
     try {
       await service.deletePricing(parseInt(id));
@@ -83,7 +84,7 @@ export async function billingRoutes(app: FastifyInstance) {
   });
 
   // ===== Billing queue =====
-  app.get('/queue', { preHandler: acctRole }, async () => {
+  app.get('/billing-queue', { preHandler: acctRole }, async () => {
     return { success: true, data: await service.getBillingQueue() };
   });
 
@@ -164,5 +165,233 @@ export async function billingRoutes(app: FastifyInstance) {
       const payment = await service.recordPayment(parseInt(id), amount, paymentMethod, reference);
       return { success: true, message: 'Payment recorded', data: payment };
     } catch (err) { return handleError(err, reply); }
+  });
+
+  // ===== Organizations list (for pricing dropdowns) =====
+  app.get('/organizations', { preHandler: acctRole }, async () => {
+    const pool = getPool();
+    const [rows] = await pool.query<any[]>(
+      'SELECT id, name, contact_email, contact_phone FROM organizations WHERE deleted_at IS NULL ORDER BY name'
+    );
+    return { success: true, data: rows };
+  });
+
+  // ===== Course types (for pricing dropdowns) =====
+  app.get('/course-types', { preHandler: [requireAuth] }, async () => {
+    const pool = getPool();
+    const [rows] = await pool.query<any[]>(
+      'SELECT id, name, description, duration_minutes FROM class_types ORDER BY name'
+    );
+    return { success: true, data: rows };
+  });
+
+  // ===== Revenue report =====
+  app.get('/reports/revenue', { preHandler: acctRole }, async (request, reply) => {
+    const { year } = request.query as { year?: string };
+    if (!year) return reply.status(400).send({ error: 'Year parameter is required' });
+
+    const pool = getPool();
+    const yearInt = parseInt(year);
+
+    // Generate monthly data using a simpler approach for MySQL
+    const months: { month: string; total_invoiced: number; total_paid_in_month: number }[] = [];
+    for (let m = 1; m <= 12; m++) {
+      const monthStr = `${yearInt}-${String(m).padStart(2, '0')}`;
+
+      const [[invoiced], [paid]] = await Promise.all([
+        pool.query<any[]>(
+          `SELECT COALESCE(SUM(amount), 0) as total FROM invoices
+           WHERE DATE_FORMAT(COALESCE(invoice_date, created_at), '%Y-%m') = ?`,
+          [monthStr]
+        ),
+        pool.query<any[]>(
+          `SELECT COALESCE(SUM(amount), 0) as total FROM payments
+           WHERE DATE_FORMAT(payment_date, '%Y-%m') = ?`,
+          [monthStr]
+        ),
+      ]);
+
+      months.push({
+        month: monthStr,
+        total_invoiced: Number(invoiced[0]?.total ?? 0),
+        total_paid_in_month: Number(paid[0]?.total ?? 0),
+      });
+    }
+    return { success: true, data: months };
+  });
+
+  // ===== AR Aging report (simple) =====
+  app.get('/reports/ar-aging', { preHandler: acctRole }, async (request) => {
+    const { organization_id, as_of_date } = request.query as Record<string, string>;
+    const pool = getPool();
+    const asOfDate = as_of_date || new Date().toISOString().split('T')[0];
+
+    let orgFilter = '';
+    const params: unknown[] = [asOfDate];
+    if (organization_id) { orgFilter = 'AND i.organization_id = ?'; params.push(parseInt(organization_id)); }
+
+    const [rows] = await pool.query<any[]>(
+      `SELECT i.id as invoice_id, i.invoice_number, i.organization_id,
+              o.name as organization_name, i.amount,
+              COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.invoice_id = i.id), 0) as paid_amount,
+              i.amount - COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.invoice_id = i.id), 0) as balance,
+              i.invoice_date, i.due_date,
+              CASE WHEN i.due_date IS NULL THEN 0
+                   ELSE GREATEST(0, DATEDIFF(?, i.due_date)) END as days_overdue,
+              i.status,
+              CASE
+                WHEN i.due_date IS NULL OR i.due_date >= ? THEN 'current'
+                WHEN DATEDIFF(?, i.due_date) BETWEEN 1 AND 30 THEN '1-30'
+                WHEN DATEDIFF(?, i.due_date) BETWEEN 31 AND 60 THEN '31-60'
+                WHEN DATEDIFF(?, i.due_date) BETWEEN 61 AND 90 THEN '61-90'
+                ELSE '90+'
+              END as aging_bucket
+       FROM invoices i
+       LEFT JOIN organizations o ON i.organization_id = o.id
+       WHERE i.status NOT IN ('paid', 'void', 'cancelled')
+         AND (i.amount - COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.invoice_id = i.id), 0)) > 0
+         ${orgFilter}
+       ORDER BY days_overdue DESC, o.name, i.invoice_date`,
+      [asOfDate, asOfDate, asOfDate, asOfDate, asOfDate, ...params.slice(1)]
+    );
+
+    // Calculate summary
+    const summary: Record<string, number> = { current: 0, '1-30': 0, '31-60': 0, '61-90': 0, '90+': 0, total: 0 };
+    rows.forEach((row: any) => {
+      const balance = Number(row.balance) || 0;
+      if (summary[row.aging_bucket] !== undefined) summary[row.aging_bucket] += balance;
+      summary.total += balance;
+    });
+
+    return { success: true, data: { asOfDate, invoices: rows, summary } };
+  });
+
+  // ===== Comprehensive aging report (for AgingReportView) =====
+  app.get('/aging-report', { preHandler: acctRole }, async (request) => {
+    const { organization_id, as_of_date } = request.query as Record<string, string>;
+    const pool = getPool();
+    const asOfDate = as_of_date || new Date().toISOString().split('T')[0];
+
+    let orgFilter = '';
+    const params: unknown[] = [asOfDate, asOfDate, asOfDate, asOfDate, asOfDate, asOfDate];
+    if (organization_id) { orgFilter = 'AND i.organization_id = ?'; params.push(parseInt(organization_id)); }
+
+    const [invoices] = await pool.query<any[]>(
+      `SELECT i.id, i.invoice_number, i.organization_id, o.name as organization_name,
+              i.amount,
+              COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.invoice_id = i.id), 0) as paid_amount,
+              i.amount - COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.invoice_id = i.id), 0) as balance_due,
+              i.invoice_date, i.due_date,
+              CASE WHEN i.due_date IS NULL THEN 0
+                   ELSE GREATEST(0, DATEDIFF(?, i.due_date)) END as days_outstanding,
+              i.status,
+              CASE
+                WHEN i.due_date IS NULL OR i.due_date >= ? THEN 'Current'
+                WHEN DATEDIFF(?, i.due_date) BETWEEN 1 AND 30 THEN '1-30 Days'
+                WHEN DATEDIFF(?, i.due_date) BETWEEN 31 AND 60 THEN '31-60 Days'
+                WHEN DATEDIFF(?, i.due_date) BETWEEN 61 AND 90 THEN '61-90 Days'
+                ELSE '90+ Days'
+              END as aging_bucket
+       FROM invoices i
+       LEFT JOIN organizations o ON i.organization_id = o.id
+       WHERE i.status NOT IN ('paid', 'void', 'cancelled')
+         AND i.posted_to_org = TRUE
+         AND (i.amount - COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.invoice_id = i.id), 0)) > 0.01
+         ${orgFilter}
+       ORDER BY days_outstanding DESC, o.name, i.invoice_date`,
+      params
+    );
+
+    // Build summaries
+    let totalOutstanding = 0, totalOverdue = 0;
+    const buckets: Record<string, { count: number; total: number; daysSum: number }> = {
+      'Current': { count: 0, total: 0, daysSum: 0 },
+      '1-30 Days': { count: 0, total: 0, daysSum: 0 },
+      '31-60 Days': { count: 0, total: 0, daysSum: 0 },
+      '61-90 Days': { count: 0, total: 0, daysSum: 0 },
+      '90+ Days': { count: 0, total: 0, daysSum: 0 },
+    };
+    const orgBreakdown: Record<number, any> = {};
+
+    invoices.forEach((inv: any) => {
+      const balance = Number(inv.balance_due) || 0;
+      const days = Number(inv.days_outstanding) || 0;
+      const bucket = inv.aging_bucket;
+
+      totalOutstanding += balance;
+      if (bucket !== 'Current') totalOverdue += balance;
+
+      if (buckets[bucket]) {
+        buckets[bucket].count++;
+        buckets[bucket].total += balance;
+        buckets[bucket].daysSum += days;
+      }
+
+      if (!orgBreakdown[inv.organization_id]) {
+        orgBreakdown[inv.organization_id] = {
+          organization_id: inv.organization_id, organization_name: inv.organization_name,
+          total_balance: 0, current_balance: 0, days_1_30: 0, days_31_60: 0, days_61_90: 0, days_90_plus: 0,
+        };
+      }
+      const org = orgBreakdown[inv.organization_id];
+      org.total_balance += balance;
+      if (bucket === 'Current') org.current_balance += balance;
+      else if (bucket === '1-30 Days') org.days_1_30 += balance;
+      else if (bucket === '31-60 Days') org.days_31_60 += balance;
+      else if (bucket === '61-90 Days') org.days_61_90 += balance;
+      else if (bucket === '90+ Days') org.days_90_plus += balance;
+    });
+
+    // Collection efficiency
+    const [effRows] = await pool.query<any[]>(
+      `SELECT COALESCE(SUM(i.amount), 0) as total_invoiced,
+              COALESCE((SELECT SUM(p.amount) FROM payments p JOIN invoices i2 ON p.invoice_id = i2.id
+                        WHERE i2.invoice_date >= DATE_SUB(?, INTERVAL 90 DAY)), 0) as total_collected
+       FROM invoices i WHERE i.invoice_date >= DATE_SUB(?, INTERVAL 90 DAY) AND i.posted_to_org = TRUE`,
+      [asOfDate, asOfDate]
+    );
+    const totalInvoiced = Number(effRows[0]?.total_invoiced) || 0;
+    const totalCollected = Number(effRows[0]?.total_collected) || 0;
+    const collectionEfficiency = totalInvoiced > 0 ? Math.round((totalCollected / totalInvoiced) * 100) : 100;
+
+    const agingSummary = Object.entries(buckets).map(([bucket, data]) => ({
+      aging_bucket: bucket, invoice_count: data.count,
+      total_balance: Math.round(data.total * 100) / 100,
+      percentage_of_total: totalOutstanding > 0 ? Math.round((data.total / totalOutstanding) * 1000) / 10 : 0,
+      avg_days_outstanding: data.count > 0 ? Math.round(data.daysSum / data.count) : 0,
+    }));
+
+    const r = (n: number) => Math.round(n * 100) / 100;
+    const organizationBreakdown = Object.values(orgBreakdown).map((org: any) => ({
+      ...org, total_balance: r(org.total_balance), current_balance: r(org.current_balance),
+      days_1_30: r(org.days_1_30), days_31_60: r(org.days_31_60),
+      days_61_90: r(org.days_61_90), days_90_plus: r(org.days_90_plus),
+      risk_score: org.total_balance > 0 ? Math.min(100, Math.round(
+        ((org.days_1_30 * 1) + (org.days_31_60 * 2) + (org.days_61_90 * 3) + (org.days_90_plus * 4))
+        / org.total_balance * 25
+      )) : 0,
+    })).sort((a: any, b: any) => b.total_balance - a.total_balance);
+
+    const overdueInvoices = invoices.filter((i: any) => i.aging_bucket !== 'Current').length;
+
+    return {
+      success: true,
+      data: {
+        report_metadata: { generated_at: new Date().toISOString(), as_of_date: asOfDate },
+        executive_summary: {
+          total_outstanding: r(totalOutstanding), total_overdue: r(totalOverdue),
+          collection_efficiency: collectionEfficiency, total_invoices: invoices.length,
+          overdue_invoices: overdueInvoices,
+          overdue_percentage: invoices.length > 0 ? Math.round((overdueInvoices / invoices.length) * 100) : 0,
+        },
+        aging_summary: agingSummary,
+        organization_breakdown: organizationBreakdown,
+        invoice_details: invoices.map((inv: any) => ({
+          id: inv.id, invoice_number: inv.invoice_number, organization_name: inv.organization_name,
+          amount: r(Number(inv.amount) || 0), balance_due: r(Number(inv.balance_due) || 0),
+          due_date: inv.due_date, days_outstanding: inv.days_outstanding, aging_bucket: inv.aging_bucket,
+        })),
+      },
+    };
   });
 }
