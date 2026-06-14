@@ -198,8 +198,8 @@ export async function instructorRoutes(app: FastifyInstance) {
     if (clientDate && /^\d{4}-\d{2}-\d{2}$/.test(clientDate)) {
       todayStr = clientDate;
     } else {
-      const [dateRows] = await pool.query<any[]>('SELECT CURRENT_DATE as current_date');
-      todayStr = new Date(dateRows[0].current_date).toISOString().split('T')[0];
+      const [dateRows] = await pool.query<any[]>('SELECT CURRENT_DATE as today_date');
+      todayStr = new Date(dateRows[0].today_date).toISOString().split('T')[0];
     }
 
     const [rows] = await pool.query<any[]>(

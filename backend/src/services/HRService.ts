@@ -33,7 +33,7 @@ export class HRService {
            AND created_at >= NOW() - INTERVAL 30 DAY
          )`
       ),
-      pool.query<any[]>(`SELECT COUNT(*) as count FROM organizations WHERE deleted_at IS NULL`),
+      pool.query<any[]>(`SELECT COUNT(*) as count FROM organizations`),
       pool.query<any[]>(
         `SELECT COUNT(*) as count FROM certifications
          WHERE expiration_date BETWEEN NOW() AND NOW() + INTERVAL 30 DAY`
@@ -72,7 +72,7 @@ export class HRService {
               MAX(cr.completed_at) as last_course_date
        FROM users u
        LEFT JOIN course_requests cr ON u.id = cr.instructor_id
-       WHERE u.role = 'instructor' AND u.deleted_at IS NULL ${searchClause}
+       WHERE u.role = 'instructor' AND u.status = 'active' ${searchClause}
        GROUP BY u.id, u.username, u.email, u.phone, u.created_at, u.updated_at
        ORDER BY u.username
        LIMIT ? OFFSET ?`,
@@ -80,7 +80,7 @@ export class HRService {
     );
 
     const [countRows] = await pool.query<any[]>(
-      `SELECT COUNT(*) as total FROM users WHERE role = 'instructor' AND deleted_at IS NULL ${searchClause}`,
+      `SELECT COUNT(*) as total FROM users WHERE role = 'instructor' AND status = 'active' ${searchClause}`,
       params
     );
 

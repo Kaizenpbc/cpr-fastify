@@ -199,7 +199,7 @@ export async function adminRoutes(app: FastifyInstance) {
   // ===== Organization management =====
   app.get('/organizations', { preHandler: adminRole }, async () => {
     const [rows] = await pool.query<any[]>(
-      'SELECT * FROM organizations WHERE deleted_at IS NULL ORDER BY name'
+      'SELECT * FROM organizations ORDER BY name'
     );
     return { success: true, data: rows };
   });
@@ -239,7 +239,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
     await pool.query(
       `UPDATE users SET username = CONCAT('deleted_', id), email = CONCAT('deleted_', id, '@deleted.invalid'),
-       first_name = NULL, last_name = NULL, phone = NULL, deleted_at = CURRENT_TIMESTAMP WHERE id = ?`,
+       first_name = NULL, last_name = NULL, phone = NULL, status = 'deleted' WHERE id = ?`,
       [id]
     );
     logger.info({ userId: id, sysadmin: request.userId }, 'PIPEDA personal data anonymised');
@@ -250,7 +250,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get('/instructors', { preHandler: adminRole }, async () => {
     const [rows] = await pool.query<any[]>(
       `SELECT id, username, email, first_name, last_name FROM users
-       WHERE role = 'instructor' AND deleted_at IS NULL ORDER BY username`
+       WHERE role = 'instructor' AND status = 'active' ORDER BY username`
     );
     return { success: true, data: rows };
   });

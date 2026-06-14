@@ -17,7 +17,7 @@ export async function courseAdminRoutes(app: FastifyInstance) {
   app.get('/instructors', { preHandler: adminRole }, async () => {
     const [rows] = await pool.query<any[]>(
       `SELECT id, username, email, first_name, last_name
-       FROM users WHERE role = 'instructor' AND deleted_at IS NULL ORDER BY username`
+       FROM users WHERE role = 'instructor' AND status = 'active' ORDER BY username`
     );
     return { success: true, data: rows };
   });

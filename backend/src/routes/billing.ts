@@ -171,7 +171,7 @@ export async function billingRoutes(app: FastifyInstance) {
   app.get('/organizations', { preHandler: acctRole }, async () => {
     const pool = getPool();
     const [rows] = await pool.query<any[]>(
-      'SELECT id, name, contact_email, contact_phone FROM organizations WHERE deleted_at IS NULL ORDER BY name'
+      'SELECT id, name, contact_email, contact_phone FROM organizations ORDER BY name'
     );
     return { success: true, data: rows };
   });

@@ -71,7 +71,7 @@ export async function payRateRoutes(app: FastifyInstance) {
     const safeLimit = Math.min(parseInt(limit), 100);
     const offset = (parseInt(page) - 1) * safeLimit;
 
-    let where = "WHERE u.role = 'instructor' AND u.deleted_at IS NULL";
+    let where = "WHERE u.role = 'instructor' AND u.status = 'active'";
     const params: unknown[] = [];
     if (search) { where += ' AND (u.username LIKE ? OR u.email LIKE ?)'; params.push(`%${search}%`, `%${search}%`); }
     if (has_rate === 'true') where += ' AND ipr.id IS NOT NULL';

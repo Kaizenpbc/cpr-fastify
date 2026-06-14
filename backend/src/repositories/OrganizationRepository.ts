@@ -9,7 +9,7 @@ export interface Organization {
   status: string;
   created_at: Date;
   updated_at: Date;
-  deleted_at: Date | null;
+  status: string;
 }
 
 export interface OrganizationWithStats extends Organization {
@@ -22,7 +22,7 @@ export interface OrganizationWithStats extends Organization {
 
 export class OrganizationRepository extends BaseRepository<Organization> {
   constructor() {
-    super('organizations', null);
+    super('organizations', null, false);
   }
 
   async findWithStats(options: { search?: string; limit: number; offset: number }): Promise<{ rows: OrganizationWithStats[]; total: number }> {
@@ -46,7 +46,7 @@ export class OrganizationRepository extends BaseRepository<Organization> {
        FROM organizations o
        LEFT JOIN course_requests cr ON o.id = cr.organization_id
        LEFT JOIN users u ON o.id = u.organization_id
-       WHERE o.deleted_at IS NULL ${searchClause}
+       WHERE 1=1 ${searchClause}
        GROUP BY o.id, o.name, o.contact_email, o.contact_phone, o.address, o.created_at, o.updated_at
        ORDER BY o.name
        LIMIT ? OFFSET ?`,
@@ -61,7 +61,7 @@ export class OrganizationRepository extends BaseRepository<Organization> {
     }
 
     const [{ total }] = await this.query<{ total: number }>(
-      `SELECT COUNT(*) as total FROM organizations WHERE deleted_at IS NULL ${countSearch}`,
+      `SELECT COUNT(*) as total FROM organizations WHERE 1=1 ${countSearch}`,
       countParams
     );
 

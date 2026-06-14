@@ -28,8 +28,9 @@ export function errorHandler(error: FastifyError, request: FastifyRequest, reply
   // Unexpected errors — log full detail, return generic message
   logger.error({ err: error, url: request.url, method: request.method }, 'Unhandled error');
 
+  const isStaging = env.FRONTEND_URL?.includes('stage');
   return reply.status(500).send({
-    error: env.NODE_ENV === 'production'
+    error: (env.NODE_ENV === 'production' && !isStaging)
       ? 'An unexpected error occurred'
       : error.message,
   });
