@@ -95,23 +95,6 @@ export async function organizationRoutes(app: FastifyInstance) {
     };
   });
 
-  // ===== Org billing summary =====
-  app.get('/billing-summary', { preHandler: orgRole }, async (request, reply) => {
-    if (!request.userOrgId) return reply.status(400).send({ error: 'No organization linked' });
-    const pool = getPool();
-    const orgId = request.userOrgId;
-
-    const [rows] = await pool.query<any[]>(
-      `SELECT
-         COALESCE(SUM(CASE WHEN status IN ('posted_to_org', 'overdue') THEN amount ELSE 0 END), 0) as outstanding,
-         COALESCE(SUM(CASE WHEN status = 'overdue' THEN amount ELSE 0 END), 0) as overdue,
-         COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0) as paid
-       FROM invoices WHERE organization_id = ?`,
-      [orgId]
-    );
-    return { success: true, data: rows[0] };
-  });
-
   // ===== Org course request (POST /organization/course-request) =====
   app.post('/course-request', { preHandler: orgRole }, async (request, reply) => {
     if (!request.userOrgId) return reply.status(400).send({ error: 'No organization linked' });
