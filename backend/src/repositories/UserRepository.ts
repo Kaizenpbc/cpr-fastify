@@ -5,26 +5,27 @@ export interface User {
   username: string;
   email: string;
   password_hash: string;
+  full_name: string;
   first_name: string;
   last_name: string;
   role: string;
   organization_id: number | null;
-  is_active: boolean;
+  status: string;
+  phone: string | null;
+  mobile: string | null;
   created_at: Date;
   updated_at: Date;
-  deleted_at: Date | null;
 }
 
-// Users table uses organization_id — default org column works
+// Users table has no deleted_at — uses status column instead
 export class UserRepository extends BaseRepository<User> {
   constructor() {
-    super('users');
+    super('users', 'organization_id', false);
   }
 
   async findByUsername(username: string): Promise<User | null> {
-    // Login lookup is unscoped — we don't know the org yet
     const rows = await this.query<User>(
-      'SELECT * FROM users WHERE username = ? AND deleted_at IS NULL',
+      'SELECT * FROM users WHERE username = ?',
       [username]
     );
     return rows[0] ?? null;
@@ -32,7 +33,7 @@ export class UserRepository extends BaseRepository<User> {
 
   async findByEmail(email: string): Promise<User | null> {
     const rows = await this.query<User>(
-      'SELECT * FROM users WHERE email = ? AND deleted_at IS NULL',
+      'SELECT * FROM users WHERE email = ?',
       [email]
     );
     return rows[0] ?? null;

@@ -18,7 +18,7 @@ export class AuthService {
 
   async login(username: string, password: string): Promise<LoginResult> {
     const user = await this.userRepo.findByUsername(username);
-    if (!user || !user.is_active) {
+    if (!user || user.status === 'inactive') {
       throw new AuthError('Invalid username or password');
     }
 
@@ -38,7 +38,7 @@ export class AuthService {
       const payload = jwt.verify(token, env.JWT_REFRESH_SECRET) as jwt.JwtPayload;
       const user = await this.userRepo.findById(payload.userId);
 
-      if (!user || !user.is_active) {
+      if (!user || user.status === 'inactive') {
         throw new AuthError('Invalid refresh token');
       }
 

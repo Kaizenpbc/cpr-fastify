@@ -17,7 +17,8 @@ export class BaseRepository<T> {
 
   constructor(
     protected readonly table: string,
-    private readonly orgColumn: string | null = 'organization_id'
+    private readonly orgColumn: string | null = 'organization_id',
+    private readonly hasSoftDelete: boolean = true
   ) {}
 
   /** Returns a scoped copy — all queries filter by this org. */
@@ -39,11 +40,15 @@ export class BaseRepository<T> {
     return [this.orgId];
   }
 
+  private get softDeleteFilter(): string {
+    return this.hasSoftDelete ? 'AND deleted_at IS NULL' : '';
+  }
+
   // --- CRUD ---
 
   async findById(id: number): Promise<T | null> {
     const [rows] = await getPool().query<RowDataPacket[]>(
-      `SELECT * FROM ${this.table} WHERE id = ? AND deleted_at IS NULL ${this.orgFilter}`,
+      `SELECT * FROM ${this.table} WHERE id = ? ${this.softDeleteFilter} ${this.orgFilter}`,
       [id, ...this.orgParams]
     );
     return (rows[0] as T) ?? null;
@@ -53,7 +58,7 @@ export class BaseRepository<T> {
     const limit = options?.limit ?? 50;
     const offset = options?.offset ?? 0;
     const [rows] = await getPool().query<RowDataPacket[]>(
-      `SELECT * FROM ${this.table} WHERE deleted_at IS NULL ${this.orgFilter} LIMIT ? OFFSET ?`,
+      `SELECT * FROM ${this.table} WHERE 1=1 ${this.softDeleteFilter} ${this.orgFilter} LIMIT ? OFFSET ?`,
       [...this.orgParams, limit, offset]
     );
     return rows as T[];
@@ -84,7 +89,7 @@ export class BaseRepository<T> {
     const setClause = keys.map((k) => `\`${k}\` = ?`).join(', ');
 
     const [result] = await getPool().query<ResultSetHeader>(
-      `UPDATE ${this.table} SET ${setClause} WHERE id = ? AND deleted_at IS NULL ${this.orgFilter}`,
+      `UPDATE ${this.table} SET ${setClause} WHERE id = ? ${this.softDeleteFilter} ${this.orgFilter}`,
       [...values, id, ...this.orgParams]
     );
     return result.affectedRows > 0;
@@ -92,7 +97,7 @@ export class BaseRepository<T> {
 
   async softDelete(id: number): Promise<boolean> {
     const [result] = await getPool().query<ResultSetHeader>(
-      `UPDATE ${this.table} SET deleted_at = NOW() WHERE id = ? AND deleted_at IS NULL ${this.orgFilter}`,
+      `UPDATE ${this.table} SET deleted_at = NOW() WHERE id = ? ${this.softDeleteFilter} ${this.orgFilter}`,
       [id, ...this.orgParams]
     );
     return result.affectedRows > 0;
@@ -101,7 +106,7 @@ export class BaseRepository<T> {
   async count(where?: string, params?: unknown[]): Promise<number> {
     const extraWhere = where ? `AND ${where}` : '';
     const [rows] = await getPool().query<RowDataPacket[]>(
-      `SELECT COUNT(*) as count FROM ${this.table} WHERE deleted_at IS NULL ${this.orgFilter} ${extraWhere}`,
+      `SELECT COUNT(*) as count FROM ${this.table} WHERE 1=1 ${this.softDeleteFilter} ${this.orgFilter} ${extraWhere}`,
       [...this.orgParams, ...(params ?? [])]
     );
     return rows[0].count;
