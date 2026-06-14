@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { AuthService, AuthError } from '../services/AuthService.js';
 import { UserRepository } from '../repositories/UserRepository.js';
+import { requireAuth } from '../plugins/auth.js';
 
 const loginSchema = z.object({
   username: z.string().min(1),
@@ -36,7 +37,7 @@ export async function authRoutes(app: FastifyInstance) {
         maxAge: 7 * 24 * 60 * 60,
       });
 
-      return { user: result.user, accessToken: result.tokens.accessToken };
+      return { success: true, data: { user: result.user, accessToken: result.tokens.accessToken } };
     } catch (err) {
       if (err instanceof AuthError) {
         return reply.status(401).send({ error: err.message });
@@ -61,7 +62,7 @@ export async function authRoutes(app: FastifyInstance) {
         maxAge: 7 * 24 * 60 * 60,
       });
 
-      return { accessToken: tokens.accessToken };
+      return { success: true, data: { accessToken: tokens.accessToken } };
     } catch (err) {
       if (err instanceof AuthError) {
         return reply.status(401).send({ error: err.message });
@@ -70,10 +71,18 @@ export async function authRoutes(app: FastifyInstance) {
     }
   });
 
+  // GET /api/v1/auth/me — verify current session
+  app.get('/me', { preHandler: [requireAuth] }, async (request) => {
+    const user = await userRepo.findById(request.userId!);
+    if (!user) return { success: false, error: { message: 'User not found' } };
+    const { password_hash, ...safeUser } = user;
+    return { success: true, data: { user: safeUser } };
+  });
+
   // POST /api/v1/auth/logout
   app.post('/logout', async (_request, reply) => {
     reply.clearCookie('refreshToken', { path: '/api/v1/auth/refresh' });
-    return { message: 'Logged out' };
+    return { success: true, data: { message: 'Logged out' } };
   });
 
   // POST /api/v1/auth/change-password (authenticated)
