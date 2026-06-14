@@ -9,7 +9,6 @@ export interface Organization {
   status: string;
   created_at: Date;
   updated_at: Date;
-  status: string;
 }
 
 export interface OrganizationWithStats extends Organization {
