@@ -1,0 +1,97 @@
+import { FastifyInstance } from 'fastify';
+import { z } from 'zod';
+import { AuthService, AuthError } from '../services/AuthService.js';
+import { UserRepository } from '../repositories/UserRepository.js';
+
+const loginSchema = z.object({
+  username: z.string().min(1),
+  password: z.string().min(1),
+});
+
+const refreshSchema = z.object({
+  refreshToken: z.string().min(1),
+});
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8),
+});
+
+export async function authRoutes(app: FastifyInstance) {
+  const userRepo = new UserRepository();
+  const authService = new AuthService(userRepo);
+
+  // POST /api/v1/auth/login
+  app.post('/login', async (request, reply) => {
+    const body = loginSchema.parse(request.body);
+
+    try {
+      const result = await authService.login(body.username, body.password);
+
+      reply.setCookie('refreshToken', result.tokens.refreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        path: '/api/v1/auth/refresh',
+        maxAge: 7 * 24 * 60 * 60,
+      });
+
+      return { user: result.user, accessToken: result.tokens.accessToken };
+    } catch (err) {
+      if (err instanceof AuthError) {
+        return reply.status(401).send({ error: err.message });
+      }
+      throw err;
+    }
+  });
+
+  // POST /api/v1/auth/refresh
+  app.post('/refresh', async (request, reply) => {
+    const token = request.cookies.refreshToken;
+    if (!token) return reply.status(401).send({ error: 'No refresh token' });
+
+    try {
+      const tokens = await authService.refreshToken(token);
+
+      reply.setCookie('refreshToken', tokens.refreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        path: '/api/v1/auth/refresh',
+        maxAge: 7 * 24 * 60 * 60,
+      });
+
+      return { accessToken: tokens.accessToken };
+    } catch (err) {
+      if (err instanceof AuthError) {
+        return reply.status(401).send({ error: err.message });
+      }
+      throw err;
+    }
+  });
+
+  // POST /api/v1/auth/logout
+  app.post('/logout', async (_request, reply) => {
+    reply.clearCookie('refreshToken', { path: '/api/v1/auth/refresh' });
+    return { message: 'Logged out' };
+  });
+
+  // POST /api/v1/auth/change-password (authenticated)
+  app.post('/change-password', async (request, reply) => {
+    // TODO: wire up auth middleware to get userId from token
+    const userId = (request as any).userId;
+    if (!userId) return reply.status(401).send({ error: 'Not authenticated' });
+
+    const body = changePasswordSchema.parse(request.body);
+
+    try {
+      await authService.changePassword(userId, body.currentPassword, body.newPassword);
+      return { message: 'Password changed' };
+    } catch (err) {
+      if (err instanceof AuthError) {
+        return reply.status(400).send({ error: err.message });
+      }
+      throw err;
+    }
+  });
+}
