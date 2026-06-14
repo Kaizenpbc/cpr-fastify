@@ -25,11 +25,10 @@ export async function vendorAdminRoutes(app: FastifyInstance) {
   app.get('/admin/vendor-invoices', { preHandler: adminRole }, async () => {
     const [rows] = await pool.query<any[]>(
       `SELECT vi.*, v.name as vendor_name, v.contact_email as vendor_email,
-              u_approved.username as approved_by, u_rejected.username as rejected_by
+              u_approved.username as approved_by_name
        FROM vendor_invoices vi
        LEFT JOIN vendors v ON vi.vendor_id = v.id
        LEFT JOIN users u_approved ON vi.approved_by = u_approved.id
-       LEFT JOIN users u_rejected ON vi.rejected_by = u_rejected.id
        ORDER BY vi.created_at DESC`
     );
     return { success: true, data: rows };
@@ -81,8 +80,8 @@ export async function vendorAdminRoutes(app: FastifyInstance) {
       } else {
         await conn.query(
           `UPDATE vendor_invoices SET status = 'rejected_by_admin', admin_notes = ?, rejection_reason = ?,
-           rejected_at = CURRENT_TIMESTAMP, rejected_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-          [notes, notes, request.userId, id]
+           rejected_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+          [notes, notes, id]
         );
       }
       await conn.commit();
@@ -191,8 +190,8 @@ export async function vendorAdminRoutes(app: FastifyInstance) {
 
       await conn.query(
         `UPDATE vendor_invoices SET status = 'rejected_by_accountant', admin_notes = ?, rejection_reason = ?,
-         rejected_at = CURRENT_TIMESTAMP, rejected_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-        [notes, notes, request.userId, id]
+         rejected_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        [notes, notes, id]
       );
       await conn.commit();
       return { success: true, message: 'Invoice rejected successfully.', data: { invoiceId: id, status: 'rejected_by_accountant' } };
