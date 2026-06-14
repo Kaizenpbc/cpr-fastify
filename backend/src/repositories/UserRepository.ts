@@ -15,12 +15,14 @@ export interface User {
   deleted_at: Date | null;
 }
 
+// Users table uses organization_id — default org column works
 export class UserRepository extends BaseRepository<User> {
   constructor() {
     super('users');
   }
 
   async findByUsername(username: string): Promise<User | null> {
+    // Login lookup is unscoped — we don't know the org yet
     const rows = await this.query<User>(
       'SELECT * FROM users WHERE username = ? AND deleted_at IS NULL',
       [username]
@@ -39,17 +41,8 @@ export class UserRepository extends BaseRepository<User> {
   async findByRole(role: string, options?: { limit?: number; offset?: number }): Promise<User[]> {
     const limit = options?.limit ?? 50;
     const offset = options?.offset ?? 0;
-    return this.query<User>(
-      'SELECT * FROM users WHERE role = ? AND deleted_at IS NULL LIMIT ? OFFSET ?',
-      [role, limit, offset]
-    );
-  }
-
-  async findByOrganization(orgId: number): Promise<User[]> {
-    return this.query<User>(
-      'SELECT * FROM users WHERE organization_id = ? AND deleted_at IS NULL',
-      [orgId]
-    );
+    // When scoped with forOrg(), only returns users in that org
+    return this.findAll({ limit, offset });
   }
 
   async updatePassword(id: number, passwordHash: string): Promise<boolean> {
