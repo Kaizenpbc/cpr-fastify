@@ -81,7 +81,7 @@ export async function organizationRoutes(app: FastifyInstance) {
       pool.query<any[]>(`SELECT COUNT(*) as count FROM course_requests WHERE organization_id = ? AND status = 'confirmed'`, [orgId]),
       pool.query<any[]>(`SELECT COUNT(*) as count FROM course_requests WHERE organization_id = ? AND status = 'completed'`, [orgId]),
       pool.query<any[]>(`SELECT COUNT(*) as count FROM invoices WHERE organization_id = ? AND status IN ('posted_to_org', 'overdue')`, [orgId]),
-      pool.query<any[]>(`SELECT COALESCE(SUM(amount), 0) as total FROM payments p JOIN invoices i ON p.invoice_id = i.id WHERE i.organization_id = ?`, [orgId]),
+      pool.query<any[]>(`SELECT COALESCE(SUM(p.amount), 0) as total FROM payments p JOIN invoices i ON p.invoice_id = i.id WHERE i.organization_id = ?`, [orgId]),
     ]);
 
     return {
