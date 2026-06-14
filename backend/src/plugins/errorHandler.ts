@@ -29,8 +29,7 @@ export function errorHandler(error: FastifyError, request: FastifyRequest, reply
   logger.error({ err: error, url: request.url, method: request.method }, 'Unhandled error');
 
   return reply.status(500).send({
-    error: env.NODE_ENV === 'production'
-      ? 'An unexpected error occurred'
-      : error.message,
+    error: error.message,
+    stack: env.NODE_ENV !== 'production' ? error.stack : undefined,
   });
 }
