@@ -86,9 +86,8 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   // POST /api/v1/auth/change-password (authenticated)
-  app.post('/change-password', async (request, reply) => {
-    // TODO: wire up auth middleware to get userId from token
-    const userId = (request as any).userId;
+  app.post('/change-password', { preHandler: [requireAuth] }, async (request, reply) => {
+    const userId = request.userId!;
     if (!userId) return reply.status(401).send({ error: 'Not authenticated' });
 
     const body = changePasswordSchema.parse(request.body);

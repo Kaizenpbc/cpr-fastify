@@ -29,7 +29,7 @@ export async function courseAdminRoutes(app: FastifyInstance) {
 
     const [result] = await pool.query<any>(
       `UPDATE course_requests SET
-       instructor_id = ?, start_time = ?, end_time = ?,
+       instructor_id = ?, confirmed_start_time = ?, confirmed_end_time = ?,
        status = 'confirmed', updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`,
       [data.instructorId, data.startTime, data.endTime, parseInt(id)]
