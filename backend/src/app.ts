@@ -18,7 +18,18 @@ export async function buildApp() {
 
   // Plugins
   await app.register(sensible);
-  await app.register(helmet, { contentSecurityPolicy: env.NODE_ENV === 'production' });
+  await app.register(helmet, {
+    contentSecurityPolicy: env.NODE_ENV === 'production' ? {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:", "blob:"],
+        connectSrc: ["'self'", env.FRONTEND_URL],
+      },
+    } : false,
+  });
   await app.register(cors, {
     origin: env.FRONTEND_URL,
     credentials: true,
