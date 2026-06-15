@@ -177,7 +177,7 @@ export async function courseRoutes(app: FastifyInstance) {
   // =====================
 
   // GET /courses/:id/validate-billing
-  app.get('/:id/validate-billing', { preHandler: [requireAuth] }, async (request, reply) => {
+  app.get('/:id/validate-billing', { preHandler: adminPreHandler }, async (request, reply) => {
     const { id } = request.params as { id: string };
     try {
       const validation = await service.validateBillingReadiness(parseInt(id));
@@ -186,7 +186,7 @@ export async function courseRoutes(app: FastifyInstance) {
   });
 
   // PUT /courses/:id/ready-for-billing
-  app.put('/:id/ready-for-billing', { preHandler: [requireAuth] }, async (request, reply) => {
+  app.put('/:id/ready-for-billing', { preHandler: adminPreHandler }, async (request, reply) => {
     const { id } = request.params as { id: string };
     try {
       const course = await service.markReadyForBilling(parseInt(id));

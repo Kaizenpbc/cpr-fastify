@@ -181,7 +181,12 @@ export async function adminRoutes(app: FastifyInstance) {
        phone ?? null, mobile ?? null, organizationId ?? null, locationId ?? null, status ?? null, id]
     );
     if (result.affectedRows === 0) return reply.status(404).send({ error: 'User not found' });
-    const [rows] = await pool.query<any[]>('SELECT * FROM users WHERE id = ?', [id]);
+    const [rows] = await pool.query<any[]>(
+      `SELECT id, username, email, full_name, first_name, last_name, role,
+              organization_id, location_id, status, phone, mobile, address,
+              date_onboarded, date_offboarded, created_at, updated_at
+       FROM users WHERE id = ?`, [id]
+    );
     return { success: true, message: 'User updated successfully', data: rows[0] };
   });
 

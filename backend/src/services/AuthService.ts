@@ -83,8 +83,10 @@ export class AuthService {
 }
 
 export class AuthError extends Error {
-  constructor(message: string) {
+  public statusCode: number;
+  constructor(message: string, statusCode: number = 401) {
     super(message);
     this.name = 'AuthError';
+    this.statusCode = statusCode;
   }
 }

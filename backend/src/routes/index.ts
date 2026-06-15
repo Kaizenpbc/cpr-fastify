@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import { requireAuth } from '../plugins/auth.js';
 import { authRoutes } from './auth.js';
 import { healthRoutes } from './health.js';
 import { courseRoutes } from './courses.js';
@@ -24,7 +25,7 @@ import { miscRoutes } from './misc.js';
 
 export async function registerRoutes(app: FastifyInstance) {
   // SSE endpoint for real-time updates (keeps connection open)
-  app.get('/events', async (request, reply) => {
+  app.get('/events', { preHandler: [requireAuth] }, async (request, reply) => {
     reply.raw.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',

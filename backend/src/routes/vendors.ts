@@ -207,8 +207,9 @@ export async function vendorRoutes(app: FastifyInstance) {
   });
 
   // ===== Get specific invoice =====
-  app.get('/invoices/:id', { preHandler: [requireAuth] }, async (request, reply) => {
+  app.get('/invoices/:id', { preHandler: vendorRole }, async (request, reply) => {
     const { id } = request.params as { id: string };
+    const { vendorId } = await getVendorIdForUser(pool, request.userId);
     const [rows] = await pool.query<any[]>(
       `SELECT vi.*, v.name as company, v.name as billing_company,
               COALESCE(vi.rate, 0) as rate, COALESCE(vi.amount, 0) as amount,
@@ -222,16 +223,17 @@ export async function vendorRoutes(app: FastifyInstance) {
        LEFT JOIN users u_approved ON vi.approved_by = u_approved.id
        LEFT JOIN (SELECT vendor_invoice_id, SUM(amount) as total_paid FROM vendor_payments WHERE status = 'processed' GROUP BY vendor_invoice_id) payments
          ON payments.vendor_invoice_id = vi.id
-       WHERE vi.id = ?`,
-      [id]
+       WHERE vi.id = ? AND vi.vendor_id = ?`,
+      [id, vendorId]
     );
     if (rows.length === 0) return reply.status(404).send({ error: 'Invoice not found' });
     return { success: true, data: rows[0] };
   });
 
   // ===== Invoice details with payment history =====
-  app.get('/invoices/:id/details', { preHandler: [requireAuth] }, async (request, reply) => {
+  app.get('/invoices/:id/details', { preHandler: vendorRole }, async (request, reply) => {
     const { id } = request.params as { id: string };
+    const { vendorId } = await getVendorIdForUser(pool, request.userId);
     const [invoiceRows] = await pool.query<any[]>(
       `SELECT vi.*, v.name as company, COALESCE(vi.rate, 0) as rate,
               COALESCE(payments.total_paid, 0) as total_paid,
@@ -239,8 +241,8 @@ export async function vendorRoutes(app: FastifyInstance) {
        FROM vendor_invoices vi LEFT JOIN vendors v ON vi.vendor_id = v.id
        LEFT JOIN (SELECT vendor_invoice_id, SUM(amount) as total_paid FROM vendor_payments WHERE status = 'processed' GROUP BY vendor_invoice_id) payments
          ON payments.vendor_invoice_id = vi.id
-       WHERE vi.id = ?`,
-      [id]
+       WHERE vi.id = ? AND vi.vendor_id = ?`,
+      [id, vendorId]
     );
     if (invoiceRows.length === 0) return reply.status(404).send({ error: 'Invoice not found' });
 
@@ -256,10 +258,11 @@ export async function vendorRoutes(app: FastifyInstance) {
   // ===== Submit to admin =====
   app.post('/invoices/:id/submit-to-admin', { preHandler: vendorRole }, async (request, reply) => {
     const { id } = request.params as { id: string };
+    const { vendorId } = await getVendorIdForUser(pool, request.userId);
     const [result] = await pool.query<any>(
       `UPDATE vendor_invoices SET status = 'submitted_to_admin', updated_at = CURRENT_TIMESTAMP
-       WHERE id = ? AND status = 'pending_submission'`,
-      [id]
+       WHERE id = ? AND vendor_id = ? AND status = 'pending_submission'`,
+      [id, vendorId]
     );
     if (result.affectedRows === 0) return reply.status(404).send({ error: 'Invoice not found or not ready to submit' });
     return { success: true, message: 'Invoice submitted to admin successfully' };
@@ -268,7 +271,7 @@ export async function vendorRoutes(app: FastifyInstance) {
   // ===== Download vendor invoice PDF =====
   app.get('/invoices/:id/download', { preHandler: [requireAuth] }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const staffRoles = ['admin', 'sysadmin', 'accounting'];
+    const staffRoles = ['admin', 'sysadmin', 'accountant'];
 
     const [rows] = await pool.query<any[]>(
       `SELECT vi.*, v.name as company, v.name as billing_company,
@@ -319,12 +322,13 @@ export async function vendorRoutes(app: FastifyInstance) {
   // ===== Resend rejected =====
   app.post('/invoices/:id/resend-to-admin', { preHandler: vendorRole }, async (request, reply) => {
     const { id } = request.params as { id: string };
+    const { vendorId } = await getVendorIdForUser(pool, request.userId);
     const { notes } = resendSchema.parse(request.body);
     const [result] = await pool.query<any>(
       `UPDATE vendor_invoices SET status = 'submitted_to_admin', admin_notes = ?,
        rejection_reason = NULL, rejected_at = NULL, rejected_by = NULL, updated_at = CURRENT_TIMESTAMP
-       WHERE id = ? AND status IN ('rejected_by_admin', 'rejected_by_accountant')`,
-      [notes, id]
+       WHERE id = ? AND vendor_id = ? AND status IN ('rejected_by_admin', 'rejected_by_accountant')`,
+      [notes, id, vendorId]
     );
     if (result.affectedRows === 0) return reply.status(404).send({ error: 'Invoice not found or not in rejected state' });
     return { success: true, message: 'Invoice resent to admin successfully' };

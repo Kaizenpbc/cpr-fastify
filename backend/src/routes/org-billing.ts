@@ -185,7 +185,7 @@ export async function orgBillingRoutes(app: FastifyInstance) {
     const rawAmount = parseFloat((request.query as any).amount);
     if (isNaN(rawAmount) || rawAmount < 0 || rawAmount > 9999999) return reply.status(400).send({ error: 'Invalid payment amount' });
 
-    const isOrgUser = (request as any).role === 'organization';
+    const isOrgUser = request.userRole === 'organization';
     const [rows] = await pool.query<any[]>(
       `SELECT i.id, i.amount, i.status, i.organization_id,
               COALESCE(SUM(CASE WHEN p.status = 'verified' THEN p.amount ELSE 0 END), 0) as verified_payments,
