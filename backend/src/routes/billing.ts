@@ -404,7 +404,7 @@ export async function billingRoutes(app: FastifyInstance) {
       `SELECT i.*, o.name as organization_name, o.contact_email,
               cr.location, cr.scheduled_date as date_completed, cr.registered_students as students_billed,
               ct.name as course_type_name,
-              op.price_per_student as rate_per_student
+              COALESCE(i.rate_per_student, op.price_per_student) as rate_per_student
        FROM invoices i
        JOIN organizations o ON i.organization_id = o.id
        JOIN course_requests cr ON i.course_request_id = cr.id
@@ -441,7 +441,7 @@ export async function billingRoutes(app: FastifyInstance) {
       `SELECT i.*, o.name as organization_name, o.contact_email,
               cr.location, cr.scheduled_date as date_completed, cr.registered_students as students_billed,
               ct.name as course_type_name,
-              op.price_per_student as rate_per_student
+              COALESCE(i.rate_per_student, op.price_per_student) as rate_per_student
        FROM invoices i
        JOIN organizations o ON i.organization_id = o.id
        JOIN course_requests cr ON i.course_request_id = cr.id
