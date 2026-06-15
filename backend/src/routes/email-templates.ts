@@ -3,6 +3,19 @@ import { z } from 'zod';
 import { getPool } from '../config/database.js';
 import { requireRole } from '../plugins/auth.js';
 import { emailService } from '../services/EmailService.js';
+import { env } from '../config/env.js';
+
+const previewSchema = z.object({
+  variables: z.record(z.string()).default({}),
+});
+
+const cloneSchema = z.object({
+  name: z.string().min(1, 'New template name is required'),
+});
+
+const testSendSchema = z.object({
+  to: z.string().email('Valid recipient email is required'),
+});
 
 const templateSchema = z.object({
   name: z.string().min(1),
@@ -108,7 +121,7 @@ export async function emailTemplateRoutes(app: FastifyInstance) {
     const [rows] = await pool.query<any[]>('SELECT * FROM email_templates WHERE id = ?', [parseInt(id)]);
     if (rows.length === 0) return reply.status(404).send({ error: 'Template not found' });
 
-    const { variables = {} } = request.body as { variables?: Record<string, string> };
+    const { variables } = previewSchema.parse(request.body);
     let rendered = rows[0].body || '';
     for (const [key, value] of Object.entries(variables)) {
       rendered = rendered.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
@@ -122,8 +135,7 @@ export async function emailTemplateRoutes(app: FastifyInstance) {
     const [rows] = await pool.query<any[]>('SELECT * FROM email_templates WHERE id = ?', [parseInt(id)]);
     if (rows.length === 0) return reply.status(404).send({ error: 'Template not found' });
 
-    const { name } = request.body as { name: string };
-    if (!name) return reply.status(400).send({ error: 'New template name is required' });
+    const { name } = cloneSchema.parse(request.body);
 
     const original = rows[0];
     const [result] = await pool.query<any>(
@@ -139,8 +151,7 @@ export async function emailTemplateRoutes(app: FastifyInstance) {
   // Test-send a template
   app.post('/:id/test-send', { preHandler: adminRole }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const { to } = request.body as { to?: string };
-    if (!to) return reply.status(400).send({ error: 'Recipient email (to) is required' });
+    const { to } = testSendSchema.parse(request.body);
 
     const [rows] = await pool.query<any[]>('SELECT * FROM email_templates WHERE id = ?', [parseInt(id)]);
     if (rows.length === 0) return reply.status(404).send({ error: 'Template not found' });
@@ -168,11 +179,11 @@ export async function emailTemplateRoutes(app: FastifyInstance) {
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Authorization': `Bearer ${env.RESEND_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: process.env.EMAIL_FROM || 'noreply@kpbc.ca',
+          from: env.EMAIL_FROM,
           to: [to],
           subject: `[TEST] ${template.subject}`,
           html: rendered,

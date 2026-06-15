@@ -161,7 +161,11 @@ export async function timesheetRoutes(app: FastifyInstance) {
   // ===== Update timesheet (instructor) =====
   app.put('/:timesheetId', { preHandler: [requireRole('instructor')] }, async (request, reply) => {
     const { timesheetId } = request.params as { timesheetId: string };
-    const { total_hours, courses_taught, notes } = request.body as any;
+    const { total_hours, courses_taught, notes } = z.object({
+      total_hours: z.number().min(0),
+      courses_taught: z.number().int().min(0).default(0),
+      notes: z.string().default(''),
+    }).parse(request.body);
 
     const [existing] = await pool.query<any[]>(
       'SELECT id, status FROM timesheets WHERE id = ? AND instructor_id = ?',
@@ -207,8 +211,12 @@ export async function timesheetRoutes(app: FastifyInstance) {
   });
 
   // ===== Instructor summary =====
-  app.get('/instructor/:instructorId/summary', { preHandler: timesheetAccess }, async (request) => {
+  app.get('/instructor/:instructorId/summary', { preHandler: timesheetAccess }, async (request, reply) => {
     const { instructorId } = request.params as { instructorId: string };
+    // Instructors can only view their own summary
+    if (request.userRole === 'instructor' && request.userId !== parseInt(instructorId)) {
+      return reply.status(403).send({ error: 'Access denied' });
+    }
     const [[summary], [recent]] = await Promise.all([
       pool.query<any[]>(
         `SELECT COUNT(*) as total_timesheets,

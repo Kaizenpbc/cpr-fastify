@@ -2,9 +2,9 @@ import { getPool } from '../config/database.js';
 import { logger } from '../config/logger.js';
 import { InvoiceRepository, Invoice, InvoiceWithDetails, DashboardData } from '../repositories/InvoiceRepository.js';
 import { CoursePricingRepository, CoursePricing } from '../repositories/CoursePricingRepository.js';
+import { HST_RATE } from '../utils/taxConfig.js';
 
-const HST_RATE = parseFloat(process.env.HST_RATE ?? '0.13');
-const INVOICE_DUE_DAYS = parseInt(process.env.INVOICE_DUE_DAYS ?? '30', 10);
+const INVOICE_DUE_DAYS = 30;
 
 export class BillingError extends Error {
   constructor(message: string, public statusCode: number = 400) {

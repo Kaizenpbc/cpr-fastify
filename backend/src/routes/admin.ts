@@ -3,14 +3,13 @@ import { z } from 'zod';
 import { getPool } from '../config/database.js';
 import { requireRole } from '../plugins/auth.js';
 import { logger } from '../config/logger.js';
+import { env } from '../config/env.js';
 import bcrypt from 'bcryptjs';
-
-const BCRYPT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS ?? '12', 10);
 
 const createUserSchema = z.object({
   username: z.string().min(3).max(50).regex(/^[a-zA-Z0-9_-]+$/),
   email: z.string().email(),
-  password: z.string().min(6).optional(),
+  password: z.string().min(8).optional(),
   role: z.enum(['admin', 'instructor', 'organization', 'accountant', 'hr', 'courseadmin', 'vendor', 'sysadmin']),
   firstName: z.string().max(100).optional(),
   lastName: z.string().max(100).optional(),
@@ -33,6 +32,23 @@ const createOrgSchema = z.object({
   contact_email: z.string().email().optional(),
   contact_phone: z.string().optional(),
   address: z.string().optional(),
+});
+
+const vendorBodySchema = z.object({
+  vendor_name: z.string().optional(),
+  name: z.string().optional(),
+  email: z.string().email().optional(),
+  contactEmail: z.string().email().optional(),
+  contact_email: z.string().email().optional(),
+  phone: z.string().optional(),
+  contact_phone: z.string().optional(),
+  address: z.string().optional(),
+  address_street: z.string().optional(),
+  address_city: z.string().optional(),
+  address_province: z.string().optional(),
+  address_postal_code: z.string().optional(),
+  vendor_type: z.string().optional(),
+  is_active: z.boolean().optional(),
 });
 
 export async function adminRoutes(app: FastifyInstance) {
@@ -65,7 +81,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   app.put('/courses/:id', { preHandler: adminRole }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const { name, description, duration_minutes, course_code, is_active } = request.body as any;
+    const { name, description, duration_minutes, course_code, is_active } = createCourseSchema.partial().parse(request.body);
 
     if (name) {
       const [dup] = await pool.query<any[]>('SELECT id FROM class_types WHERE LOWER(name) = LOWER(?) AND id != ?', [name, id]);
@@ -151,8 +167,9 @@ export async function adminRoutes(app: FastifyInstance) {
     );
     if (existingUser.length > 0) return reply.status(400).send({ error: 'Username or email already exists' });
 
-    const password = data.password ?? 'ChangeMe123!';
-    const hash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+    if (!data.password) return reply.status(400).send({ error: 'Password is required' });
+    const password = data.password;
+    const hash = await bcrypt.hash(password, env.BCRYPT_SALT_ROUNDS);
 
     const [result] = await pool.query<any>(
       `INSERT INTO users (username, email, password_hash, role, first_name, last_name,
@@ -169,7 +186,9 @@ export async function adminRoutes(app: FastifyInstance) {
 
   app.put('/users/:id', { preHandler: adminRole }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const { username, email, role, firstName, lastName, phone, mobile, organizationId, locationId, status } = request.body as any;
+    const { username, email, role, firstName, lastName, phone, mobile, organizationId, locationId, status } = createUserSchema.extend({
+      status: z.enum(['active', 'inactive', 'deleted']).optional(),
+    }).partial().parse(request.body);
 
     const [result] = await pool.query<any>(
       `UPDATE users SET username = COALESCE(?, username), email = COALESCE(?, email),
@@ -193,7 +212,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post('/users/:id/reset-password', { preHandler: adminRole }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const { password } = z.object({ password: z.string().min(6) }).parse(request.body);
-    const hash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+    const hash = await bcrypt.hash(password, env.BCRYPT_SALT_ROUNDS);
     const [result] = await pool.query<any>(
       'UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [hash, id]
     );
@@ -221,7 +240,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   app.put('/organizations/:id', { preHandler: adminRole }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const { name, contact_email, contact_phone, address } = request.body as any;
+    const { name, contact_email, contact_phone, address } = createOrgSchema.partial().parse(request.body);
     const [result] = await pool.query<any>(
       `UPDATE organizations SET name = COALESCE(?, name), contact_email = COALESCE(?, contact_email),
        contact_phone = COALESCE(?, contact_phone), address = COALESCE(?, address),
@@ -374,7 +393,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post('/vendors', { preHandler: adminRole }, async (request, reply) => {
     const { vendor_name, name, email, contactEmail, contact_email, phone, contact_phone,
             address, address_street, address_city, address_province, address_postal_code,
-            vendor_type, is_active } = request.body as any;
+            vendor_type, is_active } = vendorBodySchema.parse(request.body);
 
     const vendorName = vendor_name || name;
     if (!vendorName) return reply.status(400).send({ error: 'Vendor name is required' });
@@ -397,7 +416,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     const { vendor_name, name, email, contact_email, phone, contact_phone,
             address, address_street, address_city, address_province, address_postal_code,
-            vendor_type, is_active } = request.body as any;
+            vendor_type, is_active } = vendorBodySchema.parse(request.body);
 
     const vendorName = vendor_name || name;
     let fullAddress = address;

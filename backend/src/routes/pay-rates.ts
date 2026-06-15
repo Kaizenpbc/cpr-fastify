@@ -53,7 +53,9 @@ export async function payRateRoutes(app: FastifyInstance) {
 
   app.put('/tiers/:id', { preHandler: hrRole }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const { name, description, base_hourly_rate, course_bonus, is_active } = request.body as any;
+    const { name, description, base_hourly_rate, course_bonus, is_active } = createTierSchema.extend({
+      is_active: z.boolean().optional(),
+    }).partial().parse(request.body);
     const [result] = await pool.query<any>(
       `UPDATE pay_rate_tiers SET name = COALESCE(?, name), description = COALESCE(?, description),
        base_hourly_rate = COALESCE(?, base_hourly_rate), course_bonus = COALESCE(?, course_bonus),

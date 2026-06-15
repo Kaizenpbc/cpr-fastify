@@ -12,6 +12,15 @@ const updateProfileSchema = z.object({
   contactEmail: z.string().email().optional().default(''),
 });
 
+const courseRequestSchema = z.object({
+  courseTypeId: z.number().int().positive(),
+  scheduledDate: z.string().min(1),
+  location: z.string().min(1),
+  locationId: z.number().int().positive().optional(),
+  registeredStudents: z.number().int().min(0).default(0),
+  notes: z.string().optional(),
+});
+
 function handleError(err: unknown, reply: any) {
   if (err instanceof OrgError) return reply.status(err.statusCode).send({ error: err.message });
   throw err;
@@ -99,11 +108,7 @@ export async function organizationRoutes(app: FastifyInstance) {
   app.post('/course-request', { preHandler: orgRole }, async (request, reply) => {
     if (!request.userOrgId) return reply.status(400).send({ error: 'No organization linked' });
     const pool = getPool();
-    const { courseTypeId, scheduledDate, location, locationId, registeredStudents, notes } = request.body as any;
-
-    if (!courseTypeId || !scheduledDate || !location) {
-      return reply.status(400).send({ error: 'courseTypeId, scheduledDate, and location are required' });
-    }
+    const { courseTypeId, scheduledDate, location, locationId, registeredStudents, notes } = courseRequestSchema.parse(request.body);
 
     const [result] = await pool.query<any>(
       `INSERT INTO course_requests (organization_id, course_type_id, scheduled_date, location, location_id,

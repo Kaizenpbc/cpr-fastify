@@ -35,10 +35,9 @@ export function errorHandler(error: FastifyError, request: FastifyRequest, reply
     extra: { url: request.url, method: request.method },
   });
 
-  const isStaging = env.FRONTEND_URL?.includes('stage');
   return reply.status(500).send({
-    error: (env.NODE_ENV === 'production' && !isStaging)
-      ? 'An unexpected error occurred'
-      : error.message,
+    error: env.NODE_ENV === 'development'
+      ? error.message
+      : 'An unexpected error occurred',
   });
 }

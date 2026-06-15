@@ -2,6 +2,10 @@ import { api } from './api';
 import { tokenService } from './tokenService';
 import { AxiosError } from 'axios';
 
+const isDev = import.meta.env.DEV;
+const log = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const logError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+
 interface LoginResponse {
   user: {
     id: number;
@@ -54,10 +58,7 @@ export const authService = {
    * @throws Error if authentication fails
    */
   async login(username: string, password: string): Promise<LoginResponse> {
-    console.log('🔐 [AUTH] Frontend login attempt:', {
-      username,
-      timestamp: new Date().toISOString()
-    });
+    log('[AUTH] Login attempt');
 
     try {
       const response = await api.post<ApiResponse<LoginResponse>>('/auth/login', {
@@ -75,13 +76,7 @@ export const authService = {
         throw new Error('No access token received from server');
       }
 
-      console.log('✅ [AUTH] Frontend login response:', {
-        status: response.status,
-        hasAccessToken: true,
-        hasSessionId: !!sessionId,
-        user,
-        timestamp: new Date().toISOString()
-      });
+      log('[AUTH] Login successful');
 
       // Store access token and set in API headers
       tokenService.setAccessToken(accessToken);
@@ -89,15 +84,7 @@ export const authService = {
 
       return response.data.data;
     } catch (error: any) {
-      console.error('❌ [AUTH] Frontend login error:', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        response: error instanceof AxiosError ? {
-          status: error.response?.status,
-          data: error.response?.data,
-          headers: error.response?.headers
-        } : undefined,
-        timestamp: new Date().toISOString()
-      });
+      logError('[AUTH] Login error:', error instanceof Error ? error.message : 'Unknown error');
       throw error;
     }
   },
@@ -110,11 +97,11 @@ export const authService = {
   async refreshToken(): Promise<RefreshResponse> {
     // Return existing promise if one is already in progress
     if (refreshPromise) {
-      console.log('[TRACE] Auth service - Returning existing refresh promise');
+      log('[AUTH] Returning existing refresh promise');
       return refreshPromise;
     }
 
-    console.log('[TRACE] Auth service - Starting token refresh');
+    log('[AUTH] Starting token refresh');
 
     try {
       refreshPromise = api
@@ -130,7 +117,7 @@ export const authService = {
             throw new Error('No access token received from refresh');
           }
 
-          console.log('[TRACE] Auth service - Token refresh successful');
+          log('[AUTH] Token refresh successful');
           
           // Update the token in memory and API headers
           tokenService.setAccessToken(accessToken, expiresIn);
@@ -140,17 +127,14 @@ export const authService = {
           return response.data.data;
         })
         .catch(error => {
-          console.error('[TRACE] Auth service - Token refresh failed:', {
-            status: error.response?.status,
-            message: error.message
-          });
+          logError('[AUTH] Token refresh failed:', error.message);
 
           // Clear tokens on refresh failure
           if (error.response?.status === 401 || error.response?.status === 403) {
-            console.log('[TRACE] Auth service - Clearing tokens due to refresh failure');
+            log('[AUTH] Clearing tokens due to refresh failure');
             // Use forceLogout for blacklisted tokens to ensure complete cleanup
             if (error.response?.data?.error?.code === 'AUTH_1003') {
-              console.log('[TRACE] Auth service - Token blacklisted during refresh, forcing logout');
+              log('[AUTH] Token blacklisted during refresh, forcing logout');
               tokenService.forceLogout();
             } else {
               tokenService.clearTokens();
@@ -164,7 +148,7 @@ export const authService = {
 
       return refreshPromise;
     } catch (error: any) {
-      console.error('[TRACE] Auth service - Unexpected refresh error:', error);
+      logError('[AUTH] Unexpected refresh error:', error);
       throw error;
     }
   },
@@ -223,24 +207,24 @@ export const authService = {
   async checkAuth() {
     // Return existing promise if one is already in progress
     if (authCheckPromise) {
-      console.log('[TRACE] Auth service - Returning existing auth check promise');
+      log('[AUTH] Returning existing auth check promise');
       return authCheckPromise;
     }
 
     try {
       const token = tokenService.getAccessToken();
-      console.log('[TRACE] Auth service - Token present:', !!token);
+      log('[AUTH] Token present:', !!token);
       
       if (!token) {
-        console.log('[TRACE] Auth service - No access token found, returning null');
+        log('[AUTH] No access token found');
         return null;
       }
 
       // Ensure token is set in headers
       api.defaults.headers.common['Authorization'] = token;
-      console.log('[TRACE] Auth service - Token set in headers');
+      log('[AUTH] Token set in headers');
 
-      console.log('[TRACE] Auth service - Checking authentication with backend');
+      log('[AUTH] Checking authentication with backend');
       // Create and cache the promise
       authCheckPromise = api
         .get<ApiResponse<{ user: AuthUser }>>('/auth/me')
@@ -249,22 +233,19 @@ export const authService = {
             throw new Error(response.data.error?.message || 'Auth check failed');
           }
           const userData = response.data.data.user;
-          console.log('[TRACE] Auth service - Authentication check successful for user:', userData.username);
+          log('[AUTH] Auth check successful');
           authCheckPromise = null; // Clear the promise cache
           return userData;
         })
         .catch(error => {
-          console.error('[TRACE] Auth service - Authentication check failed:', {
-            status: error.response?.status,
-            message: error.message
-          });
+          logError('[AUTH] Auth check failed:', error.message);
 
           // Only clear tokens if we get a 401 (unauthorized) or 403 (forbidden)
           if (error.response?.status === 401 || error.response?.status === 403) {
-            console.log('[TRACE] Auth service - Clearing tokens due to authentication failure');
+            log('[AUTH] Clearing tokens due to auth failure');
             // Use forceLogout for blacklisted tokens to ensure complete cleanup
             if (error.response?.data?.error?.code === 'AUTH_1003') {
-              console.log('[TRACE] Auth service - Token blacklisted, forcing logout');
+              log('[AUTH] Token blacklisted, forcing logout');
               tokenService.forceLogout();
             } else {
               tokenService.clearTokens();
@@ -278,7 +259,7 @@ export const authService = {
 
       return authCheckPromise;
     } catch (error: any) {
-      console.error('[TRACE] Auth service - Unexpected error:', error);
+      logError('[AUTH] Unexpected error:', error);
       throw error;
     }
   },
@@ -308,13 +289,13 @@ export const authService = {
   },
 
   async recoverPassword(email: string): Promise<void> {
-    console.log('[DEBUG] Attempting to recover password for:', email);
+    log('[AUTH] Password recovery request');
     try {
       const response = await api.post('/auth/recover-password', { email });
-      console.log('[DEBUG] Password recovery response:', response.status);
+      log('[AUTH] Password recovery sent');
       return response.data;
     } catch (error: unknown) {
-      console.error('[DEBUG] Password recovery error:', error);
+      logError('[AUTH] Password recovery error');
       const errObj = error as { response?: { data?: { message?: string } } };
       throw new Error(errObj.response?.data?.message || 'Failed to send recovery email');
     }

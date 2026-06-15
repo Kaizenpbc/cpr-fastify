@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { getPool } from '../config/database.js';
 import { requireAuth, requireRole } from '../plugins/auth.js';
+import { HST_RATE } from '../utils/taxConfig.js';
 
 const createPricingSchema = z.object({
   organizationId: z.number().int().positive(),
@@ -12,6 +13,12 @@ const createPricingSchema = z.object({
 const updatePricingSchema = z.object({
   pricePerStudent: z.number().min(0).optional(),
   isActive: z.boolean().optional(),
+});
+
+const calculateCostSchema = z.object({
+  organizationId: z.coerce.number().int().positive(),
+  classTypeId: z.coerce.number().int().positive(),
+  studentCount: z.coerce.number().int().min(0),
 });
 
 export async function organizationPricingRoutes(app: FastifyInstance) {
@@ -62,26 +69,24 @@ export async function organizationPricingRoutes(app: FastifyInstance) {
 
   // Calculate course cost
   app.post('/calculate-cost', { preHandler: [requireAuth] }, async (request, reply) => {
-    const { organizationId, classTypeId, studentCount } = request.body as any;
-    const orgId = parseInt(organizationId);
+    const { organizationId, classTypeId, studentCount } = calculateCostSchema.parse(request.body);
 
-    if (request.userRole !== 'sysadmin' && request.userOrgId !== orgId) {
+    if (request.userRole !== 'sysadmin' && request.userOrgId !== organizationId) {
       return reply.status(403).send({ error: 'Access denied to this organization' });
     }
 
     const [rows] = await pool.query<any[]>(
       'SELECT price_per_student FROM organization_pricing WHERE organization_id = ? AND class_type_id = ? AND is_active = true',
-      [orgId, parseInt(classTypeId)]
+      [organizationId, classTypeId]
     );
     if (rows.length === 0) return reply.status(404).send({ error: 'Pricing not found' });
 
     const pricePerStudent = Number(rows[0].price_per_student);
-    const subtotal = pricePerStudent * parseInt(studentCount);
-    const hstRate = parseFloat(process.env.HST_RATE ?? '0.13');
-    const hst = subtotal * hstRate;
+    const subtotal = pricePerStudent * studentCount;
+    const hst = subtotal * HST_RATE;
     const total = subtotal + hst;
 
-    return { success: true, data: { pricePerStudent, studentCount: parseInt(studentCount), subtotal, hst, total } };
+    return { success: true, data: { pricePerStudent, studentCount, subtotal, hst, total } };
   });
 
   // ===== Admin CRUD (sysadmin only) =====

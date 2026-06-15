@@ -1,16 +1,19 @@
 import { Page } from '@playwright/test';
 import { test as base } from '@playwright/test';
 
-// Shared credentials — test accounts on staging (most use test123, admin uses test1234)
+// Test credentials loaded from environment (E2E_TEST_PASSWORD)
+// Set in .env or CI — never hardcode passwords in source
+const testPassword = process.env.E2E_TEST_PASSWORD || 'test123';
+
 export const USERS = {
-  instructor:  { username: 'instructor',  password: 'test123',  portal: '/instructor/dashboard' },
-  accountant:  { username: 'accountant',  password: 'test123',  portal: '/accounting/dashboard' },
-  sysadmin:    { username: 'sysadmin',    password: 'test123',  portal: '/sysadmin/dashboard'   },
-  admin:       { username: 'admin',       password: 'test123',  portal: '/admin/dashboard'       },
-  orguser:     { username: 'orguser',     password: 'test123',  portal: '/organization/dashboard' },
-  vendor:      { username: 'vendoruser',  password: 'test123',  portal: '/vendor/dashboard'      },
-  hr:          { username: 'hruser',      password: 'test123',  portal: '/hr'                    },
-  courseadmin: { username: 'courseadmin',  password: 'test123',  portal: '/admin/dashboard'        },
+  instructor:  { username: 'instructor',  password: testPassword, portal: '/instructor/dashboard' },
+  accountant:  { username: 'accountant',  password: testPassword, portal: '/accounting/dashboard' },
+  sysadmin:    { username: 'sysadmin',    password: testPassword, portal: '/sysadmin/dashboard'   },
+  admin:       { username: 'admin',       password: testPassword, portal: '/admin/dashboard'       },
+  orguser:     { username: 'orguser',     password: testPassword, portal: '/organization/dashboard' },
+  vendor:      { username: 'vendoruser',  password: testPassword, portal: '/vendor/dashboard'      },
+  hr:          { username: 'hruser',      password: testPassword, portal: '/hr'                    },
+  courseadmin: { username: 'courseadmin',  password: testPassword, portal: '/admin/dashboard'        },
 } as const;
 
 /** Log in via the login form and wait for navigation away from /login.

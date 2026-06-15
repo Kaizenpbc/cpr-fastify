@@ -1,6 +1,13 @@
 import { FastifyInstance } from 'fastify';
+import { z } from 'zod';
 import { getPool } from '../config/database.js';
 import { requireAuth, requireRole } from '../plugins/auth.js';
+
+const collegeBodySchema = z.object({
+  name: z.string().min(1).max(200),
+  is_active: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+});
 
 export async function collegeRoutes(app: FastifyInstance) {
   const pool = getPool();
@@ -24,8 +31,7 @@ export async function collegeRoutes(app: FastifyInstance) {
 
   // Create college
   app.post('/', { preHandler: adminRole }, async (request, reply) => {
-    const { name } = request.body as { name: string };
-    if (!name?.trim()) return reply.status(400).send({ error: 'College name is required' });
+    const { name } = collegeBodySchema.parse(request.body);
 
     const [existing] = await pool.query<any[]>('SELECT id FROM colleges WHERE LOWER(name) = LOWER(?)', [name.trim()]);
     if (existing.length > 0) return reply.status(400).send({ error: 'College with this name already exists' });
@@ -40,7 +46,7 @@ export async function collegeRoutes(app: FastifyInstance) {
   // Update college
   app.put('/:id', { preHandler: adminRole }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const { name, is_active, isActive } = request.body as any;
+    const { name, is_active, isActive } = collegeBodySchema.partial().parse(request.body);
     const activeValue = isActive !== undefined ? isActive : is_active;
 
     const sets: string[] = [];
