@@ -9,3 +9,5 @@ frontend/dist/
 Thumbs.db
 coverage/
 .vscode/
+playwright-report/
+test-results/

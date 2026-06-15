@@ -17,6 +17,7 @@
     "lint": "cd backend && npm run lint"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "concurrently": "^9.0.0"
   }
 }
