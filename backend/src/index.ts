@@ -25,16 +25,28 @@ async function start() {
   const address = await app.listen({ port: env.PORT, host: '0.0.0.0' });
   logger.info(`Server listening on ${address}`);
 
-  // Graceful shutdown
+  // Graceful shutdown with timeout
   const shutdown = async (signal: string) => {
     logger.info(`${signal} received, shutting down...`);
-    await app.close();
-    await closeDatabaseConnections();
+
+    // Force exit after 10 seconds if graceful shutdown hangs
+    const forceTimer = setTimeout(() => {
+      logger.error('Graceful shutdown timed out, forcing exit');
+      process.exit(1);
+    }, 10000);
+    forceTimer.unref();
+
+    try {
+      await app.close();
+      await closeDatabaseConnections();
+    } catch (err) {
+      logger.error({ err }, 'Error during shutdown');
+    }
     process.exit(0);
   };
 
-  process.on('SIGINT', () => shutdown('SIGINT'));
-  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => { shutdown('SIGINT'); });
+  process.on('SIGTERM', () => { shutdown('SIGTERM'); });
 }
 
 start().catch((err) => {

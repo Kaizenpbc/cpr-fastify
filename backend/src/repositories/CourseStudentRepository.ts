@@ -29,16 +29,17 @@ export class CourseStudentRepository extends BaseRepository<CourseStudent> {
   }
 
   async addStudents(courseRequestId: number, students: Array<{ firstName: string; lastName: string; email?: string }>): Promise<number> {
-    let inserted = 0;
-    for (const s of students) {
-      await this.execute(
-        `INSERT INTO course_students (course_request_id, first_name, last_name, email)
-         VALUES (?, ?, ?, ?)`,
-        [courseRequestId, s.firstName, s.lastName, s.email ?? null]
-      );
-      inserted++;
-    }
-    return inserted;
+    if (students.length === 0) return 0;
+
+    // Multi-row INSERT: single round-trip instead of N
+    const placeholders = students.map(() => '(?, ?, ?, ?)').join(', ');
+    const values = students.flatMap(s => [courseRequestId, s.firstName, s.lastName, s.email ?? null]);
+
+    await this.execute(
+      `INSERT INTO course_students (course_request_id, first_name, last_name, email) VALUES ${placeholders}`,
+      values
+    );
+    return students.length;
   }
 
   async countAttended(courseRequestId: number): Promise<number> {

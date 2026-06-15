@@ -14,8 +14,8 @@ const envSchema = z.object({
   // JWT
   JWT_ACCESS_SECRET: z.string().min(32),
   JWT_REFRESH_SECRET: z.string().min(32),
-  ACCESS_TOKEN_EXPIRY: z.string().default('15m'),
-  REFRESH_TOKEN_EXPIRY: z.string().default('7d'),
+  ACCESS_TOKEN_EXPIRY: z.string().regex(/^\d+[smhd]$/, 'Must be like 15m, 1h, 7d').default('15m'),
+  REFRESH_TOKEN_EXPIRY: z.string().regex(/^\d+[smhd]$/, 'Must be like 15m, 1h, 7d').default('7d'),
 
   // App
   FRONTEND_URL: z.string().url().default('http://localhost:5173'),

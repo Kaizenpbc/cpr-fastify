@@ -42,8 +42,10 @@ export class UserRepository extends BaseRepository<User> {
   async findByRole(role: string, options?: { limit?: number; offset?: number }): Promise<User[]> {
     const limit = options?.limit ?? 50;
     const offset = options?.offset ?? 0;
-    // When scoped with forOrg(), only returns users in that org
-    return this.findAll({ limit, offset });
+    return this.query<User>(
+      'SELECT * FROM users WHERE role = ? AND status = ? ORDER BY username LIMIT ? OFFSET ?',
+      [role, 'active', limit, offset]
+    );
   }
 
   async updatePassword(id: number, passwordHash: string): Promise<boolean> {

@@ -13,7 +13,8 @@ export async function connectDatabase() {
     database: env.DB_NAME,
     waitForConnections: true,
     connectionLimit: 10,
-    queueLimit: 0,
+    queueLimit: 100,        // Cap queued requests (was 0 = unlimited)
+    connectTimeout: 10000,  // 10s connection timeout
     timezone: '+00:00',
   });
 

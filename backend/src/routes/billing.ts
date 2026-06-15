@@ -193,28 +193,35 @@ export async function billingRoutes(app: FastifyInstance) {
     const pool = getPool();
     const yearInt = parseInt(year);
 
-    // Generate monthly data using a simpler approach for MySQL
-    const months: { month: string; total_invoiced: number; total_paid_in_month: number }[] = [];
+    // Two queries with GROUP BY MONTH instead of 24 sequential queries
+    const [[invoicedRows], [paidRows]] = await Promise.all([
+      pool.query<any[]>(
+        `SELECT MONTH(COALESCE(invoice_date, created_at)) as m,
+                COALESCE(SUM(amount), 0) as total
+         FROM invoices
+         WHERE YEAR(COALESCE(invoice_date, created_at)) = ?
+         GROUP BY m`,
+        [yearInt]
+      ),
+      pool.query<any[]>(
+        `SELECT MONTH(payment_date) as m,
+                COALESCE(SUM(amount), 0) as total
+         FROM payments
+         WHERE YEAR(payment_date) = ?
+         GROUP BY m`,
+        [yearInt]
+      ),
+    ]);
+
+    const invoicedMap = new Map(invoicedRows.map((r: any) => [r.m, Number(r.total)]));
+    const paidMap = new Map(paidRows.map((r: any) => [r.m, Number(r.total)]));
+
+    const months = [];
     for (let m = 1; m <= 12; m++) {
-      const monthStr = `${yearInt}-${String(m).padStart(2, '0')}`;
-
-      const [[invoiced], [paid]] = await Promise.all([
-        pool.query<any[]>(
-          `SELECT COALESCE(SUM(amount), 0) as total FROM invoices
-           WHERE DATE_FORMAT(COALESCE(invoice_date, created_at), '%Y-%m') = ?`,
-          [monthStr]
-        ),
-        pool.query<any[]>(
-          `SELECT COALESCE(SUM(amount), 0) as total FROM payments
-           WHERE DATE_FORMAT(payment_date, '%Y-%m') = ?`,
-          [monthStr]
-        ),
-      ]);
-
       months.push({
-        month: monthStr,
-        total_invoiced: Number(invoiced[0]?.total ?? 0),
-        total_paid_in_month: Number(paid[0]?.total ?? 0),
+        month: `${yearInt}-${String(m).padStart(2, '0')}`,
+        total_invoiced: invoicedMap.get(m) ?? 0,
+        total_paid_in_month: paidMap.get(m) ?? 0,
       });
     }
     return { success: true, data: months };

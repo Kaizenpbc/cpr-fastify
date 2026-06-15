@@ -1,5 +1,6 @@
 import { env } from '../config/env.js';
 import { getPool } from '../config/database.js';
+import { logger } from '../config/logger.js';
 
 const APP_URL = env.FRONTEND_URL;
 
@@ -213,9 +214,9 @@ class EmailService {
     this.fromAddress = env.EMAIL_FROM;
 
     if (this.apiKey) {
-      console.log('[EMAIL] Resend configured (fetch transport)');
+      logger.info('Email service: Resend configured');
     } else {
-      console.log('[EMAIL] RESEND_API_KEY not set — mock mode');
+      logger.info('Email service: RESEND_API_KEY not set — mock mode');
     }
   }
 
@@ -233,7 +234,7 @@ class EmailService {
     attachments?: { filename: string; content: Buffer }[]
   ): Promise<boolean> {
     if (!this.apiKey) {
-      console.log(`[EMAIL] MOCK — To: ${to}, Subject: ${subject}`);
+      logger.info({ to, subject }, 'Email mock — no API key configured');
       return false;
     }
 
@@ -252,6 +253,9 @@ class EmailService {
         }));
       }
 
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -259,26 +263,28 @@ class EmailService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
 
       const data = await response.json() as { id?: string; name?: string; message?: string };
 
       if (!response.ok) {
-        console.error('[EMAIL] Resend error:', data);
+        logger.error({ to, status: response.status, error: data }, 'Resend API error');
         return false;
       }
 
-      console.log(`[EMAIL] Sent to ${to}, Resend ID: ${data.id}`);
+      logger.info({ to, resendId: data.id }, 'Email sent');
       return true;
     } catch (error) {
-      console.error('[EMAIL] Failed:', error instanceof Error ? error.message : 'Unknown error');
+      logger.error({ to, error: error instanceof Error ? error.message : 'Unknown error' }, 'Email send failed');
       return false;
     }
   }
 
   async verifyConnection(): Promise<boolean> {
     if (!this.apiKey) return false;
-    console.log('[EMAIL] Resend client ready');
+    logger.info('Email service: Resend client ready');
     return true;
   }
 
@@ -459,7 +465,7 @@ class EmailService {
         [invoiceId, recipientEmail, daysBeforeDue]
       );
     } catch (error) {
-      console.error('[EMAIL] Error logging reminder:', error);
+      logger.error({ error }, 'Error logging email reminder');
     }
   }
 
