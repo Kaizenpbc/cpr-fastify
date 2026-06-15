@@ -595,6 +595,106 @@ export async function orgBillingRoutes(app: FastifyInstance) {
     } catch (err) { await conn.rollback(); throw err; } finally { conn.release(); }
   });
 
-  // TODO: PDF endpoints (invoice PDF, payment receipt) — requires PDFService port
-  // TODO: Certification endpoints — requires certificationService port
+  // Download invoice PDF
+  app.get('/invoices/:id/pdf', { preHandler: orgRole }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const orgId = request.userOrgId;
+
+    const [rows] = await pool.query<any[]>(
+      `SELECT i.*, o.name as organization_name, o.contact_email,
+              cr.location, cr.scheduled_date as date_completed, cr.registered_students as students_billed,
+              ct.name as course_type_name,
+              op.price_per_student as rate_per_student
+       FROM invoices i
+       JOIN organizations o ON i.organization_id = o.id
+       JOIN course_requests cr ON i.course_request_id = cr.id
+       JOIN class_types ct ON cr.course_type_id = ct.id
+       LEFT JOIN organization_pricing op ON op.organization_id = i.organization_id AND op.class_type_id = cr.course_type_id AND op.is_active = true
+       WHERE i.id = ? AND i.organization_id = ?`,
+      [parseInt(id), orgId]
+    );
+    if (rows.length === 0) return reply.status(404).send({ error: 'Invoice not found' });
+
+    const invoice = rows[0];
+
+    // Get attendance list
+    const [students] = await pool.query<any[]>(
+      `SELECT first_name, last_name, email, attended FROM course_students WHERE course_request_id = ? ORDER BY last_name, first_name`,
+      [invoice.course_request_id]
+    );
+    invoice.attendance_list = students;
+    invoice.invoice_id = invoice.id;
+
+    const { PDFService } = await import('../services/PDFService.js');
+    const pdfBuffer = await PDFService.generateInvoicePDF(invoice);
+
+    reply.header('Content-Type', 'application/pdf');
+    reply.header('Content-Disposition', `attachment; filename="Invoice-${invoice.invoice_number}.pdf"`);
+    reply.header('Content-Length', pdfBuffer.length);
+    return reply.send(pdfBuffer);
+  });
+
+  // Download payment receipt PDF
+  app.get('/payments/:id/receipt', { preHandler: orgRole }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const orgId = request.userOrgId;
+
+    const [rows] = await pool.query<any[]>(
+      `SELECT p.id as payment_id, p.amount as payment_amount, p.payment_date, p.payment_method,
+              p.reference_number, p.notes as payment_notes, p.status as payment_status, p.created_at as payment_created_at,
+              i.id as invoice_id, i.invoice_number, i.amount as invoice_amount, i.invoice_date, i.due_date,
+              o.name as organization_name, o.contact_email,
+              cr.location, cr.scheduled_date as course_date, ct.name as course_type_name
+       FROM payments p
+       JOIN invoices i ON p.invoice_id = i.id
+       JOIN organizations o ON i.organization_id = o.id
+       LEFT JOIN course_requests cr ON i.course_request_id = cr.id
+       LEFT JOIN class_types ct ON cr.course_type_id = ct.id
+       WHERE p.id = ? AND i.organization_id = ?`,
+      [parseInt(id), orgId]
+    );
+    if (rows.length === 0) return reply.status(404).send({ error: 'Payment not found' });
+
+    const { PDFService } = await import('../services/PDFService.js');
+    const pdfBuffer = await PDFService.generatePaymentReceipt(rows[0]);
+
+    reply.header('Content-Type', 'application/pdf');
+    reply.header('Content-Disposition', `attachment; filename="Payment-Receipt-${rows[0].payment_id}.pdf"`);
+    reply.header('Content-Length', pdfBuffer.length);
+    return reply.send(pdfBuffer);
+  });
+
+  // Invoice preview HTML
+  app.get('/invoices/:id/preview', { preHandler: orgRole }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const orgId = request.userOrgId;
+
+    const [rows] = await pool.query<any[]>(
+      `SELECT i.*, o.name as organization_name, o.contact_email,
+              cr.location, cr.scheduled_date as date_completed, cr.registered_students as students_billed,
+              ct.name as course_type_name,
+              op.price_per_student as rate_per_student
+       FROM invoices i
+       JOIN organizations o ON i.organization_id = o.id
+       JOIN course_requests cr ON i.course_request_id = cr.id
+       JOIN class_types ct ON cr.course_type_id = ct.id
+       LEFT JOIN organization_pricing op ON op.organization_id = i.organization_id AND op.class_type_id = cr.course_type_id AND op.is_active = true
+       WHERE i.id = ? AND i.organization_id = ?`,
+      [parseInt(id), orgId]
+    );
+    if (rows.length === 0) return reply.status(404).send({ error: 'Invoice not found' });
+
+    const invoice = rows[0];
+    const [students] = await pool.query<any[]>(
+      `SELECT first_name, last_name, email, attended FROM course_students WHERE course_request_id = ? ORDER BY last_name, first_name`,
+      [invoice.course_request_id]
+    );
+    invoice.attendance_list = students;
+    invoice.invoice_id = invoice.id;
+
+    const { PDFService } = await import('../services/PDFService.js');
+    const html = PDFService.getInvoicePreviewHTML(invoice);
+    reply.header('Content-Type', 'text/html');
+    return reply.send(html);
+  });
 }
