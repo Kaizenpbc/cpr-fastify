@@ -81,9 +81,9 @@ class TokenService {
    * @param expiresIn - Optional expiration time in seconds
    */
   setAccessToken(token: string, expiresIn?: number): void {
-    // Ensure token is properly formatted
-    const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-    inMemoryToken = formattedToken;
+    // Store raw token (without Bearer prefix) — the API interceptor adds it
+    const rawToken = token.startsWith('Bearer ') ? token.slice(7) : token;
+    inMemoryToken = rawToken;
 
     // Calculate expiry time (default to 15 minutes if not provided)
     if (expiresIn) {
@@ -96,7 +96,7 @@ class TokenService {
     // Store token and expiry in sessionStorage for persistence across page refreshes
     // Using sessionStorage for both to ensure consistent behavior (both clear when tab closes)
     try {
-      sessionStorage.setItem(ACCESS_TOKEN_KEY, formattedToken);
+      sessionStorage.setItem(ACCESS_TOKEN_KEY, rawToken);
       sessionStorage.setItem(TOKEN_EXPIRY_KEY, tokenExpiry.toString());
     } catch (error: any) {
       devLog('[TRACE] Token service - Error storing token:', error);
@@ -279,7 +279,7 @@ class TokenService {
    */
   getAuthHeader() {
     const token = this.getAccessToken();
-    return token ? { Authorization: token } : {};
+    return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
   /**

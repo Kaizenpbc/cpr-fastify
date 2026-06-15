@@ -32,6 +32,12 @@ export async function requireAuth(request: FastifyRequest, reply: FastifyReply) 
   const token = header.slice(7);
   try {
     const payload = authService.verifyAccessToken(token);
+
+    // Check token blacklist (password change invalidation)
+    if (payload.iat && authService.isTokenBlacklisted(payload.userId, payload.iat)) {
+      return reply.status(401).send({ error: 'Token has been revoked. Please log in again.' });
+    }
+
     request.userId = payload.userId;
     request.userRole = payload.role;
     request.userOrgId = payload.orgId ?? null;

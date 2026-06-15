@@ -30,7 +30,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import { PickersDay, PickersDayProps } from '@mui/x-date-pickers/PickersDay';
 import type { Class, Availability, ApiResponse } from '../../../types/api';
-import api, { instructorApi } from '../../../api/index';
+
 import { useAuth } from '../../../contexts/AuthContext';
 import { useInstructorClasses, useInstructorAvailability, useAddAvailability, useRemoveAvailability } from '../../../services/instructorService';
 import { useNavigate } from 'react-router-dom';

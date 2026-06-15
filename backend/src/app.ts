@@ -9,6 +9,7 @@ import rateLimit from '@fastify/rate-limit';
 import sensible from '@fastify/sensible';
 import { env } from './config/env.js';
 import { logger } from './config/logger.js';
+import { getPool } from './config/database.js';
 import { registerRoutes } from './routes/index.js';
 import { errorHandler } from './plugins/errorHandler.js';
 
@@ -44,14 +45,42 @@ export async function buildApp() {
     timeWindow: '1 minute',
   });
 
+  // HTTP access logging
+  app.addHook('onResponse', (request, reply, done) => {
+    const duration = reply.elapsedTime;
+    const logData = {
+      method: request.method,
+      url: request.url,
+      statusCode: reply.statusCode,
+      duration: Math.round(duration),
+      userId: (request as any).userId || undefined,
+    };
+    if (reply.statusCode >= 400) {
+      logger.warn(logData, 'HTTP request');
+    } else {
+      logger.info(logData, 'HTTP request');
+    }
+    done();
+  });
+
   // Global error handler
   app.setErrorHandler(errorHandler);
 
   // Routes
   await app.register(registerRoutes, { prefix: '/api/v1' });
 
-  // Health check (outside /api/v1)
-  app.get('/health', async () => ({ status: 'UP', timestamp: new Date().toISOString() }));
+  // Health check (outside /api/v1) — verifies DB connectivity
+  app.get('/health', async () => {
+    let dbStatus = 'UP';
+    try {
+      const pool = getPool();
+      await pool.query('SELECT 1');
+    } catch {
+      dbStatus = 'DOWN';
+    }
+    const status = dbStatus === 'UP' ? 'UP' : 'DEGRADED';
+    return { status, database: dbStatus, timestamp: new Date().toISOString() };
+  });
 
   // SPA fallback: serve index.html for non-API routes (frontend routing)
   const publicDir = resolve(process.cwd(), '../public');

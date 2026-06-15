@@ -13,24 +13,82 @@ export interface LoginResult {
   tokens: TokenPair;
 }
 
+// Token blacklist: userId -> timestamp when all prior tokens were invalidated
+// This is in-memory; survives until server restart. For multi-instance, move to Redis/DB.
+const tokenBlacklist = new Map<number, number>();
+
+// Account lockout: 5 failed attempts within 15 minutes = 15-minute lockout
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_WINDOW_MS = 15 * 60 * 1000;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000;
+
+interface LoginAttempt {
+  count: number;
+  firstAttempt: number;
+  lockedUntil: number | null;
+}
+
+const loginAttempts = new Map<string, LoginAttempt>();
+
+// Clean up old entries every 30 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, attempt] of loginAttempts) {
+    if (attempt.lockedUntil && now > attempt.lockedUntil) {
+      loginAttempts.delete(key);
+    } else if (now - attempt.firstAttempt > LOCKOUT_WINDOW_MS) {
+      loginAttempts.delete(key);
+    }
+  }
+}, 30 * 60 * 1000);
+
 export class AuthService {
   constructor(private userRepo: UserRepository) {}
 
   async login(username: string, password: string): Promise<LoginResult> {
+    const key = username.toLowerCase();
+
+    // Check lockout
+    const attempt = loginAttempts.get(key);
+    if (attempt?.lockedUntil && Date.now() < attempt.lockedUntil) {
+      const minutesLeft = Math.ceil((attempt.lockedUntil - Date.now()) / 60000);
+      throw new AuthError(`Account temporarily locked. Try again in ${minutesLeft} minute(s).`, 429);
+    }
+
     const user = await this.userRepo.findByUsername(username);
     if (!user || user.status === 'inactive') {
+      this.recordFailedAttempt(key);
       throw new AuthError('Invalid username or password');
     }
 
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
+      this.recordFailedAttempt(key);
       throw new AuthError('Invalid username or password');
     }
+
+    // Successful login — clear attempts
+    loginAttempts.delete(key);
 
     const tokens = this.generateTokens(user);
     const { password_hash, ...safeUser } = user;
 
     return { user: safeUser, tokens };
+  }
+
+  private recordFailedAttempt(key: string): void {
+    const now = Date.now();
+    const attempt = loginAttempts.get(key);
+
+    if (!attempt || now - attempt.firstAttempt > LOCKOUT_WINDOW_MS) {
+      loginAttempts.set(key, { count: 1, firstAttempt: now, lockedUntil: null });
+      return;
+    }
+
+    attempt.count++;
+    if (attempt.count >= MAX_FAILED_ATTEMPTS) {
+      attempt.lockedUntil = now + LOCKOUT_DURATION_MS;
+    }
   }
 
   async refreshToken(token: string): Promise<TokenPair> {
@@ -57,6 +115,22 @@ export class AuthService {
 
     const hash = await bcrypt.hash(newPassword, env.BCRYPT_SALT_ROUNDS);
     await this.userRepo.updatePassword(userId, hash);
+
+    // Invalidate all existing tokens for this user
+    this.invalidateUserTokens(userId);
+  }
+
+  /** Blacklist all tokens issued before now for a user */
+  invalidateUserTokens(userId: number): void {
+    tokenBlacklist.set(userId, Date.now());
+  }
+
+  /** Check if a token was issued before the user's tokens were invalidated */
+  isTokenBlacklisted(userId: number, tokenIssuedAt: number): boolean {
+    const blacklistedAt = tokenBlacklist.get(userId);
+    if (!blacklistedAt) return false;
+    // Token issued at (seconds) vs blacklisted at (ms)
+    return (tokenIssuedAt * 1000) <= blacklistedAt;
   }
 
   verifyAccessToken(token: string): jwt.JwtPayload {

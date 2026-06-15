@@ -80,7 +80,7 @@ export const authService = {
 
       // Store access token and set in API headers
       tokenService.setAccessToken(accessToken);
-      api.defaults.headers.common['Authorization'] = accessToken;
+      // Token is stored in tokenService; interceptor adds Bearer header automatically
 
       return response.data.data;
     } catch (error: any) {
@@ -121,7 +121,7 @@ export const authService = {
           
           // Update the token in memory and API headers
           tokenService.setAccessToken(accessToken, expiresIn);
-          api.defaults.headers.common['Authorization'] = accessToken;
+          // Token is stored in tokenService; interceptor adds Bearer header automatically
 
           refreshPromise = null; // Clear the promise cache
           return response.data.data;
@@ -138,7 +138,7 @@ export const authService = {
               tokenService.forceLogout();
             } else {
               tokenService.clearTokens();
-              delete api.defaults.headers.common['Authorization'];
+              // Tokens cleared via tokenService; interceptor won't add header
             }
           }
 
@@ -178,7 +178,7 @@ export const authService = {
       // Store the tokens
       if (accessToken) {
         tokenService.setAccessToken(accessToken);
-        api.defaults.headers.common['Authorization'] = accessToken;
+        // Token is stored in tokenService; interceptor adds Bearer header automatically
       }
 
       return response.data.data;
@@ -221,7 +221,7 @@ export const authService = {
       }
 
       // Ensure token is set in headers
-      api.defaults.headers.common['Authorization'] = token;
+      // Token is stored in tokenService; interceptor adds Bearer header automatically
       log('[AUTH] Token set in headers');
 
       log('[AUTH] Checking authentication with backend');
@@ -249,7 +249,7 @@ export const authService = {
               tokenService.forceLogout();
             } else {
               tokenService.clearTokens();
-              delete api.defaults.headers.common['Authorization'];
+              // Tokens cleared via tokenService; interceptor won't add header
             }
           }
 

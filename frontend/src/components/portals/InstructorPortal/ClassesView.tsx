@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Typography, CircularProgress, Alert } from '@mui/material';
-import api from '../../../api';
+import { api } from '../../../services/api';
 import logger from '../../../utils/logger';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';

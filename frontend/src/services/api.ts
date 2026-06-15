@@ -64,7 +64,7 @@ api.interceptors.request.use(
     // Add auth token to all requests
     const token = tokenService.getAccessToken();
     if (token) {
-      config.headers.Authorization = token;
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
     // Ensure proper JSON formatting for request data
