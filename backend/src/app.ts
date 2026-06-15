@@ -4,6 +4,7 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import helmet from '@fastify/helmet';
+import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import sensible from '@fastify/sensible';
 import { env } from './config/env.js';
@@ -35,6 +36,9 @@ export async function buildApp() {
     credentials: true,
   });
   await app.register(cookie);
+  await app.register(multipart, {
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+  });
   await app.register(rateLimit, {
     max: 100,
     timeWindow: '1 minute',
