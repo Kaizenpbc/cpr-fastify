@@ -9,7 +9,7 @@ export const USERS = {
   admin:       { username: 'admin',       password: 'test123',  portal: '/admin/dashboard'       },
   orguser:     { username: 'orguser',     password: 'test123',  portal: '/organization/dashboard' },
   vendor:      { username: 'vendoruser',  password: 'test123',  portal: '/vendor/dashboard'      },
-  hr:          { username: 'hruser',      password: 'test123',  portal: '/hr/dashboard'          },
+  hr:          { username: 'hruser',      password: 'test123',  portal: '/hr'                    },
   courseadmin: { username: 'courseadmin',  password: 'test123',  portal: '/admin/dashboard'        },
 } as const;
 
