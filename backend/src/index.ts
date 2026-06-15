@@ -1,7 +1,18 @@
+import * as Sentry from '@sentry/node';
 import { buildApp } from './app.js';
 import { env } from './config/env.js';
 import { logger } from './config/logger.js';
 import { connectDatabase, closeDatabaseConnections } from './config/database.js';
+
+// Initialize Sentry before anything else
+if (env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: env.SENTRY_DSN,
+    environment: env.NODE_ENV,
+    tracesSampleRate: 0.1,
+  });
+  logger.info('Sentry initialized');
+}
 
 async function start() {
   await connectDatabase();

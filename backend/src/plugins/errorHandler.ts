@@ -1,5 +1,6 @@
 import { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import { ZodError } from 'zod';
+import * as Sentry from '@sentry/node';
 import { logger } from '../config/logger.js';
 import { env } from '../config/env.js';
 
@@ -25,8 +26,11 @@ export function errorHandler(error: FastifyError, request: FastifyRequest, reply
     return reply.status(error.statusCode).send({ error: error.message });
   }
 
-  // Unexpected errors — log full detail, return generic message
+  // Unexpected errors — log full detail, report to Sentry, return generic message
   logger.error({ err: error, url: request.url, method: request.method }, 'Unhandled error');
+  Sentry.captureException(error, {
+    extra: { url: request.url, method: request.method },
+  });
 
   const isStaging = env.FRONTEND_URL?.includes('stage');
   return reply.status(500).send({

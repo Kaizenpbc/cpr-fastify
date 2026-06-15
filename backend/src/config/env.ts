@@ -24,6 +24,9 @@ const envSchema = z.object({
   // Email (optional — disabled if not set)
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().default('noreply@kpbc.ca'),
+
+  // Sentry (optional — disabled if not set)
+  SENTRY_DSN: z.string().url().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
