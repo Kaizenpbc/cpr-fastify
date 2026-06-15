@@ -23,6 +23,7 @@ const envSchema = z.object({
 
   // Email (optional — disabled if not set)
   RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().default('noreply@kpbc.ca'),
 });
 
 const parsed = envSchema.safeParse(process.env);

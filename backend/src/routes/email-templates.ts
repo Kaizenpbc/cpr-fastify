@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { getPool } from '../config/database.js';
 import { requireRole } from '../plugins/auth.js';
+import { emailService } from '../services/EmailService.js';
 
 const templateSchema = z.object({
   name: z.string().min(1),
@@ -133,6 +134,62 @@ export async function emailTemplateRoutes(app: FastifyInstance) {
     );
     const [newRows] = await pool.query<any[]>('SELECT * FROM email_templates WHERE id = ?', [result.insertId]);
     return { success: true, message: 'Email template cloned successfully', data: newRows[0] };
+  });
+
+  // Test-send a template
+  app.post('/:id/test-send', { preHandler: adminRole }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const { to } = request.body as { to?: string };
+    if (!to) return reply.status(400).send({ error: 'Recipient email (to) is required' });
+
+    const [rows] = await pool.query<any[]>('SELECT * FROM email_templates WHERE id = ?', [parseInt(id)]);
+    if (rows.length === 0) return reply.status(404).send({ error: 'Template not found' });
+
+    const template = rows[0];
+    const connected = await emailService.verifyConnection();
+    if (!connected) return reply.status(503).send({ error: 'Email service not configured (RESEND_API_KEY missing)' });
+
+    // Replace sample variables
+    let rendered = template.body || '';
+    const sampleVars: Record<string, string> = {
+      firstName: 'Test', lastName: 'User', email: to,
+      courseType: 'Basic CPR', courseDate: 'January 15, 2026',
+      courseTime: '9:00 AM - 12:00 PM', location: 'Main Training Center',
+      organization: 'Sample Organization', instructorName: 'Dr. John Smith',
+      appName: 'CPR Training System', appUrl: 'https://stagecprapp.kpbc.ca',
+      currentYear: new Date().getFullYear().toString(),
+    };
+    for (const [key, value] of Object.entries(sampleVars)) {
+      rendered = rendered.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
+    }
+
+    // Use the raw sendEmail via a direct Resend call
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: process.env.EMAIL_FROM || 'noreply@kpbc.ca',
+          to: [to],
+          subject: `[TEST] ${template.subject}`,
+          html: rendered,
+        }),
+      });
+      const data = await response.json() as { id?: string; message?: string };
+      if (!response.ok) return reply.status(502).send({ error: 'Resend API error', details: data });
+      return { success: true, message: `Test email sent to ${to}`, data: { resendId: data.id } };
+    } catch (err) {
+      return reply.status(500).send({ error: 'Failed to send test email', details: (err as Error).message });
+    }
+  });
+
+  // Verify email service connection
+  app.get('/status', { preHandler: adminRole }, async () => {
+    const connected = await emailService.verifyConnection();
+    return { success: true, data: { configured: connected, provider: 'resend' } };
   });
 
   // Get event triggers metadata
