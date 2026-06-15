@@ -1,8 +1,11 @@
 import { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import { ZodError } from 'zod';
-import * as Sentry from '@sentry/node';
 import { logger } from '../config/logger.js';
 import { env } from '../config/env.js';
+
+// Dynamic Sentry import (optional dependency)
+let Sentry: typeof import('@sentry/node') | null = null;
+try { Sentry = await import('@sentry/node'); } catch { /* not installed */ }
 
 export function errorHandler(error: FastifyError, request: FastifyRequest, reply: FastifyReply) {
   // Zod validation errors
@@ -28,7 +31,7 @@ export function errorHandler(error: FastifyError, request: FastifyRequest, reply
 
   // Unexpected errors — log full detail, report to Sentry, return generic message
   logger.error({ err: error, url: request.url, method: request.method }, 'Unhandled error');
-  Sentry.captureException(error, {
+  Sentry?.captureException(error, {
     extra: { url: request.url, method: request.method },
   });
 
