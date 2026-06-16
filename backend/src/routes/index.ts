@@ -22,8 +22,23 @@ import { courseAdminRoutes } from './courseadmin.js';
 import { emailTemplateRoutes } from './email-templates.js';
 import { collegeRoutes } from './colleges.js';
 import { miscRoutes } from './misc.js';
+import { logger } from '../config/logger.js';
 
 export async function registerRoutes(app: FastifyInstance) {
+  // Client-side error collector (unauthenticated, rate-limited)
+  app.post('/client-errors', {
+    config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
+  }, async (request, reply) => {
+    const body = request.body as Record<string, unknown>;
+    logger.warn({
+      clientError: true,
+      source: body?.source,
+      message: body?.message,
+      stack: body?.stack,
+      clientUrl: body?.url,
+    }, 'Client-side error reported');
+    return { received: true };
+  });
   // SSE endpoint for real-time updates (keeps connection open)
   app.get('/events', { preHandler: [requireAuth] }, async (request, reply) => {
     reply.raw.writeHead(200, {

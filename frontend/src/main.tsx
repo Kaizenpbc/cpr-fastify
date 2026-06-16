@@ -14,16 +14,34 @@ import TokenValidationProvider from './components/TokenValidationProvider';
 import App from './App';
 import './index.css';
 
-// Global error handlers (dev only)
-if (import.meta.env.DEV) {
-  window.onerror = (msg, url, line, col, error) => {
-    console.error('[Global Error]', { msg, url, line, col, error });
-    return false;
+// Global error handlers — capture unhandled errors in all environments
+function reportError(source: string, error: unknown) {
+  const payload = {
+    source,
+    message: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined,
+    url: window.location.href,
+    timestamp: new Date().toISOString(),
   };
-  window.addEventListener('unhandledrejection', event => {
-    console.error('[Unhandled Promise]', event.reason);
-  });
+  if (import.meta.env.DEV) {
+    console.error(`[${source}]`, payload);
+  }
+  // Fire-and-forget POST to backend error collector
+  const apiBase = import.meta.env.VITE_API_URL || '/api/v1';
+  fetch(`${apiBase}/client-errors`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).catch(() => { /* silently ignore reporting failures */ });
 }
+
+window.onerror = (msg, url, line, col, error) => {
+  reportError('window.onerror', error || msg);
+  return false;
+};
+window.addEventListener('unhandledrejection', event => {
+  reportError('unhandledrejection', event.reason);
+});
 
 const queryClient = new QueryClient({
   defaultOptions: {

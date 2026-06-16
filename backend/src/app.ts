@@ -1,5 +1,6 @@
 import { readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
+import { randomUUID } from 'crypto';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
@@ -16,6 +17,8 @@ import { errorHandler } from './plugins/errorHandler.js';
 export async function buildApp() {
   const app = Fastify({
     logger: false, // We use our own pino logger
+    genReqId: (req) => (req.headers['x-request-id'] as string) || randomUUID(),
+    requestIdHeader: 'x-request-id',
   });
 
   // Plugins
@@ -45,10 +48,17 @@ export async function buildApp() {
     timeWindow: '1 minute',
   });
 
-  // HTTP access logging
+  // Return request ID in response headers for client-side tracing
+  app.addHook('onSend', (request, reply, _payload, done) => {
+    reply.header('x-request-id', request.id);
+    done();
+  });
+
+  // HTTP access logging with correlation ID
   app.addHook('onResponse', (request, reply, done) => {
     const duration = reply.elapsedTime;
     const logData = {
+      reqId: request.id,
       method: request.method,
       url: request.url,
       statusCode: reply.statusCode,
