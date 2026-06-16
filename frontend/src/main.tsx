@@ -48,6 +48,8 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      staleTime: 30_000,       // 30s default — most data is fresh enough
+      gcTime: 5 * 60_000,     // 5min garbage collection
     },
   },
 });

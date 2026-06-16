@@ -1,8 +1,11 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { tokenService } from '../services/tokenService';
 import api from '../services/api';
+
+const isDev = import.meta.env.DEV;
+const log = (...args: unknown[]) => { if (isDev) console.log(...args); };
 
 interface User {
   id: number;
@@ -67,13 +70,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Enhanced token validation on page load - LESS AGGRESSIVE
   const validateTokenOnPageLoad = async (): Promise<TokenValidationResult> => {
-    console.log('[TOKEN VALIDATION] Starting page load token validation');
+    log('[TOKEN VALIDATION] Starting page load token validation');
     
     try {
       const token = tokenService.getAccessToken();
       
       if (!token) {
-        console.log('[TOKEN VALIDATION] No token found');
+        log('[TOKEN VALIDATION] No token found');
         return {
           isValid: false,
           requiresReauth: true,
@@ -84,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Client-side token expiration check (fast, no network)
       const status = authService.getSessionStatus();
       if (status.isExpired) {
-        console.log('[TOKEN VALIDATION] Token expired on client-side check');
+        log('[TOKEN VALIDATION] Token expired on client-side check');
         return {
           isValid: false,
           requiresReauth: true,
@@ -96,11 +99,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Skip backend validation if we just logged in (user data is fresh from login response)
       let resolvedUser = user; // capture before any async state updates
       if (!user && !justLoggedIn) {
-        console.log('[TOKEN VALIDATION] No user data, validating with backend');
+        log('[TOKEN VALIDATION] No user data, validating with backend');
         const userData = await authService.checkAuth();
 
         if (!userData) {
-          console.log('[TOKEN VALIDATION] Backend validation failed - no user data');
+          log('[TOKEN VALIDATION] Backend validation failed - no user data');
           return {
             isValid: false,
             requiresReauth: true,
@@ -112,15 +115,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // cannot read from the `user` closure after this point
         setUser(userData);
         resolvedUser = userData;
-        console.log('[TOKEN VALIDATION] User data set from backend validation');
+        log('[TOKEN VALIDATION] User data set from backend validation');
       } else if (justLoggedIn) {
-        console.log('[TOKEN VALIDATION] Skipping backend validation - just logged in');
+        log('[TOKEN VALIDATION] Skipping backend validation - just logged in');
       }
 
       // Use resolvedUser (freshly fetched or existing from state)
       const currentUser = resolvedUser;
       if (!currentUser) {
-        console.log('[TOKEN VALIDATION] No current user data available');
+        log('[TOKEN VALIDATION] No current user data available');
         return {
           isValid: false,
           requiresReauth: true,
@@ -150,7 +153,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // ONLY validate role mismatch if we're on a protected route AND the user role doesn't match
       // This prevents false positives when switching tabs
       if (isProtectedRoute && userRolePrefix && !currentPath.startsWith(userRolePrefix)) {
-        console.log('[TOKEN VALIDATION] User role mismatch on protected route:', {
+        log('[TOKEN VALIDATION] User role mismatch on protected route:', {
           userRole: currentUser.role,
           currentPath,
           expectedPrefix: userRolePrefix
@@ -166,7 +169,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // If we're on login page but have a valid token, that's fine (user just logged in)
       if (isLoginPage && currentUser) {
-        console.log('[TOKEN VALIDATION] User on login page with valid token - likely just logged in');
+        log('[TOKEN VALIDATION] User on login page with valid token - likely just logged in');
         return {
           isValid: true,
           user: currentUser,
@@ -174,7 +177,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       }
 
-      console.log('[TOKEN VALIDATION] Token validation successful for user:', currentUser.username);
+      log('[TOKEN VALIDATION] Token validation successful for user:', currentUser.username);
       return {
         isValid: true,
         user: currentUser,
@@ -182,7 +185,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
 
     } catch (err: any) {
-      console.error('[TOKEN VALIDATION] Validation error:', err);
+      log('[TOKEN VALIDATION] Validation error:', err);
       
       const errorMessage = err instanceof Error ? err.message : 'Token validation failed';
       const isAuthError = errorMessage.includes('401') || errorMessage.includes('403');
@@ -200,17 +203,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       setError(null);
       
-      console.log('[TRACE] Auth check - Starting comprehensive validation');
+      log('[TRACE] Auth check - Starting comprehensive validation');
       const validationResult = await validateTokenOnPageLoad();
       
       if (!validationResult.isValid) {
-        console.log('[TRACE] Auth check - Token validation failed:', validationResult.error);
+        log('[TRACE] Auth check - Token validation failed:', validationResult.error);
         setUser(null);
         setSessionStatus(null);
         setError(validationResult.error || 'Authentication failed');
         
         if (validationResult.requiresReauth) {
-          console.log('[TRACE] Auth check - Clearing tokens due to validation failure');
+          log('[TRACE] Auth check - Clearing tokens due to validation failure');
           tokenService.clearTokens();
           tokenService.clearSavedLocation();
           sessionStorage.removeItem('location_restoration_attempted');
@@ -220,7 +223,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Token is valid, set user data
       if (validationResult.user) {
-        console.log('[TRACE] Auth check - Setting user data:', validationResult.user.username);
+        log('[TRACE] Auth check - Setting user data:', validationResult.user.username);
         setUser(validationResult.user);
         
         // Update session status
@@ -228,9 +231,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSessionStatus(status);
       }
       
-      console.log('[TRACE] Auth check - Authentication successful');
+      log('[TRACE] Auth check - Authentication successful');
     } catch (err: any) {
-      console.error('[TRACE] Auth check - Unexpected error:', err);
+      log('[TRACE] Auth check - Unexpected error:', err);
       setError(err instanceof Error ? err.message : 'Authentication failed');
       setUser(null);
       setSessionStatus(null);
@@ -246,16 +249,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshSession = async () => {
     try {
-      console.log('[TRACE] Auth context - Refreshing session');
+      log('[TRACE] Auth context - Refreshing session');
       await authService.refreshToken();
 
       // Update session status
       const status = authService.getSessionStatus();
       setSessionStatus(status);
 
-      console.log('[TRACE] Auth context - Session refreshed successfully');
+      log('[TRACE] Auth context - Session refreshed successfully');
     } catch (err: any) {
-      console.error('[TRACE] Auth context - Session refresh failed:', err);
+      log('[TRACE] Auth context - Session refresh failed:', err);
       setError(err instanceof Error ? err.message : 'Session refresh failed');
       // Don't clear user here, let the next API call handle it
     }
@@ -276,7 +279,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Show warning if session is expiring soon
         if (status.timeUntilExpiry && status.timeUntilExpiry < 300000 && status.timeUntilExpiry > 0) {
-          console.log('[TRACE] Auth context - Session expiring soon, showing warning');
+          log('[TRACE] Auth context - Session expiring soon, showing warning');
           // You could show a notification here
         }
       }
@@ -286,9 +289,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => clearInterval(interval);
   }, [user]);
 
-  // Enhanced page load validation
+  // Enhanced page load validation — runs once on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    console.log('[TRACE] Auth context - Initial page load validation');
+    log('[TRACE] Auth context - Initial page load validation');
     checkAuth();
   }, []);
 
@@ -321,7 +325,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           const userRolePrefix = roleRoutes[user.role as keyof typeof roleRoutes];
           if (userRolePrefix && !savedLocation.startsWith(userRolePrefix)) {
-            console.log('[TRACE] Auth context - Saved location not appropriate for user role:', {
+            log('[TRACE] Auth context - Saved location not appropriate for user role:', {
               userRole: user.role,
               savedLocation,
               userRolePrefix
@@ -338,7 +342,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const isFromAuthFlow = sessionStorage.getItem('from_auth_flow') === 'true';
           
           if (isFromAuthFlow) {
-            console.log('[TRACE] Auth context - Restoring saved location from auth flow:', savedLocation);
+            log('[TRACE] Auth context - Restoring saved location from auth flow:', savedLocation);
             // Mark that we've attempted restoration to prevent loops
             sessionStorage.setItem('location_restoration_attempted', 'true');
             tokenService.clearSavedLocation();
@@ -349,14 +353,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               navigate(savedLocation, { replace: true });
             }, 100);
           } else {
-            console.log('[TRACE] Auth context - Not restoring location (not from auth flow)');
+            log('[TRACE] Auth context - Not restoring location (not from auth flow)');
             tokenService.clearSavedLocation();
             // Clear auth flow flag since we're not restoring location
             sessionStorage.removeItem('from_auth_flow');
           }
         } else {
           // Clear saved location if we're already on a specific page or location is inappropriate
-          console.log('[TRACE] Auth context - Clearing saved location (not default route or inappropriate)');
+          log('[TRACE] Auth context - Clearing saved location (not default route or inappropriate)');
           tokenService.clearSavedLocation();
           // Clear auth flow flag since we're not restoring location
           sessionStorage.removeItem('from_auth_flow');
@@ -371,7 +375,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user, loading, navigate]);
 
   const login = async (username: string, password: string) => {
-    console.log('[DEEP TRACE] AuthContext.login - Starting login process:', {
+    log('[DEEP TRACE] AuthContext.login - Starting login process:', {
       username,
       timestamp: new Date().toISOString()
     });
@@ -380,9 +384,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       setError(null);
       
-      console.log('[DEEP TRACE] AuthContext.login - Calling authService.login');
+      log('[DEEP TRACE] AuthContext.login - Calling authService.login');
       const response = await authService.login(username, password);
-      console.log('[DEEP TRACE] AuthContext.login - Login response received:', {
+      log('[DEEP TRACE] AuthContext.login - Login response received:', {
         user: response.user,
         timestamp: new Date().toISOString()
       });
@@ -398,7 +402,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const status = authService.getSessionStatus();
       setSessionStatus(status);
 
-      console.log('[DEEP TRACE] AuthContext.login - User state updated');
+      log('[DEEP TRACE] AuthContext.login - User state updated');
 
       // Navigate based on user role
       const roleRoutes = {
@@ -413,7 +417,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
 
       const targetRoute = roleRoutes[response.user.role as keyof typeof roleRoutes] || '/';
-      console.log('[DEEP TRACE] AuthContext.login - Navigating to:', {
+      log('[DEEP TRACE] AuthContext.login - Navigating to:', {
         role: response.user.role,
         targetRoute,
         timestamp: new Date().toISOString()
@@ -422,9 +426,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Set flag to indicate this is from auth flow for location restoration
       sessionStorage.setItem('from_auth_flow', 'true');
       navigate(targetRoute);
-      console.log('[DEEP TRACE] AuthContext.login - Navigation completed');
+      log('[DEEP TRACE] AuthContext.login - Navigation completed');
     } catch (err: any) {
-      console.error('[DEEP TRACE] AuthContext.login - Error occurred:', {
+      log('[DEEP TRACE] AuthContext.login - Error occurred:', {
         error: err,
         message: err instanceof Error ? err.message : 'Unknown error',
         timestamp: new Date().toISOString()
@@ -433,7 +437,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw err;
     } finally {
       setLoading(false);
-      console.log('[DEEP TRACE] AuthContext.login - Login process completed');
+      log('[DEEP TRACE] AuthContext.login - Login process completed');
     }
   };
 

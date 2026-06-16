@@ -49,7 +49,7 @@ import {
   Create as CreateIcon,
   Save as SaveIcon,
 } from '@mui/icons-material';
-import Editor from '@monaco-editor/react';
+const Editor = React.lazy(() => import('@monaco-editor/react'));
 import { emailTemplateApi } from '../../../services/api';
 import { useToast } from '../../../contexts/ToastContext';
 
@@ -909,19 +909,21 @@ const EmailTemplateManager: React.FC = () => {
                     height: 400,
                   }}
                 >
-                  <Editor
-                    height='400px'
-                    defaultLanguage='html'
-                    value={formData.htmlContent}
-                    onChange={value =>
-                      setFormData({ ...formData, htmlContent: value || '' })
-                    }
-                    options={{
-                      minimap: { enabled: false },
-                      fontSize: 14,
-                      wordWrap: 'on',
-                    }}
-                  />
+                  <React.Suspense fallback={<Box sx={{ p: 2 }}>Loading editor...</Box>}>
+                    <Editor
+                      height='400px'
+                      defaultLanguage='html'
+                      value={formData.htmlContent}
+                      onChange={value =>
+                        setFormData({ ...formData, htmlContent: value || '' })
+                      }
+                      options={{
+                        minimap: { enabled: false },
+                        fontSize: 14,
+                        wordWrap: 'on',
+                      }}
+                    />
+                  </React.Suspense>
                 </Box>
               ) : editorMode === 'simple' ? (
                 <TextField

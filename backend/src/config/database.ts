@@ -12,7 +12,7 @@ export async function connectDatabase() {
     password: env.DB_PASSWORD,
     database: env.DB_NAME,
     waitForConnections: true,
-    connectionLimit: 10,
+    connectionLimit: 20,
     queueLimit: 100,        // Cap queued requests (was 0 = unlimited)
     connectTimeout: 10000,  // 10s connection timeout
     enableKeepAlive: true,
