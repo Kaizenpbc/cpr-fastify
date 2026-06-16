@@ -5,6 +5,7 @@ import { requireRole } from '../plugins/auth.js';
 import { logger } from '../config/logger.js';
 import { env } from '../config/env.js';
 import bcrypt from 'bcryptjs';
+import { StudentRepository } from '../repositories/StudentRepository.js';
 
 const createUserSchema = z.object({
   username: z.string().min(3).max(50).regex(/^[a-zA-Z0-9_-]+$/),
@@ -445,5 +446,90 @@ export async function adminRoutes(app: FastifyInstance) {
     if (result.affectedRows === 0) return reply.status(404).send({ error: 'Vendor not found' });
     const [rows] = await pool.query<any[]>('SELECT * FROM vendors WHERE id = ?', [id]);
     return { success: true, message: 'Vendor deactivated successfully', data: rows[0] };
+  });
+
+  // ===== Student directory =====
+  const studentRepo = new StudentRepository();
+
+  // Search students by name or email
+  app.get('/students', { preHandler: adminRole }, async (request) => {
+    const { q, orgId } = request.query as { q?: string; orgId?: string };
+
+    if (orgId) {
+      const students = await studentRepo.findByOrg(parseInt(orgId));
+      return { success: true, data: students };
+    }
+
+    if (q && q.trim().length >= 2) {
+      const students = await studentRepo.search(q.trim());
+      return { success: true, data: students };
+    }
+
+    // No filter — return recent students (last 100)
+    const [rows] = await pool.query<any[]>(
+      `SELECT s.*, COUNT(DISTINCT cs.course_request_id) as course_count,
+              MAX(cr.completed_at) as last_course_date,
+              o.name as organization_name
+       FROM students s
+       LEFT JOIN course_students cs ON cs.student_id = s.id
+       LEFT JOIN course_requests cr ON cs.course_request_id = cr.id
+       LEFT JOIN organizations o ON s.organization_id = o.id
+       GROUP BY s.id
+       ORDER BY s.created_at DESC LIMIT 100`
+    );
+    return { success: true, data: rows };
+  });
+
+  // Get single student with full course history
+  app.get('/students/:id', { preHandler: adminRole }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const student = await studentRepo.findById(parseInt(id));
+    if (!student) return reply.status(404).send({ error: 'Student not found' });
+
+    const history = await studentRepo.getCourseHistory(parseInt(id));
+    return { success: true, data: { ...student, courses: history } };
+  });
+
+  // Update student details
+  app.put('/students/:id', { preHandler: adminRole }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const updates = z.object({
+      first_name: z.string().min(1).optional(),
+      last_name: z.string().min(1).optional(),
+      phone: z.string().optional(),
+      organization_id: z.number().int().positive().nullable().optional(),
+      notes: z.string().optional(),
+    }).parse(request.body);
+
+    const student = await studentRepo.findById(parseInt(id));
+    if (!student) return reply.status(404).send({ error: 'Student not found' });
+
+    const fields = Object.entries(updates).filter(([, v]) => v !== undefined);
+    if (fields.length === 0) return reply.status(400).send({ error: 'No fields to update' });
+
+    const setClauses = fields.map(([k]) => `${k} = ?`).join(', ');
+    const values = fields.map(([, v]) => v);
+
+    await pool.query(
+      `UPDATE students SET ${setClauses}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      [...values, id]
+    );
+
+    const updated = await studentRepo.findById(parseInt(id));
+    return { success: true, data: updated };
+  });
+
+  // Update marketing consent
+  app.put('/students/:id/consent', { preHandler: adminRole }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const { marketing_consent } = z.object({
+      marketing_consent: z.boolean(),
+    }).parse(request.body);
+
+    const student = await studentRepo.findById(parseInt(id));
+    if (!student) return reply.status(404).send({ error: 'Student not found' });
+
+    await studentRepo.updateMarketingConsent(parseInt(id), marketing_consent);
+    return { success: true, message: `Marketing consent ${marketing_consent ? 'granted' : 'revoked'}` };
   });
 }
