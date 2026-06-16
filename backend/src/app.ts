@@ -76,7 +76,7 @@ export async function buildApp() {
   // Global error handler
   app.setErrorHandler(errorHandler);
 
-  // Routes
+  // Routes (includes OpenAPI docs at /api/v1/docs)
   await app.register(registerRoutes, { prefix: '/api/v1' });
 
   // Health check (outside /api/v1) — verifies DB connectivity
