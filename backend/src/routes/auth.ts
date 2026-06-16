@@ -22,8 +22,13 @@ export async function authRoutes(app: FastifyInstance) {
   const userRepo = new UserRepository();
   const authService = new AuthService(userRepo);
 
+  // Stricter rate limit for auth endpoints (10 req/min vs global 100)
+  const authRateLimit = {
+    config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
+  };
+
   // POST /api/v1/auth/login
-  app.post('/login', async (request, reply) => {
+  app.post('/login', authRateLimit, async (request, reply) => {
     const body = loginSchema.parse(request.body);
 
     try {
@@ -47,7 +52,7 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   // POST /api/v1/auth/refresh
-  app.post('/refresh', async (request, reply) => {
+  app.post('/refresh', authRateLimit, async (request, reply) => {
     const token = request.cookies.refreshToken;
     if (!token) return reply.status(401).send({ error: 'No refresh token' });
 

@@ -223,7 +223,7 @@ export async function adminRoutes(app: FastifyInstance) {
   // ===== Organization management =====
   app.get('/organizations', { preHandler: adminRole }, async () => {
     const [rows] = await pool.query<any[]>(
-      'SELECT * FROM organizations ORDER BY name'
+      'SELECT * FROM organizations ORDER BY name LIMIT 500'
     );
     return { success: true, data: rows };
   });
@@ -322,7 +322,7 @@ export async function adminRoutes(app: FastifyInstance) {
   // ===== System configurations =====
   app.get('/configurations', { preHandler: sysadminRole }, async () => {
     const [rows] = await pool.query<any[]>(
-      'SELECT * FROM system_configurations ORDER BY category, config_key'
+      'SELECT * FROM system_configurations ORDER BY category, config_key LIMIT 500'
     );
     return { success: true, data: rows };
   });

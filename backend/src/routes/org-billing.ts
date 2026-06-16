@@ -262,6 +262,25 @@ export async function orgBillingRoutes(app: FastifyInstance) {
     try {
       await conn.beginTransaction();
 
+      // Lock the invoice row to prevent concurrent overpayment
+      const [lockedRows] = await conn.query<any[]>(
+        `SELECT i.id, i.amount, i.status,
+                COALESCE(SUM(CASE WHEN p.status IN ('verified', 'pending_verification') THEN p.amount ELSE 0 END), 0) as total_submitted
+         FROM invoices i LEFT JOIN payments p ON i.id = p.invoice_id
+         WHERE i.id = ? AND i.organization_id = ?
+         GROUP BY i.id, i.amount, i.status
+         FOR UPDATE`,
+        [id, request.userOrgId]
+      );
+      if (lockedRows.length === 0) { await conn.rollback(); return reply.status(404).send({ error: 'Invoice not found' }); }
+
+      const locked = lockedRows[0];
+      const lockedOutstanding = parseFloat(locked.amount) - parseFloat(locked.total_submitted);
+      if (data.amount > lockedOutstanding + 0.01) {
+        await conn.rollback();
+        return reply.status(400).send({ error: `Payment amount ($${data.amount.toFixed(2)}) exceeds outstanding balance ($${lockedOutstanding.toFixed(2)}).` });
+      }
+
       const [payResult] = await conn.query<any>(
         `INSERT INTO payments (invoice_id, amount, payment_date, payment_method, reference_number, notes, status, submitted_by_org_at)
          VALUES (?, ?, ?, ?, ?, ?, 'pending_verification', NOW())`,

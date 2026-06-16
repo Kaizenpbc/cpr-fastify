@@ -1,6 +1,7 @@
 import { BaseRepository } from './BaseRepository.js';
 import { getPool } from '../config/database.js';
 import { RowDataPacket } from 'mysql2/promise';
+import { HST_RATE } from '../utils/taxConfig.js';
 
 export interface Invoice {
   id: number;
@@ -111,7 +112,7 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
          (SELECT COUNT(*) FROM course_students cs WHERE cs.course_request_id = cr.id AND cs.attended = true) as students_attended,
          cp.price_per_student as rate_per_student,
          ((SELECT COUNT(*) FROM course_students cs WHERE cs.course_request_id = cr.id AND cs.attended = true)
-           * cp.price_per_student * 1.13) as total_amount,
+           * cp.price_per_student * ?) as total_amount,
          COALESCE(NULLIF(TRIM(CONCAT(COALESCE(u.first_name,''),' ',COALESCE(u.last_name,''))), ''), u.username) as instructor_name,
          u.email as instructor_email,
          cr.ready_for_billing_at
@@ -123,7 +124,9 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
        LEFT JOIN users u ON cr.instructor_id = u.id
        WHERE cr.ready_for_billing = true AND cr.ready_for_billing_at IS NOT NULL
          AND (cr.invoiced IS NULL OR cr.invoiced = FALSE)
-       ORDER BY cr.ready_for_billing_at DESC`
+       ORDER BY cr.ready_for_billing_at DESC
+       LIMIT 200`,
+      [1 + HST_RATE]
     );
   }
 
@@ -158,7 +161,8 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
        LEFT JOIN class_types ct ON cr.course_type_id = ct.id
        LEFT JOIN (SELECT invoice_id, SUM(amount) as total_paid FROM payments
                   WHERE status = 'verified' GROUP BY invoice_id) p ON p.invoice_id = i.id
-       ORDER BY i.created_at DESC`
+       ORDER BY i.created_at DESC
+       LIMIT 500`
     );
   }
 
@@ -197,7 +201,8 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
        LEFT JOIN (SELECT invoice_id, SUM(amount) as total_paid FROM payments
                   WHERE status = 'completed' GROUP BY invoice_id) p ON p.invoice_id = i.id
        WHERE i.approval_status = 'pending'
-       ORDER BY i.created_at ASC`
+       ORDER BY i.created_at ASC
+       LIMIT 200`
     );
   }
 
@@ -211,7 +216,8 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
        LEFT JOIN class_types ct ON cr.course_type_id = ct.id
        LEFT JOIN users u ON i.rejected_by = u.id
        WHERE i.approval_status = 'rejected'
-       ORDER BY i.rejected_at DESC`
+       ORDER BY i.rejected_at DESC
+       LIMIT 200`
     );
   }
 

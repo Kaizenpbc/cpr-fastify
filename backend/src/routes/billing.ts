@@ -171,7 +171,7 @@ export async function billingRoutes(app: FastifyInstance) {
   app.get('/organizations', { preHandler: acctRole }, async () => {
     const pool = getPool();
     const [rows] = await pool.query<any[]>(
-      'SELECT id, name, contact_email, contact_phone FROM organizations ORDER BY name'
+      'SELECT id, name, contact_email, contact_phone FROM organizations ORDER BY name LIMIT 500'
     );
     return { success: true, data: rows };
   });
@@ -180,7 +180,7 @@ export async function billingRoutes(app: FastifyInstance) {
   app.get('/course-types', { preHandler: [requireAuth] }, async () => {
     const pool = getPool();
     const [rows] = await pool.query<any[]>(
-      'SELECT id, name, description, duration_minutes FROM class_types ORDER BY name'
+      'SELECT id, name, description, duration_minutes FROM class_types ORDER BY name LIMIT 200'
     );
     return { success: true, data: rows };
   });
@@ -240,8 +240,8 @@ export async function billingRoutes(app: FastifyInstance) {
     const [rows] = await pool.query<any[]>(
       `SELECT i.id as invoice_id, i.invoice_number, i.organization_id,
               o.name as organization_name, i.amount,
-              COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.invoice_id = i.id), 0) as paid_amount,
-              i.amount - COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.invoice_id = i.id), 0) as balance,
+              COALESCE(pp.total_paid, 0) as paid_amount,
+              i.amount - COALESCE(pp.total_paid, 0) as balance,
               i.invoice_date, i.due_date,
               CASE WHEN i.due_date IS NULL THEN 0
                    ELSE GREATEST(0, DATEDIFF(?, i.due_date)) END as days_overdue,
@@ -255,8 +255,9 @@ export async function billingRoutes(app: FastifyInstance) {
               END as aging_bucket
        FROM invoices i
        LEFT JOIN organizations o ON i.organization_id = o.id
+       LEFT JOIN (SELECT invoice_id, SUM(amount) as total_paid FROM payments GROUP BY invoice_id) pp ON pp.invoice_id = i.id
        WHERE i.status NOT IN ('paid', 'void', 'cancelled')
-         AND (i.amount - COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.invoice_id = i.id), 0)) > 0
+         AND (i.amount - COALESCE(pp.total_paid, 0)) > 0
          ${orgFilter}
        ORDER BY days_overdue DESC, o.name, i.invoice_date`,
       [asOfDate, asOfDate, asOfDate, asOfDate, asOfDate, ...params.slice(1)]
@@ -286,8 +287,8 @@ export async function billingRoutes(app: FastifyInstance) {
     const [invoices] = await pool.query<any[]>(
       `SELECT i.id, i.invoice_number, i.organization_id, o.name as organization_name,
               i.amount,
-              COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.invoice_id = i.id), 0) as paid_amount,
-              i.amount - COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.invoice_id = i.id), 0) as balance_due,
+              COALESCE(pp.total_paid, 0) as paid_amount,
+              i.amount - COALESCE(pp.total_paid, 0) as balance_due,
               i.invoice_date, i.due_date,
               CASE WHEN i.due_date IS NULL THEN 0
                    ELSE GREATEST(0, DATEDIFF(?, i.due_date)) END as days_outstanding,
@@ -301,9 +302,10 @@ export async function billingRoutes(app: FastifyInstance) {
               END as aging_bucket
        FROM invoices i
        LEFT JOIN organizations o ON i.organization_id = o.id
+       LEFT JOIN (SELECT invoice_id, SUM(amount) as total_paid FROM payments GROUP BY invoice_id) pp ON pp.invoice_id = i.id
        WHERE i.status NOT IN ('paid', 'void', 'cancelled')
          AND i.posted_to_org = TRUE
-         AND (i.amount - COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.invoice_id = i.id), 0)) > 0.01
+         AND (i.amount - COALESCE(pp.total_paid, 0)) > 0.01
          ${orgFilter}
        ORDER BY days_outstanding DESC, o.name, i.invoice_date`,
       params

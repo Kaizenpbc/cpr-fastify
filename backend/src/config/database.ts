@@ -15,6 +15,7 @@ export async function connectDatabase() {
     connectionLimit: 10,
     queueLimit: 100,        // Cap queued requests (was 0 = unlimited)
     connectTimeout: 10000,  // 10s connection timeout
+    enableKeepAlive: true,
     timezone: '+00:00',
   });
 
