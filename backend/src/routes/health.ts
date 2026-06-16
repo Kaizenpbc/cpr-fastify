@@ -1,16 +1,28 @@
 import { FastifyInstance } from 'fastify';
+import jwt from 'jsonwebtoken';
 import { getPool } from '../config/database.js';
+import { env } from '../config/env.js';
 
 export async function healthRoutes(app: FastifyInstance) {
-  // Temporary diagnostic — check what auth header the server receives
+  // Temporary diagnostic — verify JWT on server
   app.get('/auth-debug', async (request) => {
     const authHeader = request.headers.authorization;
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    let verifyResult: any = null;
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET);
+        verifyResult = { success: true, decoded };
+      } catch (err: any) {
+        verifyResult = { success: false, error: err.message, name: err.name };
+      }
+    }
     return {
       hasHeader: !!authHeader,
-      headerStart: authHeader?.substring(0, 20),
-      headerLength: authHeader?.length,
-      startsWithBearer: authHeader?.startsWith('Bearer '),
-      tokenLength: authHeader?.startsWith('Bearer ') ? authHeader.slice(7).length : null,
+      tokenLength: token?.length,
+      secretAvailable: !!env.JWT_ACCESS_SECRET,
+      secretLength: env.JWT_ACCESS_SECRET?.length,
+      verifyResult,
     };
   });
 
