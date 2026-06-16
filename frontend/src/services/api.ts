@@ -574,8 +574,7 @@ export const organizationApi = {
     devLog('[TRACE] API - Students data:', students);
 
     try {
-      const response = await api.post('/organization/upload-students', {
-        courseRequestId,
+      const response = await api.post(`/courses/org/students/${courseRequestId}`, {
         students
       });
 
@@ -589,7 +588,7 @@ export const organizationApi = {
 
   // Get students for a course
   getCourseStudents: async (courseId: number) => {
-    const response = await api.get(`/organization/courses/${courseId}/students`);
+    const response = await api.get(`/courses/org/students/${courseId}`);
     return response.data;
   },
 };
