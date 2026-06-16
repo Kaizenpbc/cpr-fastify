@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
@@ -5,10 +6,10 @@ import AccountingDashboard from '../AccountingDashboard';
 
 // Mock the API
 const mockApi = {
-  get: jest.fn()
+  get: vi.fn()
 };
 
-jest.mock('../../../services/api', () => ({
+vi.mock('../../../services/api', () => ({
   api: mockApi
 }));
 
@@ -32,7 +33,7 @@ const renderWithProviders = (component: React.ReactElement) => {
 
 describe('AccountingDashboard Component', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('renders accounting dashboard title', () => {

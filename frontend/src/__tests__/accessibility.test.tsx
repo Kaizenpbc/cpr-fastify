@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
@@ -11,15 +12,15 @@ import AccessibleTextField from '../components/common/AccessibleTextField';
 import MobileOptimized from '../components/common/MobileOptimized';
 
 // Mock the accessibility hook
-jest.mock('../hooks/useAccessibility', () => ({
+vi.mock('../hooks/useAccessibility', () => ({
   useAccessibility: () => ({
-    announceToScreenReader: jest.fn(),
-    setFocus: jest.fn(),
+    announceToScreenReader: vi.fn(),
+    setFocus: vi.fn(),
   }),
 }));
 
 // Mock the responsive hook
-jest.mock('../hooks/useResponsive', () => ({
+vi.mock('../hooks/useResponsive', () => ({
   useResponsive: () => ({
     isMobile: false,
     isTablet: false,
@@ -27,11 +28,11 @@ jest.mock('../hooks/useResponsive', () => ({
     isLargeScreen: false,
     windowSize: { width: 1200, height: 800 },
     breakpoint: 'lg',
-    isBreakpoint: jest.fn(),
-    isBreakpointDown: jest.fn(),
-    isBreakpointUp: jest.fn(),
-    isBreakpointOnly: jest.fn(),
-    isBreakpointBetween: jest.fn(),
+    isBreakpoint: vi.fn(),
+    isBreakpointDown: vi.fn(),
+    isBreakpointUp: vi.fn(),
+    isBreakpointOnly: vi.fn(),
+    isBreakpointBetween: vi.fn(),
   }),
 }));
 
@@ -195,7 +196,7 @@ describe('Accessibility Tests', () => {
 
     test('should apply mobile-specific styles when on mobile', () => {
       // Mock mobile breakpoint
-      jest.doMock('../hooks/useResponsive', () => ({
+      vi.doMock('../hooks/useResponsive', () => ({
         useResponsive: () => ({
           isMobile: true,
           isTablet: false,
@@ -203,11 +204,11 @@ describe('Accessibility Tests', () => {
           isLargeScreen: false,
           windowSize: { width: 400, height: 800 },
           breakpoint: 'xs',
-          isBreakpoint: jest.fn(),
-          isBreakpointDown: jest.fn(),
-          isBreakpointUp: jest.fn(),
-          isBreakpointOnly: jest.fn(),
-          isBreakpointBetween: jest.fn(),
+          isBreakpoint: vi.fn(),
+          isBreakpointDown: vi.fn(),
+          isBreakpointUp: vi.fn(),
+          isBreakpointOnly: vi.fn(),
+          isBreakpointBetween: vi.fn(),
         }),
       }));
 

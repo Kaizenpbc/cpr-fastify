@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
@@ -5,11 +6,11 @@ import { AuthProvider, useAuth } from '../AuthContext';
 
 // Mock the API
 const mockApi = {
-  post: jest.fn(),
-  get: jest.fn()
+  post: vi.fn(),
+  get: vi.fn()
 };
 
-jest.mock('../../services/api', () => ({
+vi.mock('../../services/api', () => ({
   api: mockApi
 }));
 
@@ -54,7 +55,7 @@ const renderWithProviders = (component: React.ReactElement) => {
 
 describe('AuthContext', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     localStorage.clear();
   });
 

@@ -145,7 +145,7 @@ export class HRService {
       }
 
       await conn.commit();
-      return { message: `Profile change ${action}d successfully` };
+      return { message: `Profile change ${action === 'approve' ? 'approved' : 'rejected'} successfully` };
     } catch (err) {
       await conn.rollback();
       throw err;

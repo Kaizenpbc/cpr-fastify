@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
@@ -5,10 +6,10 @@ import InvoiceHistory from '../InvoiceHistory';
 
 // Mock the vendor API
 const mockVendorApi = {
-  getInvoices: jest.fn()
+  getInvoices: vi.fn()
 };
 
-jest.mock('../../../services/api', () => ({
+vi.mock('../../../services/api', () => ({
   vendorApi: mockVendorApi
 }));
 
@@ -54,7 +55,7 @@ const renderWithProviders = (component: React.ReactElement) => {
 
 describe('InvoiceHistory Component', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('renders invoice history title', () => {

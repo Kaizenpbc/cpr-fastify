@@ -107,10 +107,13 @@ global.performance = {
 };
 
 // Mock crypto.randomUUID
-global.crypto = {
-  ...global.crypto,
-  randomUUID: vi.fn(() => 'mock-uuid') as unknown as () => `${string}-${string}-${string}-${string}-${string}`,
-};
+Object.defineProperty(global, 'crypto', {
+  value: {
+    ...global.crypto,
+    randomUUID: vi.fn(() => 'mock-uuid') as unknown as () => `${string}-${string}-${string}-${string}-${string}`,
+  },
+  writable: true,
+});
 
 // Setup cleanup after each test
 afterEach(() => {

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
@@ -5,11 +6,11 @@ import InvoiceStatusView from '../InvoiceStatusView';
 
 // Mock the vendor API
 const mockVendorApi = {
-  getInvoices: jest.fn(),
-  downloadInvoice: jest.fn()
+  getInvoices: vi.fn(),
+  downloadInvoice: vi.fn()
 };
 
-jest.mock('../../../services/api', () => ({
+vi.mock('../../../services/api', () => ({
   vendorApi: mockVendorApi
 }));
 
@@ -33,7 +34,7 @@ const renderWithProviders = (component: React.ReactElement) => {
 
 describe('InvoiceStatusView Component', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('renders invoice status dashboard title', () => {
