@@ -956,6 +956,28 @@ export const sysAdminApi = {
     const response = await api.delete(`/sysadmin/organizations/${orgId}/locations/${locationId}`);
     return response.data;
   },
+
+  // Student Directory
+  getStudents: async (params?: { q?: string; orgId?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.q) query.set('q', params.q);
+    if (params?.orgId) query.set('orgId', String(params.orgId));
+    const qs = query.toString();
+    const response = await api.get(`/sysadmin/students${qs ? `?${qs}` : ''}`);
+    return response.data;
+  },
+  getStudent: async (id: number) => {
+    const response = await api.get(`/sysadmin/students/${id}`);
+    return response.data;
+  },
+  updateStudent: async (id: number, data: Record<string, unknown>) => {
+    const response = await api.put(`/sysadmin/students/${id}`, data);
+    return response.data;
+  },
+  updateStudentConsent: async (id: number, consent: boolean) => {
+    const response = await api.put(`/sysadmin/students/${id}/consent`, { marketing_consent: consent });
+    return response.data;
+  },
 };
 
 // Organization Analytics API

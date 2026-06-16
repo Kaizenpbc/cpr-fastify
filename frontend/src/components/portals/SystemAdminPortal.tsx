@@ -25,6 +25,7 @@ import {
   Logout as LogoutIcon,
   Settings as SettingsIcon,
   AttachMoney as PricingIcon,
+  ContactPhone as StudentIcon,
 } from '@mui/icons-material';
 import ErrorBoundary from '../common/ErrorBoundary';
 import ThemeToggle from '../common/ThemeToggle';
@@ -35,6 +36,7 @@ import VendorManagement from '../sysadmin/VendorManagement';
 import OrganizationManagement from '../sysadmin/OrganizationManagement';
 import SystemConfiguration from '../sysadmin/SystemConfiguration';
 import OrganizationPricingManager from '../admin/OrganizationPricingManager';
+import StudentManagement from '../sysadmin/StudentManagement';
 
 const drawerWidth = 240;
 
@@ -107,6 +109,12 @@ const SystemAdminPortal = () => {
       label: 'Vendor Management',
       icon: <StoreIcon />,
       path: '/sysadmin/vendors',
+    },
+    {
+      key: 'students',
+      label: 'Student Directory',
+      icon: <StudentIcon />,
+      path: '/sysadmin/students',
     },
     {
       key: 'configuration',
@@ -254,6 +262,14 @@ const SystemAdminPortal = () => {
                 element={
                   <ErrorBoundary context="system_admin_vendors" onError={handleError}>
                     <VendorManagement onShowSnackbar={showSnackbar} />
+                  </ErrorBoundary>
+                }
+              />
+              <Route
+                path='/students'
+                element={
+                  <ErrorBoundary context="system_admin_students" onError={handleError}>
+                    <StudentManagement onShowSnackbar={showSnackbar} />
                   </ErrorBoundary>
                 }
               />
