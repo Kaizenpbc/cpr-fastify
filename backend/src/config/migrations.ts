@@ -49,6 +49,12 @@ const migrations: Migration[] = [
       CONSTRAINT fk_inv_seq_org FOREIGN KEY (organization_id) REFERENCES organizations(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
   },
+  {
+    version: 4,
+    name: 'fix_token_blacklist_add_invalidated_at',
+    up: `ALTER TABLE token_blacklist
+      ADD COLUMN IF NOT EXISTS invalidated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`,
+  },
 ];
 
 export async function runMigrations(): Promise<void> {

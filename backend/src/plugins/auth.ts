@@ -30,20 +30,25 @@ export async function requireAuth(request: FastifyRequest, reply: FastifyReply) 
   }
 
   const token = header.slice(7);
+  let payload;
   try {
-    const payload = authService.verifyAccessToken(token);
+    payload = authService.verifyAccessToken(token);
+  } catch {
+    return reply.status(401).send({ error: 'Invalid or expired token' });
+  }
 
+  try {
     // Check token blacklist (password change invalidation — DB-backed)
     if (payload.iat && await authService.isTokenBlacklisted(payload.userId, payload.iat)) {
       return reply.status(401).send({ error: 'Token has been revoked. Please log in again.' });
     }
-
-    request.userId = payload.userId;
-    request.userRole = payload.role;
-    request.userOrgId = payload.orgId ?? null;
   } catch {
-    return reply.status(401).send({ error: 'Invalid or expired token' });
+    // DB error checking blacklist — allow request through rather than blocking all auth
   }
+
+  request.userId = payload.userId;
+  request.userRole = payload.role;
+  request.userOrgId = payload.orgId ?? null;
 }
 
 export function requireRole(...roles: string[]) {
