@@ -22,6 +22,12 @@ vi.mock('../utils/taxConfig.js', () => ({
   HST_RATE: 0.13,
 }));
 
+vi.mock('../services/InvoiceNumberService.js', () => ({
+  InvoiceNumberService: vi.fn().mockImplementation(() => ({
+    allocate: vi.fn().mockResolvedValue(`INV-${new Date().getFullYear()}-000001`),
+  })),
+}));
+
 import { BillingService, BillingError } from '../services/BillingService.js';
 import { InvoiceRepository } from '../repositories/InvoiceRepository.js';
 import { CoursePricingRepository } from '../repositories/CoursePricingRepository.js';
@@ -103,7 +109,7 @@ describe('BillingLifecycle (T-3)', () => {
       expect(insertParams[11]).toBe(80);
     });
 
-    it('generates invoice number in INV-YYYY-XXXXXX format', async () => {
+    it('generates invoice number via InvoiceNumberService', async () => {
       const course = makeCourseRow();
       mockConnQuery.mockResolvedValueOnce([[course]]);
       mockConnQuery.mockResolvedValueOnce([{ insertId: 101 }]);
@@ -114,8 +120,7 @@ describe('BillingLifecycle (T-3)', () => {
 
       const insertParams = mockConnQuery.mock.calls[1][1];
       const invoiceNumber = insertParams[0] as string;
-      expect(invoiceNumber).toMatch(/^INV-\d{4}-\d{6}$/);
-      expect(invoiceNumber).toContain(`INV-${new Date().getFullYear()}-`);
+      expect(invoiceNumber).toBe(`INV-${new Date().getFullYear()}-000001`);
     });
 
     it('marks course_requests.invoiced = TRUE after invoice creation', async () => {

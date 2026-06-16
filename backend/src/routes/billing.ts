@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { BillingService, BillingError } from '../services/BillingService.js';
 import { InvoiceRepository } from '../repositories/InvoiceRepository.js';
 import { CoursePricingRepository } from '../repositories/CoursePricingRepository.js';
+import { InvoiceNumberService } from '../services/InvoiceNumberService.js';
 import { getPool } from '../config/database.js';
 import { requireAuth, requireRole } from '../plugins/auth.js';
 
@@ -473,5 +474,63 @@ export async function billingRoutes(app: FastifyInstance) {
     const html = PDFService.getInvoicePreviewHTML(invoice);
     reply.header('Content-Type', 'text/html');
     return reply.send(html);
+  });
+
+  // ===== Invoice Number Sequences =====
+  const invoiceNumberService = new InvoiceNumberService();
+
+  const sequenceSchema = z.object({
+    organizationId: z.number().int().positive(),
+    prefix: z.string().min(1).max(20).optional(),
+    formatString: z.string().min(1).max(100).optional(),
+    padding: z.number().int().min(1).max(10).optional(),
+    nextNumber: z.number().int().min(1).optional(),
+    step: z.number().int().min(1).max(100).optional(),
+    resetPolicy: z.enum(['none', 'yearly', 'monthly']).optional(),
+  });
+
+  // List all configured sequences
+  app.get('/invoice-sequences', { preHandler: acctRole }, async () => {
+    return { success: true, data: await invoiceNumberService.getAllSequences() };
+  });
+
+  // Get sequence for a specific org
+  app.get('/invoice-sequences/:orgId', { preHandler: acctRole }, async (request, reply) => {
+    const { orgId } = request.params as { orgId: string };
+    const seq = await invoiceNumberService.getSequence(parseInt(orgId));
+    return { success: true, data: seq };
+  });
+
+  // Preview next invoice number for an org
+  app.get('/invoice-sequences/:orgId/preview', { preHandler: acctRole }, async (request) => {
+    const { orgId } = request.params as { orgId: string };
+    const preview = await invoiceNumberService.preview(parseInt(orgId));
+    return { success: true, data: { nextInvoiceNumber: preview } };
+  });
+
+  // Create or update a sequence
+  app.put('/invoice-sequences', { preHandler: acctRole }, async (request, reply) => {
+    const data = sequenceSchema.parse(request.body);
+    try {
+      const seq = await invoiceNumberService.upsert(data.organizationId, {
+        prefix: data.prefix,
+        format_string: data.formatString,
+        padding: data.padding,
+        next_number: data.nextNumber,
+        step: data.step,
+        reset_policy: data.resetPolicy,
+      });
+      return { success: true, data: seq };
+    } catch (err: any) {
+      return reply.status(400).send({ error: err.message });
+    }
+  });
+
+  // Delete a sequence (org reverts to system default)
+  app.delete('/invoice-sequences/:orgId', { preHandler: acctRole }, async (request, reply) => {
+    const { orgId } = request.params as { orgId: string };
+    const deleted = await invoiceNumberService.deleteSequence(parseInt(orgId));
+    if (!deleted) return reply.status(404).send({ error: 'No sequence found for this organization' });
+    return { success: true, message: 'Sequence deleted — organization will use system default' };
   });
 }

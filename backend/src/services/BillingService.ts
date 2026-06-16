@@ -2,6 +2,7 @@ import { getPool } from '../config/database.js';
 import { logger } from '../config/logger.js';
 import { InvoiceRepository, Invoice, InvoiceWithDetails, DashboardData } from '../repositories/InvoiceRepository.js';
 import { CoursePricingRepository, CoursePricing } from '../repositories/CoursePricingRepository.js';
+import { InvoiceNumberService } from './InvoiceNumberService.js';
 import { HST_RATE } from '../utils/taxConfig.js';
 
 const INVOICE_DUE_DAYS = 30;
@@ -14,6 +15,8 @@ export class BillingError extends Error {
 }
 
 export class BillingService {
+  private invoiceNumberService = new InvoiceNumberService();
+
   constructor(
     private invoiceRepo: InvoiceRepository,
     private pricingRepo: CoursePricingRepository,
@@ -104,7 +107,7 @@ export class BillingService {
       const baseCost = course.students_attended * course.price_per_student;
       const taxAmount = baseCost * HST_RATE;
       const totalAmount = baseCost + taxAmount;
-      const invoiceNumber = `INV-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+      const invoiceNumber = await this.invoiceNumberService.allocate(course.organization_id, conn);
 
       const [result] = await conn.query<any>(
         `INSERT INTO invoices (

@@ -31,6 +31,24 @@ const migrations: Migration[] = [
       INDEX idx_token_blacklist_user (user_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
   },
+  {
+    version: 3,
+    name: 'create_invoice_number_sequences',
+    up: `CREATE TABLE IF NOT EXISTS invoice_number_sequences (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      organization_id INT NOT NULL UNIQUE,
+      prefix VARCHAR(20) NOT NULL DEFAULT 'INV',
+      format_string VARCHAR(100) NOT NULL DEFAULT '{PREFIX}-{YYYY}-{NNNN}',
+      padding INT NOT NULL DEFAULT 4,
+      next_number INT NOT NULL DEFAULT 1,
+      step INT NOT NULL DEFAULT 1,
+      reset_policy ENUM('none','yearly','monthly') NOT NULL DEFAULT 'none',
+      last_reset_period VARCHAR(10) DEFAULT NULL,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      CONSTRAINT fk_inv_seq_org FOREIGN KEY (organization_id) REFERENCES organizations(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+  },
 ];
 
 export async function runMigrations(): Promise<void> {
