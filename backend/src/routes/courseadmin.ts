@@ -1,6 +1,10 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { getPool } from '../config/database.js';
+import { CourseService, CourseError } from '../services/CourseService.js';
+import { CourseRequestRepository } from '../repositories/CourseRequestRepository.js';
+import { CourseStudentRepository } from '../repositories/CourseStudentRepository.js';
+import { UserRepository } from '../repositories/UserRepository.js';
 import { requireRole } from '../plugins/auth.js';
 
 const scheduleSchema = z.object({
@@ -11,6 +15,11 @@ const scheduleSchema = z.object({
 
 export async function courseAdminRoutes(app: FastifyInstance) {
   const pool = getPool();
+  const courseService = new CourseService(
+    new CourseRequestRepository(),
+    new CourseStudentRepository(),
+    new UserRepository(),
+  );
   const adminRole = [requireRole('admin', 'sysadmin', 'courseadmin')];
 
   // Get instructors for scheduling
@@ -22,21 +31,23 @@ export async function courseAdminRoutes(app: FastifyInstance) {
     return { success: true, data: rows };
   });
 
-  // Schedule a course (assign instructor + times)
+  // Schedule a course (assign instructor + times) — delegates to CourseService
+  // for conflict detection, availability update, and classes table entry
   app.post('/courses/:id/schedule', { preHandler: adminRole }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const data = scheduleSchema.parse(request.body);
 
-    const [result] = await pool.query<any>(
-      `UPDATE course_requests SET
-       instructor_id = ?, confirmed_start_time = ?, confirmed_end_time = ?,
-       status = 'confirmed', updated_at = CURRENT_TIMESTAMP
-       WHERE id = ?`,
-      [data.instructorId, data.startTime, data.endTime, parseInt(id)]
-    );
-    if (result.affectedRows === 0) return reply.status(404).send({ error: 'Course not found' });
-
-    const [rows] = await pool.query<any[]>('SELECT * FROM course_requests WHERE id = ?', [parseInt(id)]);
-    return { success: true, message: 'Course scheduled successfully', data: rows[0] };
+    try {
+      const course = await courseService.assignInstructor({
+        courseId: parseInt(id),
+        instructorId: data.instructorId,
+        startTime: data.startTime,
+        endTime: data.endTime,
+      });
+      return { success: true, message: 'Course scheduled successfully', data: course };
+    } catch (err) {
+      if (err instanceof CourseError) return reply.status(err.statusCode).send({ error: err.message });
+      throw err;
+    }
   });
 }

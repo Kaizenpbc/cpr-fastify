@@ -2,6 +2,10 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { OrganizationService, OrgError } from '../services/OrganizationService.js';
 import { OrganizationRepository } from '../repositories/OrganizationRepository.js';
+import { CourseService, CourseError } from '../services/CourseService.js';
+import { CourseRequestRepository } from '../repositories/CourseRequestRepository.js';
+import { CourseStudentRepository } from '../repositories/CourseStudentRepository.js';
+import { UserRepository } from '../repositories/UserRepository.js';
 import { getPool } from '../config/database.js';
 import { requireAuth, requireRole } from '../plugins/auth.js';
 
@@ -22,12 +26,17 @@ const courseRequestSchema = z.object({
 });
 
 function handleError(err: unknown, reply: any) {
-  if (err instanceof OrgError) return reply.status(err.statusCode).send({ error: err.message });
+  if (err instanceof OrgError || err instanceof CourseError) return reply.status(err.statusCode).send({ error: err.message });
   throw err;
 }
 
 export async function organizationRoutes(app: FastifyInstance) {
   const service = new OrganizationService(new OrganizationRepository());
+  const courseService = new CourseService(
+    new CourseRequestRepository(),
+    new CourseStudentRepository(),
+    new UserRepository(),
+  );
   const orgRole = [requireRole('organization')];
   const adminRole = [requireRole('admin', 'sysadmin')];
 
@@ -107,16 +116,19 @@ export async function organizationRoutes(app: FastifyInstance) {
   // ===== Org course request (POST /organization/course-request) =====
   app.post('/course-request', { preHandler: orgRole }, async (request, reply) => {
     if (!request.userOrgId) return reply.status(400).send({ error: 'No organization linked' });
-    const pool = getPool();
     const { courseTypeId, scheduledDate, location, locationId, registeredStudents, notes } = courseRequestSchema.parse(request.body);
 
-    const [result] = await pool.query<any>(
-      `INSERT INTO course_requests (organization_id, course_type_id, scheduled_date, location, location_id,
-       registered_students, notes, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`,
-      [request.userOrgId, courseTypeId, scheduledDate, location, locationId ?? null,
-       registeredStudents ?? 0, notes ?? null]
-    );
-    const [rows] = await pool.query<any[]>('SELECT * FROM course_requests WHERE id = ?', [result.insertId]);
-    return { success: true, message: 'Course request submitted successfully', data: rows[0] };
+    try {
+      const course = await courseService.createRequest({
+        organizationId: request.userOrgId,
+        courseTypeId,
+        scheduledDate,
+        location,
+        locationId,
+        registeredStudents,
+        notes,
+      });
+      return { success: true, message: 'Course request submitted successfully', data: course };
+    } catch (err) { return handleError(err, reply); }
   });
 }
