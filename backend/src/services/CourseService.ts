@@ -422,7 +422,7 @@ export class CourseService {
     const course = await this.courseRepo.forOrg(orgId).findById(courseId);
     if (!course) throw new CourseError('Course not found or not authorized', 404);
 
-    return this.studentRepo.addStudents(courseId, students);
+    return this.studentRepo.addStudents(courseId, students, orgId);
   }
 
   // --- Reminder ---

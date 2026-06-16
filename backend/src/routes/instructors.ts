@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getPool } from '../config/database.js';
 import { requireRole } from '../plugins/auth.js';
 import { logger } from '../config/logger.js';
+import { StudentRepository } from '../repositories/StudentRepository.js';
 
 const addStudentSchema = z.object({
   firstName: z.string().min(1),
@@ -308,10 +309,20 @@ export async function instructorRoutes(app: FastifyInstance) {
     );
     if (existing.length > 0) return reply.status(400).send({ error: 'Student with this email already exists for this course' });
 
+    // Write-through to students master table
+    const studentRepo = new StudentRepository();
+    const [courseRow] = await pool.query<any[]>(
+      'SELECT organization_id FROM course_requests WHERE id = ?', [classId]
+    );
+    const studentId = await studentRepo.findOrCreate({
+      email, firstName, lastName, phone,
+      organizationId: courseRow[0]?.organization_id ?? null,
+    });
+
     const [insertResult] = await pool.query<any>(
-      `INSERT INTO course_students (course_request_id, first_name, last_name, email, phone, college)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [classId, firstName, lastName, email, phone, college ?? null]
+      `INSERT INTO course_students (course_request_id, first_name, last_name, email, phone, college, student_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [classId, firstName, lastName, email, phone, college ?? null, studentId]
     );
 
     const [rows] = await pool.query<any[]>(

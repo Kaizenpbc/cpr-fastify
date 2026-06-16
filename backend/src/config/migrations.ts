@@ -1,10 +1,11 @@
+import { Pool } from 'mysql2/promise';
 import { getPool } from './database.js';
 import { logger } from './logger.js';
 
 interface Migration {
   version: number;
   name: string;
-  up: string;
+  up: string | ((pool: Pool) => Promise<void>);
 }
 
 /**
@@ -55,6 +56,74 @@ const migrations: Migration[] = [
     up: `ALTER TABLE token_blacklist
       ADD COLUMN IF NOT EXISTS invalidated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`,
   },
+  {
+    version: 5,
+    name: 'create_students_master',
+    up: `CREATE TABLE IF NOT EXISTS students (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      email VARCHAR(255) NOT NULL,
+      first_name VARCHAR(255) NOT NULL,
+      last_name VARCHAR(255) NOT NULL,
+      phone VARCHAR(50) DEFAULT NULL,
+      organization_id INT DEFAULT NULL,
+      marketing_consent BOOLEAN NOT NULL DEFAULT FALSE,
+      marketing_consent_at DATETIME DEFAULT NULL,
+      notes TEXT DEFAULT NULL,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE INDEX idx_students_email (email),
+      INDEX idx_students_org (organization_id),
+      INDEX idx_students_name (last_name, first_name),
+      CONSTRAINT fk_students_org FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+  },
+  {
+    version: 6,
+    name: 'add_student_id_to_course_students',
+    up: `ALTER TABLE course_students
+      ADD COLUMN IF NOT EXISTS student_id INT DEFAULT NULL,
+      ADD INDEX IF NOT EXISTS idx_cs_student_id (student_id),
+      ADD CONSTRAINT fk_cs_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE SET NULL`,
+  },
+  {
+    version: 7,
+    name: 'backfill_students_master',
+    up: async (pool: Pool) => {
+      // Group existing course_students by email, create master records, link them
+      const [rows] = await pool.query<any[]>(`
+        SELECT email, MIN(first_name) as first_name, MIN(last_name) as last_name,
+               MIN(phone) as phone,
+               (SELECT cr.organization_id FROM course_requests cr
+                WHERE cr.id = MIN(cs.course_request_id)) as organization_id
+        FROM course_students cs
+        WHERE email IS NOT NULL AND TRIM(email) != ''
+        GROUP BY LOWER(TRIM(email))
+      `);
+
+      if (rows.length === 0) return;
+
+      for (const r of rows) {
+        const email = r.email.trim().toLowerCase();
+        // Insert if not exists (idempotent)
+        await pool.query(
+          `INSERT IGNORE INTO students (email, first_name, last_name, phone, organization_id)
+           VALUES (?, ?, ?, ?, ?)`,
+          [email, r.first_name, r.last_name, r.phone, r.organization_id]
+        );
+      }
+
+      // Link course_students to their master records
+      await pool.query(`
+        UPDATE course_students cs
+        JOIN students s ON LOWER(TRIM(cs.email)) = s.email
+        SET cs.student_id = s.id
+        WHERE cs.student_id IS NULL AND cs.email IS NOT NULL AND TRIM(cs.email) != ''
+      `);
+
+      const [count] = await pool.query<any[]>('SELECT COUNT(*) as c FROM students');
+      logger.info({ studentsMigrated: count[0].c }, 'Students master table backfilled');
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {
@@ -77,7 +146,11 @@ export async function runMigrations(): Promise<void> {
   let ran = 0;
   for (const m of migrations) {
     if (applied.has(m.version)) continue;
-    await pool.query(m.up);
+    if (typeof m.up === 'function') {
+      await m.up(pool);
+    } else {
+      await pool.query(m.up);
+    }
     await pool.query(
       'INSERT INTO schema_migrations (version, name) VALUES (?, ?)',
       [m.version, m.name]
