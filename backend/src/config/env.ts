@@ -25,6 +25,9 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().default('noreply@kpbc.ca'),
 
+  // Tax
+  HST_RATE: z.coerce.number().min(0).max(1).optional(),
+
   // Sentry (optional — disabled if not set)
   SENTRY_DSN: z.string().url().optional(),
 });

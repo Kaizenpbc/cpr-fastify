@@ -2,11 +2,21 @@ import { getPool } from '../config/database.js';
 import { ProfileChangeRepository, ProfileChange } from '../repositories/ProfileChangeRepository.js';
 import { UserRepository } from '../repositories/UserRepository.js';
 
-const PROFILE_CHANGE_ALLOWED_FIELDS = new Set([
-  'first_name', 'last_name', 'full_name', 'email', 'phone', 'mobile',
-  'address', 'date_onboarded', 'date_offboarded', 'emergency_contact_name',
-  'emergency_contact_phone', 'user_comments',
-]);
+// Safe column mapping — prevents SQL injection even if profile_changes table is compromised
+const PROFILE_CHANGE_COLUMN_MAP: Record<string, string> = {
+  first_name: 'first_name',
+  last_name: 'last_name',
+  full_name: 'full_name',
+  email: 'email',
+  phone: 'phone',
+  mobile: 'mobile',
+  address: 'address',
+  date_onboarded: 'date_onboarded',
+  date_offboarded: 'date_offboarded',
+  emergency_contact_name: 'emergency_contact_name',
+  emergency_contact_phone: 'emergency_contact_phone',
+  user_comments: 'user_comments',
+};
 
 export class HRError extends Error {
   constructor(message: string, public statusCode: number = 400) {
@@ -124,11 +134,12 @@ export class HRService {
       );
 
       if (action === 'approve') {
-        if (!PROFILE_CHANGE_ALLOWED_FIELDS.has(change.field_name)) {
+        const safeColumn = PROFILE_CHANGE_COLUMN_MAP[change.field_name];
+        if (!safeColumn) {
           throw new HRError(`Field '${change.field_name}' is not permitted for profile changes`);
         }
         await conn.query(
-          `UPDATE users SET \`${change.field_name}\` = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+          `UPDATE users SET \`${safeColumn}\` = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
           [change.new_value, change.user_id]
         );
       }
@@ -261,7 +272,7 @@ export class HRService {
   // --- Profile change submission (by any user) ---
 
   async submitProfileChange(userId: number, userRole: string, data: { fieldName: string; newValue: string; changeType: string; targetUserId?: number }) {
-    if (!PROFILE_CHANGE_ALLOWED_FIELDS.has(data.fieldName)) {
+    if (!PROFILE_CHANGE_COLUMN_MAP[data.fieldName]) {
       throw new HRError(`Field '${data.fieldName}' is not permitted for profile changes`);
     }
 

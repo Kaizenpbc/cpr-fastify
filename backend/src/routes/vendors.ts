@@ -153,8 +153,11 @@ export async function vendorRoutes(app: FastifyInstance) {
         const parts = request.parts();
         for await (const part of parts) {
           if (part.type === 'file') {
-            // Only accept PDF/HTML files
-            if (part.mimetype !== 'application/pdf' && part.mimetype !== 'text/html') {
+            // Only accept PDF/HTML files (MIME + extension check)
+            const allowedMimes = ['application/pdf', 'text/html'];
+            const allowedExts = ['.pdf', '.html', '.htm'];
+            const fileExt = extname(part.filename || '').toLowerCase();
+            if (!allowedMimes.includes(part.mimetype) || !allowedExts.includes(fileExt)) {
               return reply.status(400).send({ error: 'Only PDF or HTML files are accepted' });
             }
             const uploadDir = resolve(process.cwd(), 'uploads/vendor-invoices');

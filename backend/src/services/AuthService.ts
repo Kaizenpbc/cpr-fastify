@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
+import { getPool } from '../config/database.js';
 import { UserRepository, User } from '../repositories/UserRepository.js';
 
 export interface TokenPair {
@@ -13,34 +14,10 @@ export interface LoginResult {
   tokens: TokenPair;
 }
 
-// Token blacklist: userId -> timestamp when all prior tokens were invalidated
-// This is in-memory; survives until server restart. For multi-instance, move to Redis/DB.
-const tokenBlacklist = new Map<number, number>();
-
 // Account lockout: 5 failed attempts within 15 minutes = 15-minute lockout
 const MAX_FAILED_ATTEMPTS = 5;
-const LOCKOUT_WINDOW_MS = 15 * 60 * 1000;
-const LOCKOUT_DURATION_MS = 15 * 60 * 1000;
-
-interface LoginAttempt {
-  count: number;
-  firstAttempt: number;
-  lockedUntil: number | null;
-}
-
-const loginAttempts = new Map<string, LoginAttempt>();
-
-// Clean up old entries every 30 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, attempt] of loginAttempts) {
-    if (attempt.lockedUntil && now > attempt.lockedUntil) {
-      loginAttempts.delete(key);
-    } else if (now - attempt.firstAttempt > LOCKOUT_WINDOW_MS) {
-      loginAttempts.delete(key);
-    }
-  }
-}, 30 * 60 * 1000);
+const LOCKOUT_WINDOW_MINUTES = 15;
+const LOCKOUT_DURATION_MINUTES = 15;
 
 export class AuthService {
   constructor(private userRepo: UserRepository) {}
@@ -48,27 +25,26 @@ export class AuthService {
   async login(username: string, password: string): Promise<LoginResult> {
     const key = username.toLowerCase();
 
-    // Check lockout
-    const attempt = loginAttempts.get(key);
-    if (attempt?.lockedUntil && Date.now() < attempt.lockedUntil) {
-      const minutesLeft = Math.ceil((attempt.lockedUntil - Date.now()) / 60000);
-      throw new AuthError(`Account temporarily locked. Try again in ${minutesLeft} minute(s).`, 429);
+    // Check lockout (DB-backed — survives restarts)
+    const lockout = await this.checkLockout(key);
+    if (lockout) {
+      throw new AuthError(`Account temporarily locked. Try again in ${lockout} minute(s).`, 429);
     }
 
     const user = await this.userRepo.findByUsername(username);
     if (!user || user.status === 'inactive') {
-      this.recordFailedAttempt(key);
+      await this.recordFailedAttempt(key);
       throw new AuthError('Invalid username or password');
     }
 
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
-      this.recordFailedAttempt(key);
+      await this.recordFailedAttempt(key);
       throw new AuthError('Invalid username or password');
     }
 
     // Successful login — clear attempts
-    loginAttempts.delete(key);
+    await this.clearAttempts(key);
 
     const tokens = this.generateTokens(user);
     const { password_hash, ...safeUser } = user;
@@ -76,19 +52,42 @@ export class AuthService {
     return { user: safeUser, tokens };
   }
 
-  private recordFailedAttempt(key: string): void {
-    const now = Date.now();
-    const attempt = loginAttempts.get(key);
+  /** Check if account is locked. Returns minutes remaining, or null if not locked. */
+  private async checkLockout(key: string): Promise<number | null> {
+    const pool = getPool();
+    const [rows] = await pool.query<any[]>(
+      `SELECT COUNT(*) as cnt FROM login_attempts
+       WHERE username = ? AND attempted_at > NOW() - INTERVAL ? MINUTE`,
+      [key, LOCKOUT_WINDOW_MINUTES]
+    );
+    const count = Number(rows[0]?.cnt ?? 0);
+    if (count < MAX_FAILED_ATTEMPTS) return null;
 
-    if (!attempt || now - attempt.firstAttempt > LOCKOUT_WINDOW_MS) {
-      loginAttempts.set(key, { count: 1, firstAttempt: now, lockedUntil: null });
-      return;
-    }
+    // Check when the most recent attempt was (to calculate remaining lockout)
+    const [latest] = await pool.query<any[]>(
+      `SELECT attempted_at FROM login_attempts
+       WHERE username = ? ORDER BY attempted_at DESC LIMIT 1`,
+      [key]
+    );
+    if (latest.length === 0) return null;
 
-    attempt.count++;
-    if (attempt.count >= MAX_FAILED_ATTEMPTS) {
-      attempt.lockedUntil = now + LOCKOUT_DURATION_MS;
-    }
+    const lockedUntil = new Date(latest[0].attempted_at).getTime() + LOCKOUT_DURATION_MINUTES * 60 * 1000;
+    const remaining = lockedUntil - Date.now();
+    if (remaining <= 0) return null;
+    return Math.ceil(remaining / 60000);
+  }
+
+  private async recordFailedAttempt(key: string): Promise<void> {
+    const pool = getPool();
+    await pool.query(
+      'INSERT INTO login_attempts (username, attempted_at) VALUES (?, NOW())',
+      [key]
+    );
+  }
+
+  private async clearAttempts(key: string): Promise<void> {
+    const pool = getPool();
+    await pool.query('DELETE FROM login_attempts WHERE username = ?', [key]);
   }
 
   async refreshToken(token: string): Promise<TokenPair> {
@@ -116,21 +115,32 @@ export class AuthService {
     const hash = await bcrypt.hash(newPassword, env.BCRYPT_SALT_ROUNDS);
     await this.userRepo.updatePassword(userId, hash);
 
-    // Invalidate all existing tokens for this user
-    this.invalidateUserTokens(userId);
+    // Invalidate all existing tokens for this user (DB-backed)
+    await this.invalidateUserTokens(userId);
   }
 
-  /** Blacklist all tokens issued before now for a user */
-  invalidateUserTokens(userId: number): void {
-    tokenBlacklist.set(userId, Date.now());
+  /** Blacklist all tokens issued before now for a user (DB-backed) */
+  async invalidateUserTokens(userId: number): Promise<void> {
+    const pool = getPool();
+    await pool.query(
+      `INSERT INTO token_blacklist (user_id, invalidated_at)
+       VALUES (?, NOW())
+       ON DUPLICATE KEY UPDATE invalidated_at = NOW()`,
+      [userId]
+    );
   }
 
-  /** Check if a token was issued before the user's tokens were invalidated */
-  isTokenBlacklisted(userId: number, tokenIssuedAt: number): boolean {
-    const blacklistedAt = tokenBlacklist.get(userId);
-    if (!blacklistedAt) return false;
-    // Token issued at (seconds) vs blacklisted at (ms)
-    return (tokenIssuedAt * 1000) <= blacklistedAt;
+  /** Check if a token was issued before the user's tokens were invalidated (DB-backed) */
+  async isTokenBlacklisted(userId: number, tokenIssuedAt: number): Promise<boolean> {
+    const pool = getPool();
+    const [rows] = await pool.query<any[]>(
+      'SELECT invalidated_at FROM token_blacklist WHERE user_id = ?',
+      [userId]
+    );
+    if (rows.length === 0) return false;
+    const invalidatedAtMs = new Date(rows[0].invalidated_at).getTime();
+    // Token issued at (seconds) vs invalidated at (ms)
+    return (tokenIssuedAt * 1000) <= invalidatedAtMs;
   }
 
   verifyAccessToken(token: string): jwt.JwtPayload {

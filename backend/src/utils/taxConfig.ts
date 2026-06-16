@@ -1,9 +1,11 @@
 /**
  * Tax configuration.
  * Set HST_RATE env var to override the default 13% (Ontario HST).
+ * Validated via Zod in config/env.ts.
  */
-const parsed = process.env.HST_RATE ? parseFloat(process.env.HST_RATE) : NaN;
-export const HST_RATE: number = Number.isFinite(parsed) ? parsed : 0.13;
+import { env } from '../config/env.js';
+
+export const HST_RATE: number = env.HST_RATE ?? 0.13;
 
 export const HST_RATE_PERCENT: number = HST_RATE * 100;
 

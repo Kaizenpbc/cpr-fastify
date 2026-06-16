@@ -70,7 +70,7 @@ export async function buildApp() {
   await app.register(registerRoutes, { prefix: '/api/v1' });
 
   // Health check (outside /api/v1) — verifies DB connectivity
-  app.get('/health', async () => {
+  app.get('/health', async (_request, reply) => {
     let dbStatus = 'UP';
     try {
       const pool = getPool();
@@ -79,7 +79,8 @@ export async function buildApp() {
       dbStatus = 'DOWN';
     }
     const status = dbStatus === 'UP' ? 'UP' : 'DEGRADED';
-    return { status, database: dbStatus, timestamp: new Date().toISOString() };
+    const httpStatus = dbStatus === 'UP' ? 200 : 503;
+    return reply.status(httpStatus).send({ status, database: dbStatus, timestamp: new Date().toISOString() });
   });
 
   // SPA fallback: serve index.html for non-API routes (frontend routing)
