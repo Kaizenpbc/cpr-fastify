@@ -145,8 +145,9 @@ export class StudentRepository {
     const pool = getPool();
     const [rows] = await pool.query<any[]>(
       `SELECT cs.id, cs.course_request_id, cs.attended, cs.attendance_marked,
+              cs.certificate_number, cs.certificate_issued_at, cs.certificate_expires_at,
               cr.completed_at, cr.location,
-              ct.name as course_type_name,
+              ct.name as course_type_name, ct.certification_validity_months,
               o.name as organization_name,
               COALESCE(NULLIF(TRIM(CONCAT(COALESCE(u.first_name,''),' ',COALESCE(u.last_name,''))), ''), u.username) as instructor_name
        FROM course_students cs

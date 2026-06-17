@@ -978,6 +978,20 @@ export const sysAdminApi = {
     const response = await api.put(`/sysadmin/students/${id}/consent`, { marketing_consent: consent });
     return response.data;
   },
+
+  // Certification Expiry
+  getExpiringCertifications: async (days = 90) => {
+    const response = await api.get(`/sysadmin/certifications/expiring?days=${days}`);
+    return response.data;
+  },
+  getExpiredCertifications: async () => {
+    const response = await api.get('/sysadmin/certifications/expired');
+    return response.data;
+  },
+  getCertificationStats: async () => {
+    const response = await api.get('/sysadmin/certifications/stats');
+    return response.data;
+  },
 };
 
 // Organization Analytics API

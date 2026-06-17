@@ -274,10 +274,19 @@ const StudentManagement = ({ onShowSnackbar }: StudentManagementProps) => {
                     <TableCell sx={{ fontWeight: 'bold' }}>Location</TableCell>
                     <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
                     <TableCell sx={{ fontWeight: 'bold' }} align='center'>Attended</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }} align='center'>Cert Status</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {courseHistory.map((course: any) => (
+                  {courseHistory.map((course: any) => {
+                    let certStatus: { label: string; color: 'success' | 'warning' | 'error' | 'default' } = { label: '—', color: 'default' };
+                    if (course.certificate_expires_at) {
+                      const daysLeft = Math.ceil((new Date(course.certificate_expires_at).getTime() - Date.now()) / 86400000);
+                      if (daysLeft < 0) certStatus = { label: 'Expired', color: 'error' };
+                      else if (daysLeft <= 90) certStatus = { label: `${daysLeft}d left`, color: 'warning' };
+                      else certStatus = { label: 'Active', color: 'success' };
+                    }
+                    return (
                     <TableRow key={course.id} hover>
                       <TableCell>{course.course_type_name}</TableCell>
                       <TableCell>{course.organization_name}</TableCell>
@@ -295,8 +304,12 @@ const StudentManagement = ({ onShowSnackbar }: StudentManagementProps) => {
                           color={course.attended ? 'success' : 'default'}
                         />
                       </TableCell>
+                      <TableCell align='center'>
+                        <Chip label={certStatus.label} size='small' color={certStatus.color} />
+                      </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             </TableContainer>

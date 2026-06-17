@@ -26,6 +26,7 @@ import {
   Settings as SettingsIcon,
   AttachMoney as PricingIcon,
   ContactPhone as StudentIcon,
+  VerifiedUser as CertIcon,
 } from '@mui/icons-material';
 import ErrorBoundary from '../common/ErrorBoundary';
 import ThemeToggle from '../common/ThemeToggle';
@@ -37,6 +38,7 @@ import OrganizationManagement from '../sysadmin/OrganizationManagement';
 import SystemConfiguration from '../sysadmin/SystemConfiguration';
 import OrganizationPricingManager from '../admin/OrganizationPricingManager';
 import StudentManagement from '../sysadmin/StudentManagement';
+import CertificationTracking from '../sysadmin/CertificationTracking';
 
 const drawerWidth = 240;
 
@@ -115,6 +117,12 @@ const SystemAdminPortal = () => {
       label: 'Student Directory',
       icon: <StudentIcon />,
       path: '/sysadmin/students',
+    },
+    {
+      key: 'certifications',
+      label: 'Certification Tracking',
+      icon: <CertIcon />,
+      path: '/sysadmin/certifications',
     },
     {
       key: 'configuration',
@@ -270,6 +278,14 @@ const SystemAdminPortal = () => {
                 element={
                   <ErrorBoundary context="system_admin_students" onError={handleError}>
                     <StudentManagement onShowSnackbar={showSnackbar} />
+                  </ErrorBoundary>
+                }
+              />
+              <Route
+                path='/certifications'
+                element={
+                  <ErrorBoundary context="system_admin_certifications" onError={handleError}>
+                    <CertificationTracking onShowSnackbar={showSnackbar} />
                   </ErrorBoundary>
                 }
               />

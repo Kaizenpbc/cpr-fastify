@@ -271,15 +271,34 @@ export async function instructorRoutes(app: FastifyInstance) {
     );
     if (check.length === 0) return reply.status(404).send({ error: 'Course request not found or not authorized' });
 
+    // If marking attended, auto-set certificate dates based on class type validity
+    let certUpdate = '';
+    const certValues: any[] = [attended, studentId, classId];
+    if (attended) {
+      const [typeRows] = await pool.query<any[]>(
+        `SELECT ct.certification_validity_months, cr.completed_at
+         FROM course_requests cr JOIN class_types ct ON cr.course_type_id = ct.id
+         WHERE cr.id = ?`,
+        [classId]
+      );
+      const ct = typeRows[0];
+      if (ct?.certification_validity_months && ct.completed_at) {
+        certUpdate = ', certificate_issued_at = ?, certificate_expires_at = DATE_ADD(?, INTERVAL ? MONTH)';
+        certValues.splice(1, 0, ct.completed_at, ct.completed_at, ct.certification_validity_months);
+      }
+    } else {
+      certUpdate = ', certificate_issued_at = NULL, certificate_expires_at = NULL';
+    }
+
     const [result] = await pool.query<any>(
-      `UPDATE course_students SET attended = ?, attendance_marked = true, updated_at = CURRENT_TIMESTAMP
+      `UPDATE course_students SET attended = ?, attendance_marked = true${certUpdate}, updated_at = CURRENT_TIMESTAMP
        WHERE id = ? AND course_request_id = ?`,
-      [attended, studentId, classId]
+      certValues
     );
     if (result.affectedRows === 0) return reply.status(404).send({ error: 'Student not found' });
 
     const [rows] = await pool.query<any[]>(
-      'SELECT id, first_name, last_name, email, attended, attendance_marked FROM course_students WHERE id = ?',
+      'SELECT id, first_name, last_name, email, attended, attendance_marked, certificate_issued_at, certificate_expires_at FROM course_students WHERE id = ?',
       [studentId]
     );
     const r = rows[0];

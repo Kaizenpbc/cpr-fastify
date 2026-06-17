@@ -124,6 +124,41 @@ const migrations: Migration[] = [
       logger.info({ studentsMigrated: count[0].c }, 'Students master table backfilled');
     },
   },
+  {
+    version: 8,
+    name: 'add_certification_expiry_tracking',
+    up: `ALTER TABLE class_types
+      ADD COLUMN IF NOT EXISTS certification_validity_months INT DEFAULT NULL`,
+  },
+  {
+    version: 9,
+    name: 'add_certificate_fields_to_course_students',
+    up: `ALTER TABLE course_students
+      ADD COLUMN IF NOT EXISTS certificate_number VARCHAR(50) DEFAULT NULL,
+      ADD COLUMN IF NOT EXISTS certificate_issued_at DATETIME DEFAULT NULL,
+      ADD COLUMN IF NOT EXISTS certificate_expires_at DATETIME DEFAULT NULL,
+      ADD INDEX IF NOT EXISTS idx_cs_cert_expires (certificate_expires_at)`,
+  },
+  {
+    version: 10,
+    name: 'backfill_certificate_dates',
+    up: async (pool: Pool) => {
+      // For attended students in completed courses where the class type has a validity period,
+      // set certificate_issued_at = course completed_at, and calculate expiry
+      const [result] = await pool.query<any>(`
+        UPDATE course_students cs
+        JOIN course_requests cr ON cs.course_request_id = cr.id
+        JOIN class_types ct ON cr.course_type_id = ct.id
+        SET cs.certificate_issued_at = cr.completed_at,
+            cs.certificate_expires_at = DATE_ADD(cr.completed_at, INTERVAL ct.certification_validity_months MONTH)
+        WHERE cs.attended = true
+          AND cr.completed_at IS NOT NULL
+          AND ct.certification_validity_months IS NOT NULL
+          AND cs.certificate_issued_at IS NULL
+      `);
+      logger.info({ backfilled: result.affectedRows }, 'Certificate dates backfilled');
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {

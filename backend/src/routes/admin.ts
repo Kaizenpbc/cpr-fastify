@@ -26,6 +26,7 @@ const createCourseSchema = z.object({
   duration_minutes: z.number().int().positive(),
   course_code: z.string().optional(),
   is_active: z.boolean().default(true),
+  certification_validity_months: z.number().int().min(1).max(120).nullable().optional(),
 });
 
 const createOrgSchema = z.object({
@@ -61,6 +62,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get('/courses', { preHandler: adminRole }, async () => {
     const [rows] = await pool.query<any[]>(
       `SELECT id, name, description, duration_minutes, course_code,
+              certification_validity_months,
               COALESCE(is_active, true) as is_active, created_at, updated_at
        FROM class_types ORDER BY name`
     );
@@ -73,8 +75,8 @@ export async function adminRoutes(app: FastifyInstance) {
     if (existing.length > 0) return reply.status(400).send({ error: 'A course with this name already exists' });
 
     const [result] = await pool.query<any>(
-      'INSERT INTO class_types (name, description, duration_minutes, course_code, is_active) VALUES (?, ?, ?, ?, ?)',
-      [data.name, data.description ?? null, data.duration_minutes, data.course_code ?? null, data.is_active]
+      'INSERT INTO class_types (name, description, duration_minutes, course_code, is_active, certification_validity_months) VALUES (?, ?, ?, ?, ?, ?)',
+      [data.name, data.description ?? null, data.duration_minutes, data.course_code ?? null, data.is_active, data.certification_validity_months ?? null]
     );
     const [rows] = await pool.query<any[]>('SELECT * FROM class_types WHERE id = ?', [result.insertId]);
     return { success: true, message: 'Course created successfully', data: rows[0] };
@@ -82,7 +84,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   app.put('/courses/:id', { preHandler: adminRole }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const { name, description, duration_minutes, course_code, is_active } = createCourseSchema.partial().parse(request.body);
+    const { name, description, duration_minutes, course_code, is_active, certification_validity_months } = createCourseSchema.partial().parse(request.body);
 
     if (name) {
       const [dup] = await pool.query<any[]>('SELECT id FROM class_types WHERE LOWER(name) = LOWER(?) AND id != ?', [name, id]);
@@ -92,8 +94,11 @@ export async function adminRoutes(app: FastifyInstance) {
     const [result] = await pool.query<any>(
       `UPDATE class_types SET name = COALESCE(?, name), description = COALESCE(?, description),
        duration_minutes = COALESCE(?, duration_minutes), course_code = COALESCE(?, course_code),
-       is_active = COALESCE(?, is_active), updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-      [name ?? null, description ?? null, duration_minutes ?? null, course_code ?? null, is_active ?? null, id]
+       is_active = COALESCE(?, is_active),
+       certification_validity_months = ${certification_validity_months !== undefined ? '?' : 'certification_validity_months'},
+       updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      [name ?? null, description ?? null, duration_minutes ?? null, course_code ?? null, is_active ?? null,
+       ...(certification_validity_months !== undefined ? [certification_validity_months ?? null] : []), id]
     );
     if (result.affectedRows === 0) return reply.status(404).send({ error: 'Course not found' });
     const [rows] = await pool.query<any[]>('SELECT * FROM class_types WHERE id = ?', [id]);
@@ -531,5 +536,67 @@ export async function adminRoutes(app: FastifyInstance) {
 
     await studentRepo.updateMarketingConsent(parseInt(id), marketing_consent);
     return { success: true, message: `Marketing consent ${marketing_consent ? 'granted' : 'revoked'}` };
+  });
+
+  // ===== Certification expiry tracking =====
+  app.get('/certifications/expiring', { preHandler: adminRole }, async (request) => {
+    const { days } = request.query as { days?: string };
+    const withinDays = parseInt(days || '90') || 90;
+
+    const [rows] = await pool.query<any[]>(
+      `SELECT s.id as student_id, s.email, s.first_name, s.last_name, s.phone,
+              o.name as organization_name,
+              ct.name as course_type_name, ct.certification_validity_months,
+              cs.certificate_issued_at, cs.certificate_expires_at,
+              cs.certificate_number,
+              DATEDIFF(cs.certificate_expires_at, NOW()) as days_until_expiry
+       FROM course_students cs
+       JOIN students s ON cs.student_id = s.id
+       JOIN course_requests cr ON cs.course_request_id = cr.id
+       JOIN class_types ct ON cr.course_type_id = ct.id
+       LEFT JOIN organizations o ON s.organization_id = o.id
+       WHERE cs.certificate_expires_at IS NOT NULL
+         AND cs.certificate_expires_at BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL ? DAY)
+         AND cs.attended = true
+       ORDER BY cs.certificate_expires_at ASC`,
+      [withinDays]
+    );
+    return { success: true, data: rows };
+  });
+
+  app.get('/certifications/expired', { preHandler: adminRole }, async () => {
+    const [rows] = await pool.query<any[]>(
+      `SELECT s.id as student_id, s.email, s.first_name, s.last_name, s.phone,
+              o.name as organization_name,
+              ct.name as course_type_name,
+              cs.certificate_issued_at, cs.certificate_expires_at,
+              cs.certificate_number,
+              DATEDIFF(NOW(), cs.certificate_expires_at) as days_expired
+       FROM course_students cs
+       JOIN students s ON cs.student_id = s.id
+       JOIN course_requests cr ON cs.course_request_id = cr.id
+       JOIN class_types ct ON cr.course_type_id = ct.id
+       LEFT JOIN organizations o ON s.organization_id = o.id
+       WHERE cs.certificate_expires_at IS NOT NULL
+         AND cs.certificate_expires_at < NOW()
+         AND cs.attended = true
+       ORDER BY cs.certificate_expires_at DESC
+       LIMIT 200`
+    );
+    return { success: true, data: rows };
+  });
+
+  // Summary stats for dashboard
+  app.get('/certifications/stats', { preHandler: adminRole }, async () => {
+    const [rows] = await pool.query<any[]>(`
+      SELECT
+        COUNT(CASE WHEN cs.certificate_expires_at > NOW() THEN 1 END) as active_certs,
+        COUNT(CASE WHEN cs.certificate_expires_at BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 30 DAY) THEN 1 END) as expiring_30d,
+        COUNT(CASE WHEN cs.certificate_expires_at BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 90 DAY) THEN 1 END) as expiring_90d,
+        COUNT(CASE WHEN cs.certificate_expires_at < NOW() THEN 1 END) as expired
+      FROM course_students cs
+      WHERE cs.certificate_expires_at IS NOT NULL AND cs.attended = true
+    `);
+    return { success: true, data: rows[0] };
   });
 }

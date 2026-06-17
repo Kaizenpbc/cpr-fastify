@@ -120,11 +120,11 @@ const CourseManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
     setFormData({
       name: course.name || '',
       description: course.description || '',
-      durationHours: course.durationMinutes ? Math.floor(course.durationMinutes / 60).toString() : '',
-      durationMinutes: course.durationMinutes ? (course.durationMinutes % 60).toString() : '',
+      durationHours: course.durationMinutes ? Math.floor(course.durationMinutes / 60).toString() : (course.duration_minutes ? Math.floor(course.duration_minutes / 60).toString() : ''),
+      durationMinutes: course.durationMinutes ? (course.durationMinutes % 60).toString() : (course.duration_minutes ? (course.duration_minutes % 60).toString() : ''),
       prerequisites: course.prerequisites || [],
       certificationType: course.certificationType || '',
-      validityPeriodMonths: course.validityPeriodMonths || '',
+      validityPeriodMonths: course.certification_validity_months ? course.certification_validity_months.toString() : (course.validityPeriodMonths || ''),
       courseCategory: course.courseCategory || '',
       regulatoryCompliance: course.regulatoryCompliance || [],
       isActive: course.isActive !== false,
@@ -193,6 +193,9 @@ const CourseManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
         validityPeriodMonths: formData.validityPeriodMonths
           ? parseInt(formData.validityPeriodMonths)
           : undefined,
+        certification_validity_months: formData.validityPeriodMonths
+          ? parseInt(formData.validityPeriodMonths)
+          : null,
       };
 
       if (editingCourse) {
