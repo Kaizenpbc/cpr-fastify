@@ -1,12 +1,33 @@
 import { FastifyInstance } from 'fastify';
 import mysql from 'mysql2/promise';
 import { z } from 'zod';
-import { createWriteStream, existsSync, mkdirSync } from 'fs';
+import { createWriteStream, existsSync, mkdirSync, readFileSync, unlinkSync } from 'fs';
 import { resolve, extname } from 'path';
 import { pipeline } from 'stream/promises';
 import { getPool } from '../config/database.js';
 import { requireAuth, requireRole } from '../plugins/auth.js';
 import { PDFService } from '../services/PDFService.js';
+
+/** Validate file content by checking magic bytes against expected MIME type. */
+function validateMagicBytes(filePath: string, declaredMime: string): boolean {
+  try {
+    const fd = readFileSync(filePath);
+    if (fd.length < 4) return false;
+
+    if (declaredMime === 'application/pdf') {
+      // PDF starts with %PDF
+      return fd[0] === 0x25 && fd[1] === 0x50 && fd[2] === 0x44 && fd[3] === 0x46;
+    }
+    if (declaredMime === 'text/html') {
+      // HTML: look for common opening tags in the first 512 bytes
+      const head = fd.subarray(0, Math.min(512, fd.length)).toString('utf-8').toLowerCase().trim();
+      return head.startsWith('<!doctype') || head.startsWith('<html') || head.startsWith('<head') || head.startsWith('<body');
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
 
 const updateProfileSchema = z.object({
   vendor_name: z.string().min(1),
@@ -164,7 +185,15 @@ export async function vendorRoutes(app: FastifyInstance) {
             if (!existsSync(uploadDir)) mkdirSync(uploadDir, { recursive: true });
             const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
             pdfFilename = `invoice-${uniqueSuffix}${extname(part.filename || '.pdf')}`;
-            await pipeline(part.file, createWriteStream(resolve(uploadDir, pdfFilename)));
+            const fullPath = resolve(uploadDir, pdfFilename);
+            await pipeline(part.file, createWriteStream(fullPath));
+
+            // Validate magic bytes match declared MIME type
+            if (!validateMagicBytes(fullPath, part.mimetype)) {
+              unlinkSync(fullPath);
+              pdfFilename = null;
+              return reply.status(400).send({ error: 'File content does not match declared type. Upload a valid PDF or HTML file.' });
+            }
           } else {
             fields[part.fieldname] = part.value as string;
           }

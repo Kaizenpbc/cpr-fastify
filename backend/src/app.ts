@@ -48,6 +48,20 @@ export async function buildApp() {
     timeWindow: '1 minute',
   });
 
+  // CSRF defense-in-depth: verify Origin header on state-changing requests
+  app.addHook('onRequest', (request, reply, done) => {
+    const method = request.method;
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+      const origin = request.headers.origin;
+      // Allow requests with no Origin header (non-browser clients, same-origin navigations)
+      if (origin && origin !== env.FRONTEND_URL) {
+        logger.warn({ origin, url: request.url, method }, 'CSRF: rejected cross-origin state-changing request');
+        return reply.status(403).send({ error: 'Cross-origin request blocked' });
+      }
+    }
+    done();
+  });
+
   // Return request ID in response headers for client-side tracing
   app.addHook('onSend', (request, reply, _payload, done) => {
     reply.header('x-request-id', request.id);
