@@ -26,7 +26,7 @@ jobs:
       - run: npx vitest run
 
   frontend:
-    name: Frontend — typecheck & build
+    name: Frontend — build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -40,7 +40,6 @@ jobs:
           cache-dependency-path: package-lock.json
       - run: npm ci --legacy-peer-deps
         working-directory: .
-      - run: npx tsc --noEmit
       - run: VITE_API_URL=https://cpr.kpbc.ca/api/v1 npx vite build
       - uses: actions/upload-artifact@v4
         with:

@@ -19,7 +19,8 @@ vi.mock('../config/logger.js', () => ({
 }));
 
 vi.mock('../utils/taxConfig.js', () => ({
-  HST_RATE: 0.13,
+  getHSTRate: () => 0.13,
+  getHSTLabel: () => 'HST (13%)',
 }));
 
 import { BillingService, BillingError } from '../services/BillingService.js';
@@ -155,17 +156,15 @@ describe('BillingService', () => {
 
   describe('recordPayment', () => {
     it('records payment and marks invoice paid when fully paid', async () => {
-      vi.mocked(invoiceRepo.findById).mockResolvedValue({ id: 1, amount: 100 } as any);
       mockConnQuery
+        .mockResolvedValueOnce([[{ id: 1, amount: 100, status: 'pending', total_paid: 0 }]]) // FOR UPDATE lock
         .mockResolvedValueOnce([{ insertId: 10 }]) // INSERT payment
-        .mockResolvedValueOnce([[{ total: 100 }]])  // SUM payments = fully paid
         .mockResolvedValueOnce([{}]);               // UPDATE invoice status
 
       const result = await service.recordPayment(1, 100, 'cheque', 'REF-001');
 
       expect(result).toEqual({ id: 10, amount: 100, totalPaid: 100 });
       expect(mockConn.commit).toHaveBeenCalled();
-      // Should update invoice to 'paid'
       expect(mockConnQuery).toHaveBeenCalledWith(
         expect.stringContaining("status = 'paid'"),
         [1]
@@ -173,16 +172,15 @@ describe('BillingService', () => {
     });
 
     it('records partial payment without marking paid', async () => {
-      vi.mocked(invoiceRepo.findById).mockResolvedValue({ id: 1, amount: 200 } as any);
       mockConnQuery
-        .mockResolvedValueOnce([{ insertId: 11 }])
-        .mockResolvedValueOnce([[{ total: 50 }]]);
+        .mockResolvedValueOnce([[{ id: 1, amount: 200, status: 'pending', total_paid: 0 }]]) // FOR UPDATE lock
+        .mockResolvedValueOnce([{ insertId: 11 }]); // INSERT payment
 
       const result = await service.recordPayment(1, 50, 'etransfer');
 
       expect(result.totalPaid).toBe(50);
       expect(mockConn.commit).toHaveBeenCalled();
-      // Should NOT update invoice to paid (only 2 queries, not 3)
+      // FOR UPDATE + INSERT = 2 queries, no UPDATE to paid
       expect(mockConnQuery).toHaveBeenCalledTimes(2);
     });
 
@@ -192,14 +190,31 @@ describe('BillingService', () => {
     });
 
     it('throws when invoice not found', async () => {
-      vi.mocked(invoiceRepo.findById).mockResolvedValue(null);
+      mockConnQuery.mockResolvedValueOnce([[]]); // FOR UPDATE returns empty
 
       await expect(service.recordPayment(999, 50, 'cheque'))
         .rejects.toThrow('Invoice not found');
     });
 
+    it('rejects overpayment', async () => {
+      mockConnQuery
+        .mockResolvedValueOnce([[{ id: 1, amount: 100, status: 'pending', total_paid: 80 }]]); // FOR UPDATE
+
+      await expect(service.recordPayment(1, 50, 'cheque'))
+        .rejects.toThrow('exceeds remaining balance');
+      expect(mockConn.rollback).toHaveBeenCalled();
+    });
+
+    it('rejects payment on fully paid invoice', async () => {
+      mockConnQuery
+        .mockResolvedValueOnce([[{ id: 1, amount: 100, status: 'paid', total_paid: 100 }]]); // FOR UPDATE
+
+      await expect(service.recordPayment(1, 10, 'cheque'))
+        .rejects.toThrow('already fully paid');
+      expect(mockConn.rollback).toHaveBeenCalled();
+    });
+
     it('rolls back on error', async () => {
-      vi.mocked(invoiceRepo.findById).mockResolvedValue({ id: 1, amount: 100 } as any);
       mockConnQuery.mockRejectedValueOnce(new Error('DB error'));
 
       await expect(service.recordPayment(1, 50, 'cheque'))

@@ -19,7 +19,8 @@ vi.mock('../config/logger.js', () => ({
 }));
 
 vi.mock('../utils/taxConfig.js', () => ({
-  HST_RATE: 0.13,
+  getHSTRate: () => 0.13,
+  getHSTLabel: () => 'HST (13%)',
 }));
 
 vi.mock('../services/InvoiceNumberService.js', () => ({
@@ -399,9 +400,8 @@ describe('BillingLifecycle (T-3)', () => {
 
       // Step 4: Record payment (full)
       vi.clearAllMocks();
-      vi.mocked(invoiceRepo.findById).mockResolvedValueOnce({ id: 200, amount: 452 } as any);
+      mockConnQuery.mockResolvedValueOnce([[{ id: 200, amount: 452, status: 'pending', total_paid: 0 }]]); // FOR UPDATE lock
       mockConnQuery.mockResolvedValueOnce([{ insertId: 300 }]); // INSERT payment
-      mockConnQuery.mockResolvedValueOnce([[{ total: 452 }]]);  // SUM = fully paid
       mockConnQuery.mockResolvedValueOnce([{}]);                 // UPDATE status=paid
 
       const payment = await service.recordPayment(200, 452, 'cheque', 'REF-001');
@@ -441,20 +441,18 @@ describe('BillingLifecycle (T-3)', () => {
 
     it('partial payments accumulate until invoice is fully paid', async () => {
       // First partial payment: $200 of $452
-      vi.mocked(invoiceRepo.findById).mockResolvedValueOnce({ id: 1, amount: 452 } as any);
-      mockConnQuery.mockResolvedValueOnce([{ insertId: 50 }]);
-      mockConnQuery.mockResolvedValueOnce([[{ total: 200 }]]);
+      mockConnQuery.mockResolvedValueOnce([[{ id: 1, amount: 452, status: 'pending', total_paid: 0 }]]); // FOR UPDATE
+      mockConnQuery.mockResolvedValueOnce([{ insertId: 50 }]); // INSERT
 
       const p1 = await service.recordPayment(1, 200, 'etransfer');
       expect(p1.totalPaid).toBe(200);
-      // Only 2 queries — no status update to 'paid'
+      // FOR UPDATE + INSERT = 2 queries, no status update to 'paid'
       expect(mockConnQuery).toHaveBeenCalledTimes(2);
 
       // Second partial payment: $252 — total now $452, fully paid
       vi.clearAllMocks();
-      vi.mocked(invoiceRepo.findById).mockResolvedValueOnce({ id: 1, amount: 452 } as any);
-      mockConnQuery.mockResolvedValueOnce([{ insertId: 51 }]);
-      mockConnQuery.mockResolvedValueOnce([[{ total: 452 }]]);
+      mockConnQuery.mockResolvedValueOnce([[{ id: 1, amount: 452, status: 'pending', total_paid: 200 }]]); // FOR UPDATE
+      mockConnQuery.mockResolvedValueOnce([{ insertId: 51 }]); // INSERT
       mockConnQuery.mockResolvedValueOnce([{}]); // UPDATE status=paid
 
       const p2 = await service.recordPayment(1, 252, 'etransfer');
