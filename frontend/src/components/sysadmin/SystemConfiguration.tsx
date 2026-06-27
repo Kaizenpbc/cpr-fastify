@@ -1,30 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Card,
-  CardContent,
   Typography,
-  Grid,
   TextField,
-  Button,
-  Alert,
   CircularProgress,
-  Chip,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  IconButton,
-  Tooltip,
+  Alert,
+  Card,
 } from '@mui/material';
-import {
-  ExpandMore as ExpandMoreIcon,
-  Save as SaveIcon,
-  Refresh as RefreshIcon,
-  CheckCircle as CheckCircleIcon,
-  Error as ErrorIcon,
-} from '@mui/icons-material';
 import { sysadminApi } from '../../services/api';
 import logger from '../../utils/logger';
+import { PrimaryButton, GhostButton } from '../gtacpr/Buttons';
 
 interface SystemConfig {
   id: number;
@@ -49,22 +34,17 @@ const SystemConfiguration: React.FC = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [editedValues, setEditedValues] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    loadConfigurations();
-  }, []);
+  useEffect(() => { loadConfigurations(); }, []);
 
   const loadConfigurations = async () => {
     try {
       setLoading(true);
       setError(null);
-      
       const response = await sysadminApi.getConfigurations();
-      
       if (response.data.success) {
         setConfigurations(response.data.data);
-        // Initialize edited values with current values
         const initialValues: Record<string, string> = {};
-        (Object.values(response.data.data).flat() as SystemConfig[]).forEach((config) => {
+        (Object.values(response.data.data).flat() as SystemConfig[]).forEach(config => {
           initialValues[config.configKey] = config.configValue;
         });
         setEditedValues(initialValues);
@@ -80,10 +60,7 @@ const SystemConfiguration: React.FC = () => {
   };
 
   const handleValueChange = (key: string, value: string) => {
-    setEditedValues(prev => ({
-      ...prev,
-      [key]: value
-    }));
+    setEditedValues(prev => ({ ...prev, [key]: value }));
   };
 
   const handleSave = async (key: string) => {
@@ -91,12 +68,9 @@ const SystemConfiguration: React.FC = () => {
       setSaving(true);
       setError(null);
       setSuccess(null);
-
       const response = await sysadminApi.updateConfiguration(key, editedValues[key]);
-
       if (response.data.success) {
         setSuccess(`Configuration '${key}' updated successfully`);
-        // Reload configurations to get updated data
         await loadConfigurations();
       } else {
         setError(`Failed to update ${key}`);
@@ -114,11 +88,9 @@ const SystemConfiguration: React.FC = () => {
       setSaving(true);
       setError(null);
       setSuccess(null);
-
-      const updatePromises = Object.keys(editedValues).map(key => 
+      const updatePromises = Object.keys(editedValues).map(key =>
         sysadminApi.updateConfiguration(key, editedValues[key])
       );
-
       await Promise.all(updatePromises);
       setSuccess('All configurations updated successfully');
       await loadConfigurations();
@@ -130,154 +102,107 @@ const SystemConfiguration: React.FC = () => {
     }
   };
 
-  const getCategoryIcon = (category: string) => {
-    switch (category.toLowerCase()) {
-      case 'invoice':
-        return '💰';
-      case 'email':
-        return '📧';
-      case 'course':
-        return '📚';
-      case 'system':
-        return '⚙️';
-      default:
-        return '🔧';
-    }
-  };
-
-  const getCategoryColor = (category: string) => {
-    switch (category.toLowerCase()) {
-      case 'invoice':
-        return 'primary';
-      case 'email':
-        return 'info';
-      case 'course':
-        return 'success';
-      case 'system':
-        return 'warning';
-      default:
-        return 'default';
-    }
-  };
-
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+        <CircularProgress size={48} />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        System Configuration
-      </Typography>
-      
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-        Manage system-wide settings and defaults. Changes take effect immediately.
-      </Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {error && <Alert severity="error" onClose={() => setError(null)}>{error}</Alert>}
+      {success && <Alert severity="success" onClose={() => setSuccess(null)}>{success}</Alert>}
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {success}
-        </Alert>
-      )}
-
-      <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
-        <Button
-          variant="contained"
-          onClick={handleSaveAll}
-          disabled={saving}
-          startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
-        >
+      {/* Action bar */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5 }}>
+        <GhostButton onClick={loadConfigurations} disabled={loading}>Refresh</GhostButton>
+        <PrimaryButton onClick={handleSaveAll} disabled={saving}>
           {saving ? 'Saving...' : 'Save All Changes'}
-        </Button>
-        
-        <Button
-          variant="outlined"
-          onClick={loadConfigurations}
-          disabled={loading}
-          startIcon={<RefreshIcon />}
-        >
-          Refresh
-        </Button>
+        </PrimaryButton>
       </Box>
 
+      {/* Category sections */}
       {Object.entries(configurations).map(([category, configs]) => (
-        <Accordion key={category} defaultExpanded>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Box display="flex" alignItems="center" gap={1}>
-              <Typography variant="h6">
-                {getCategoryIcon(category)} {category.charAt(0).toUpperCase() + category.slice(1)} Settings
-              </Typography>
-              <Chip 
-                label={configs.length} 
-                size="small" 
-                color={getCategoryColor(category) as any}
-              />
-            </Box>
-          </AccordionSummary>
-          
-          <AccordionDetails>
-            <Grid container spacing={2}>
-              {configs.map((config) => (
-                <Grid item xs={12} md={6} key={config.configKey}>
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
-                        <Typography variant="subtitle2" fontWeight="bold">
-                          {config.configKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                        </Typography>
+        <Box key={category}>
+          {/* Category header */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+              {category} Settings
+            </Typography>
+            <Typography sx={{ fontSize: 11, color: '#9CA3AF', bgcolor: '#F3F4F6', px: 1, py: 0.25, borderRadius: '10px', fontWeight: 600 }}>
+              {configs.length}
+            </Typography>
+          </Box>
 
-                        <Box display="flex" gap={1}>
-                          <Tooltip title="Save this setting">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleSave(config.configKey)}
-                              disabled={saving}
-                              color="primary"
-                            >
-                              {saving ? <CircularProgress size={16} /> : <SaveIcon />}
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </Box>
+          {/* Config cards */}
+          <Card sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', overflow: 'hidden' }}>
+            {configs.map((config, i) => (
+              <Box
+                key={config.configKey}
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1.2fr auto',
+                  alignItems: 'center',
+                  gap: 3,
+                  px: 3,
+                  py: 2,
+                  borderBottom: i < configs.length - 1 ? '1px solid #F3F4F6' : 'none',
+                }}
+              >
+                {/* Label + description */}
+                <Box>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                    {config.configKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  </Typography>
+                  <Typography sx={{ fontSize: 11.5, color: '#9CA3AF', mt: 0.25 }}>
+                    {config.description}
+                  </Typography>
+                </Box>
 
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        {config.description}
-                      </Typography>
+                {/* Value input */}
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={editedValues[config.configKey] || config.configValue}
+                  onChange={(e) => handleValueChange(config.configKey, e.target.value)}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px',
+                      fontSize: 13,
+                      '& fieldset': { borderColor: '#E5E7EB' },
+                      '&:hover fieldset': { borderColor: '#9CA3AF' },
+                      '&.Mui-focused fieldset': { borderColor: '#CC1F1F' },
+                    },
+                  }}
+                />
 
-                      <TextField
-                        fullWidth
-                        size="small"
-                        value={editedValues[config.configKey] || config.configValue}
-                        onChange={(e) => handleValueChange(config.configKey, e.target.value)}
-                        variant="outlined"
-                        label="Value"
-                      />
-
-                      {config.updatedAt && (
-                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                          Last updated: {new Date(config.updatedAt).toLocaleString()}
-                        </Typography>
-                      )}
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          </AccordionDetails>
-        </Accordion>
+                {/* Save + timestamp */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
+                  <Box
+                    onClick={() => !saving && handleSave(config.configKey)}
+                    sx={{
+                      fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: saving ? 'default' : 'pointer',
+                      opacity: saving ? 0.5 : 1,
+                      '&:hover': saving ? {} : { textDecoration: 'underline' },
+                    }}
+                  >
+                    Save
+                  </Box>
+                  {config.updatedAt && (
+                    <Typography sx={{ fontSize: 10.5, color: '#9CA3AF' }}>
+                      {new Date(config.updatedAt).toLocaleDateString()}
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+            ))}
+          </Card>
+        </Box>
       ))}
     </Box>
   );
 };
 
-export default SystemConfiguration; 
+export default SystemConfiguration;

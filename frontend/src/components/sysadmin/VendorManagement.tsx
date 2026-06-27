@@ -2,16 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Button,
-  TextField,
-  Alert,
   CircularProgress,
   Dialog,
   DialogTitle,
@@ -22,29 +12,47 @@ import {
   Select,
   MenuItem,
   Grid,
+  TextField,
+  Button,
   Chip,
-  IconButton,
-  Tooltip,
   Rating,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Business as BusinessIcon,
-  Save as SaveIcon,
-  Cancel as CancelIcon,
-  Star as StarIcon,
-} from '@mui/icons-material';
 import { sysAdminApi } from '../../services/api';
 import logger from '../../utils/logger';
+import DataTable, { DataTableRow } from '../gtacpr/DataTable';
+import StatusChip from '../gtacpr/StatusChip';
+import StatCard from '../gtacpr/StatCard';
+import { PrimaryButton } from '../gtacpr/Buttons';
+
+const columns = [
+  { key: 'vendor', label: 'VENDOR', width: '1.5fr' },
+  { key: 'contact', label: 'CONTACT', width: '1fr' },
+  { key: 'type', label: 'TYPE', width: '0.9fr' },
+  { key: 'services', label: 'SERVICES', width: '1.2fr' },
+  { key: 'rating', label: 'RATING', width: '0.7fr' },
+  { key: 'cert', label: 'CERTIFICATION', width: '0.9fr' },
+  { key: 'contract', label: 'CONTRACT', width: '0.9fr' },
+  { key: 'status', label: 'STATUS', width: '0.7fr' },
+  { key: 'actions', label: '', width: '0.5fr', align: 'right' as const },
+];
+
+const vendorTypes = ['Training Provider', 'Equipment Supplier', 'Certification Body', 'Consulting Services', 'Technology Provider', 'Facility Rental', 'Other'];
+const serviceTypes = ['CPR Training', 'First Aid Training', 'BLS Training', 'Equipment Supply', 'Certification Services', 'Facility Rental', 'Technology Support', 'Consulting', 'Other'];
+const certificationStatuses = ['Certified', 'Pending', 'Expired', 'Not Required', 'Under Review'];
+
+function getCertKind(status: string): 'active' | 'warning' | 'danger' | 'neutral' | 'pending' {
+  switch (status) {
+    case 'Certified': return 'active';
+    case 'Pending': case 'Under Review': return 'warning';
+    case 'Expired': return 'danger';
+    default: return 'neutral';
+  }
+}
 
 const VendorManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
   const [vendors, setVendors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
-  // Dialog state
   const [showDialog, setShowDialog] = useState(false);
   const [editingVendor, setEditingVendor] = useState<any>(null);
   const [formData, setFormData] = useState<{
@@ -56,71 +64,24 @@ const VendorManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
     insuranceExpiry: string; certificationStatus: string;
     billingContactEmail: string; comments: string; status: string;
   }>({
-    vendorName: '',
-    contactFirstName: '',
-    contactLastName: '',
-    email: '',
-    mobile: '',
-    phone: '',
-    addressStreet: '',
-    addressCity: '',
-    addressProvince: '',
-    addressPostalCode: '',
-    vendorType: '',
-    services: [],
-    contractStartDate: '',
-    contractEndDate: '',
-    performanceRating: 0,
-    insuranceExpiry: '',
-    certificationStatus: '',
-    billingContactEmail: '',
-    comments: '',
-    status: 'active',
+    vendorName: '', contactFirstName: '', contactLastName: '',
+    email: '', mobile: '', phone: '', addressStreet: '',
+    addressCity: '', addressProvince: '', addressPostalCode: '',
+    vendorType: '', services: [], contractStartDate: '',
+    contractEndDate: '', performanceRating: 0,
+    insuranceExpiry: '', certificationStatus: '',
+    billingContactEmail: '', comments: '', status: 'active',
   });
 
-  const vendorTypes = [
-    'Training Provider',
-    'Equipment Supplier',
-    'Certification Body',
-    'Consulting Services',
-    'Technology Provider',
-    'Facility Rental',
-    'Other',
-  ];
-
-  const serviceTypes = [
-    'CPR Training',
-    'First Aid Training',
-    'BLS Training',
-    'Equipment Supply',
-    'Certification Services',
-    'Facility Rental',
-    'Technology Support',
-    'Consulting',
-    'Other',
-  ];
-
-  const certificationStatuses = [
-    'Certified',
-    'Pending',
-    'Expired',
-    'Not Required',
-    'Under Review',
-  ];
-
-  useEffect(() => {
-    loadVendors();
-  }, []);
+  useEffect(() => { loadVendors(); }, []);
 
   const loadVendors = async () => {
     setLoading(true);
     try {
       const response = await sysAdminApi.getVendors();
       setVendors(response.data || []);
-      setError('');
     } catch (err: any) {
       logger.error('Error loading vendors:', err);
-      setError('Failed to load vendors');
       onShowSnackbar?.('Failed to load vendors', 'error');
     } finally {
       setLoading(false);
@@ -130,26 +91,13 @@ const VendorManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
   const handleAddNew = () => {
     setEditingVendor(null);
     setFormData({
-      vendorName: '',
-      contactFirstName: '',
-      contactLastName: '',
-      email: '',
-      mobile: '',
-      phone: '',
-      addressStreet: '',
-      addressCity: '',
-      addressProvince: '',
-      addressPostalCode: '',
-      vendorType: '',
-      services: [],
-      contractStartDate: '',
-      contractEndDate: '',
-      performanceRating: 0,
-      insuranceExpiry: '',
-      certificationStatus: '',
-      billingContactEmail: '',
-      comments: '',
-      status: 'active',
+      vendorName: '', contactFirstName: '', contactLastName: '',
+      email: '', mobile: '', phone: '', addressStreet: '',
+      addressCity: '', addressProvince: '', addressPostalCode: '',
+      vendorType: '', services: [], contractStartDate: '',
+      contractEndDate: '', performanceRating: 0,
+      insuranceExpiry: '', certificationStatus: '',
+      billingContactEmail: '', comments: '', status: 'active',
     });
     setShowDialog(true);
   };
@@ -157,42 +105,25 @@ const VendorManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
   const handleEdit = (vendor: any) => {
     setEditingVendor(vendor);
     setFormData({
-      vendorName: vendor.vendorName || '',
-      contactFirstName: vendor.contactFirstName || '',
-      contactLastName: vendor.contactLastName || '',
-      email: vendor.email || '',
-      mobile: vendor.mobile || '',
-      phone: vendor.phone || '',
-      addressStreet: vendor.addressStreet || '',
-      addressCity: vendor.addressCity || '',
-      addressProvince: vendor.addressProvince || '',
-      addressPostalCode: vendor.addressPostalCode || '',
-      vendorType: vendor.vendorType || '',
-      services: vendor.services || [],
-      contractStartDate: vendor.contractStartDate
-        ? vendor.contractStartDate.split('T')[0]
-        : '',
-      contractEndDate: vendor.contractEndDate
-        ? vendor.contractEndDate.split('T')[0]
-        : '',
+      vendorName: vendor.vendorName || '', contactFirstName: vendor.contactFirstName || '',
+      contactLastName: vendor.contactLastName || '', email: vendor.email || '',
+      mobile: vendor.mobile || '', phone: vendor.phone || '',
+      addressStreet: vendor.addressStreet || '', addressCity: vendor.addressCity || '',
+      addressProvince: vendor.addressProvince || '', addressPostalCode: vendor.addressPostalCode || '',
+      vendorType: vendor.vendorType || '', services: vendor.services || [],
+      contractStartDate: vendor.contractStartDate ? vendor.contractStartDate.split('T')[0] : '',
+      contractEndDate: vendor.contractEndDate ? vendor.contractEndDate.split('T')[0] : '',
       performanceRating: vendor.performanceRating || 0,
-      insuranceExpiry: vendor.insuranceExpiry
-        ? vendor.insuranceExpiry.split('T')[0]
-        : '',
+      insuranceExpiry: vendor.insuranceExpiry ? vendor.insuranceExpiry.split('T')[0] : '',
       certificationStatus: vendor.certificationStatus || '',
       billingContactEmail: vendor.billingContactEmail || '',
-      comments: vendor.comments || '',
-      status: vendor.status || 'active',
+      comments: vendor.comments || '', status: vendor.status || 'active',
     });
     setShowDialog(true);
   };
 
   const handleDelete = async (vendor: any) => {
-    if (
-      window.confirm(
-        `Are you sure you want to deactivate the vendor "${vendor.vendorName}"?`
-      )
-    ) {
+    if (window.confirm(`Are you sure you want to deactivate the vendor "${vendor.vendorName}"?`)) {
       try {
         await sysAdminApi.deleteVendor(vendor.id);
         onShowSnackbar?.('Vendor deactivated successfully', 'success');
@@ -206,12 +137,7 @@ const VendorManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-
-    if (!formData.vendorName.trim()) {
-      onShowSnackbar?.('Vendor name is required', 'error');
-      return;
-    }
-
+    if (!formData.vendorName.trim()) { onShowSnackbar?.('Vendor name is required', 'error'); return; }
     try {
       const submitData = {
         ...formData,
@@ -220,7 +146,6 @@ const VendorManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
         insuranceExpiry: formData.insuranceExpiry || null,
         performanceRating: formData.performanceRating || null,
       };
-
       if (editingVendor) {
         await sysAdminApi.updateVendor(editingVendor.id, submitData);
         onShowSnackbar?.('Vendor updated successfully', 'success');
@@ -228,7 +153,6 @@ const VendorManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
         await sysAdminApi.createVendor(submitData);
         onShowSnackbar?.('Vendor created successfully', 'success');
       }
-
       setShowDialog(false);
       loadVendors();
     } catch (err: any) {
@@ -239,498 +163,172 @@ const VendorManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
 
   const handleChange = (e: any) => {
     const { name, value, checked, type } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handleServicesChange = (e: any) => {
     const { value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      services: typeof value === 'string' ? value.split(',') : value,
-    }));
+    setFormData(prev => ({ ...prev, services: typeof value === 'string' ? value.split(',') : value }));
   };
 
-  const formatDate = (dateString: any) => {
-    return dateString ? new Date(dateString).toLocaleDateString() : '-';
-  };
+  const formatDate = (dateString: any) => dateString ? new Date(dateString).toLocaleDateString() : '—';
 
-  const getStatusColor = (status: any) => {
-    switch (status) {
-      case 'active':
-        return 'success';
-      case 'inactive':
-        return 'default';
-      case 'suspended':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
-  const getCertificationColor = (status: any) => {
-    switch (status) {
-      case 'Certified':
-        return 'success';
-      case 'Pending':
-        return 'warning';
-      case 'Expired':
-        return 'error';
-      case 'Under Review':
-        return 'info';
-      default:
-        return 'default';
-    }
-  };
+  const activeVendors = vendors.filter(v => v.status === 'active');
+  const certified = vendors.filter(v => v.certificationStatus === 'Certified');
+  const avgRating = vendors.reduce((sum, v) => sum + (v.performanceRating || 0), 0) / (vendors.length || 1);
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: 400,
-        }}
-      >
-        <CircularProgress size={60} />
-        <Typography variant='body1' sx={{ ml: 2 }}>
-          Loading vendors...
-        </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+        <CircularProgress size={48} />
       </Box>
     );
   }
 
   return (
-    <Box>
-      {/* Header */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 3,
-        }}
-      >
-        <Box>
-          <Typography
-            variant='h5'
-            gutterBottom
-            sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-          >
-            <BusinessIcon color='primary' />
-            Vendor Management
-          </Typography>
-          <Typography variant='body1' color='text.secondary'>
-            Manage vendor relationships, contracts, and performance
-          </Typography>
-        </Box>
-        <Button
-          variant='contained'
-          startIcon={<AddIcon />}
-          onClick={handleAddNew}
-          sx={{ minWidth: 200 }}
-        >
-          Add New Vendor
-        </Button>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Stat cards */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+        <StatCard label="Total Vendors" value={vendors.length} sub="All records" dotColor="#4B5563" />
+        <StatCard label="Active Vendors" value={activeVendors.length} sub="Currently active" dotColor="#16A34A" />
+        <StatCard label="Certified" value={certified.length} sub="Valid certification" dotColor="#CC1F1F" />
+        <StatCard label="Avg Rating" value={avgRating.toFixed(1)} sub="Performance score" dotColor="#ED6C02" />
       </Box>
 
-      {error && (
-        <Alert severity='error' sx={{ mb: 2 }} onClose={() => setError('')}>
-          {error}
-        </Alert>
-      )}
+      {/* Action bar */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <PrimaryButton onClick={handleAddNew}>+ New Vendor</PrimaryButton>
+      </Box>
 
-      {/* Vendors Table */}
-      <TableContainer component={Paper} elevation={2}>
-        <Table stickyHeader>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 'bold' }}>Vendor Name</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Contact</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Type</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Services</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Performance</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Certification</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Contract Period</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {vendors.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={9} align='center'>
-                  <Typography
-                    variant='body1'
-                    color='text.secondary'
-                    sx={{ py: 4 }}
-                  >
-                    No vendors found. Click "Add New Vendor" to get started.
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              vendors.map((vendor: any, index: any) => (
-                <TableRow
-                  key={vendor.id}
-                  hover
-                  sx={{
-                    backgroundColor: index % 2 !== 0 ? '#f9f9f9' : 'inherit',
-                  }}
-                >
-                  <TableCell>
-                    <Typography variant='body2' fontWeight='medium'>
-                      {vendor.vendorName}
-                    </Typography>
-                    {vendor.email && (
-                      <Typography
-                        variant='caption'
-                        color='text.secondary'
-                        display='block'
-                      >
-                        {vendor.email}
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant='body2'>
-                      {`${vendor.contactFirstName || ''} ${vendor.contactLastName || ''}`.trim() ||
-                        '-'}
-                    </Typography>
-                    {vendor.mobile && (
-                      <Typography
-                        variant='caption'
-                        color='text.secondary'
-                        display='block'
-                      >
-                        {vendor.mobile}
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant='body2'>
-                      {vendor.vendorType || '-'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {vendor.services && vendor.services.length > 0 ? (
-                        vendor.services
-                          .slice(0, 2)
-                          .map((service: any, idx: any) => (
-                            <Chip
-                              key={idx}
-                              label={service}
-                              size='small'
-                              variant='outlined'
-                            />
-                          ))
-                      ) : (
-                        <Typography variant='body2' color='text.secondary'>
-                          -
-                        </Typography>
-                      )}
-                      {vendor.services && vendor.services.length > 2 && (
-                        <Chip
-                          label={`+${vendor.services.length - 2} more`}
-                          size='small'
-                          variant='outlined'
-                          color='primary'
-                        />
-                      )}
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    {vendor.performanceRating ? (
-                      <Box
-                        sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
-                      >
-                        <Rating
-                          value={vendor.performanceRating}
-                          readOnly
-                          size='small'
-                        />
-                        <Typography variant='caption'>
-                          ({vendor.performanceRating}/5)
-                        </Typography>
-                      </Box>
-                    ) : (
-                      <Typography variant='body2' color='text.secondary'>
-                        Not rated
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={vendor.certificationStatus || 'Not Set'}
-                      size='small'
-                      color={getCertificationColor(vendor.certificationStatus)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant='body2'>
-                      {vendor.contractStartDate
-                        ? formatDate(vendor.contractStartDate)
-                        : '-'}
-                    </Typography>
-                    {vendor.contractEndDate && (
-                      <Typography
-                        variant='caption'
-                        color='text.secondary'
-                        display='block'
-                      >
-                        to {formatDate(vendor.contractEndDate)}
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={vendor.status || 'active'}
-                      color={getStatusColor(vendor.status)}
-                      size='small'
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      <Tooltip title='Edit Vendor'>
-                        <IconButton
-                          onClick={() => handleEdit(vendor)}
-                          color='primary'
-                          size='small'
-                        >
-                          <EditIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title='Deactivate Vendor'>
-                        <IconButton
-                          onClick={() => handleDelete(vendor)}
-                          color='error'
-                          size='small'
-                          disabled={vendor.status === 'inactive'}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      {/* Table */}
+      <DataTable columns={columns} shownCount={vendors.length} totalCount={vendors.length}>
+        {vendors.map(vendor => (
+          <DataTableRow key={vendor.id} columns={columns}>
+            {/* VENDOR */}
+            <Box>
+              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{vendor.vendorName}</Typography>
+              {vendor.email && <Typography sx={{ fontSize: 11.5, color: '#9CA3AF' }}>{vendor.email}</Typography>}
+            </Box>
+            {/* CONTACT */}
+            <Box>
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                {`${vendor.contactFirstName || ''} ${vendor.contactLastName || ''}`.trim() || '—'}
+              </Typography>
+              {vendor.mobile && <Typography sx={{ fontSize: 11.5, color: '#9CA3AF' }}>{vendor.mobile}</Typography>}
+            </Box>
+            {/* TYPE */}
+            <Typography sx={{ fontSize: 12.5, color: '#4B5563' }}>{vendor.vendorType || '—'}</Typography>
+            {/* SERVICES */}
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+              {vendor.services && vendor.services.length > 0 ? (
+                <>
+                  {vendor.services.slice(0, 2).map((s: string, i: number) => (
+                    <Chip key={i} label={s} size="small" sx={{ fontSize: 11, bgcolor: '#F3F4F6', color: '#4B5563', height: 22 }} />
+                  ))}
+                  {vendor.services.length > 2 && (
+                    <Chip label={`+${vendor.services.length - 2}`} size="small" sx={{ fontSize: 11, bgcolor: '#FFF0F0', color: '#CC1F1F', height: 22 }} />
+                  )}
+                </>
+              ) : (
+                <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>—</Typography>
+              )}
+            </Box>
+            {/* RATING */}
+            <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>
+              {vendor.performanceRating ? `${vendor.performanceRating}/5` : '—'}
+            </Typography>
+            {/* CERTIFICATION */}
+            <StatusChip kind={getCertKind(vendor.certificationStatus)} label={vendor.certificationStatus || 'Not Set'} />
+            {/* CONTRACT */}
+            <Box>
+              <Typography sx={{ fontSize: 12, color: '#4B5563' }}>{formatDate(vendor.contractStartDate)}</Typography>
+              {vendor.contractEndDate && (
+                <Typography sx={{ fontSize: 11, color: '#9CA3AF' }}>to {formatDate(vendor.contractEndDate)}</Typography>
+              )}
+            </Box>
+            {/* STATUS */}
+            <StatusChip
+              kind={vendor.status === 'active' ? 'active' : vendor.status === 'suspended' ? 'danger' : 'inactive'}
+              label={vendor.status || 'active'}
+            />
+            {/* ACTIONS */}
+            <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+              <Box onClick={() => handleEdit(vendor)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
+                Edit
+              </Box>
+              {vendor.status !== 'inactive' && (
+                <>
+                  <Typography sx={{ fontSize: 12, color: '#E5E7EB' }}>|</Typography>
+                  <Box onClick={() => handleDelete(vendor)} sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' } }}>
+                    Deactivate
+                  </Box>
+                </>
+              )}
+            </Box>
+          </DataTableRow>
+        ))}
+      </DataTable>
 
       {/* Add/Edit Vendor Dialog */}
-      <Dialog
-        open={showDialog}
-        onClose={() => setShowDialog(false)}
-        maxWidth='lg'
-        fullWidth
-      >
-        <DialogTitle>
-          {editingVendor ? 'Edit Vendor' : 'Add New Vendor'}
-        </DialogTitle>
+      <Dialog open={showDialog} onClose={() => setShowDialog(false)} maxWidth="lg" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>{editingVendor ? 'Edit Vendor' : 'Add New Vendor'}</DialogTitle>
         <DialogContent>
-          <Box component='form' onSubmit={handleSubmit} sx={{ mt: 2 }}>
+          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
             <Grid container spacing={2}>
-              {/* Basic Information */}
-              <Grid item xs={12}>
-                <Typography variant='h6' gutterBottom>
-                  Basic Information
-                </Typography>
-              </Grid>
+              <Grid item xs={12}><Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Basic Information</Typography></Grid>
+              <Grid item xs={12} sm={6}><TextField fullWidth required label="Vendor Name" name="vendorName" value={formData.vendorName} onChange={handleChange} /></Grid>
               <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  required
-                  label='Vendor Name'
-                  name='vendorName'
-                  value={formData.vendorName}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Vendor Type</InputLabel>
-                  <Select
-                    name='vendorType'
-                    value={formData.vendorType}
-                    label='Vendor Type'
-                    onChange={handleChange}
-                  >
-                    {vendorTypes.map(type => (
-                      <MenuItem key={type} value={type}>
-                        {type}
-                      </MenuItem>
-                    ))}
+                <FormControl fullWidth><InputLabel>Vendor Type</InputLabel>
+                  <Select name="vendorType" value={formData.vendorType} label="Vendor Type" onChange={handleChange}>
+                    {vendorTypes.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
                   </Select>
                 </FormControl>
               </Grid>
 
-              {/* Contact Information */}
-              <Grid item xs={12}>
-                <Typography variant='h6' gutterBottom sx={{ mt: 2 }}>
-                  Contact Information
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label='Contact First Name'
-                  name='contactFirstName'
-                  value={formData.contactFirstName}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label='Contact Last Name'
-                  name='contactLastName'
-                  value={formData.contactLastName}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  type='email'
-                  label='Email'
-                  name='email'
-                  value={formData.email}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label='Mobile'
-                  name='mobile'
-                  value={formData.mobile}
-                  onChange={handleChange}
-                />
-              </Grid>
+              <Grid item xs={12}><Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mt: 1 }}>Contact Information</Typography></Grid>
+              <Grid item xs={12} sm={6}><TextField fullWidth label="Contact First Name" name="contactFirstName" value={formData.contactFirstName} onChange={handleChange} /></Grid>
+              <Grid item xs={12} sm={6}><TextField fullWidth label="Contact Last Name" name="contactLastName" value={formData.contactLastName} onChange={handleChange} /></Grid>
+              <Grid item xs={12} sm={6}><TextField fullWidth type="email" label="Email" name="email" value={formData.email} onChange={handleChange} /></Grid>
+              <Grid item xs={12} sm={6}><TextField fullWidth label="Mobile" name="mobile" value={formData.mobile} onChange={handleChange} /></Grid>
 
-              {/* Services */}
               <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel>Services Provided</InputLabel>
-                  <Select
-                    multiple
-                    name='services'
-                    value={formData.services}
-                    label='Services Provided'
-                    onChange={handleServicesChange}
+                <FormControl fullWidth><InputLabel>Services Provided</InputLabel>
+                  <Select multiple name="services" value={formData.services} label="Services Provided" onChange={handleServicesChange}
                     renderValue={(selected: any) => (
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {selected.map((value: any) => (
-                          <Chip key={value} label={value} size='small' />
-                        ))}
+                        {selected.map((v: any) => <Chip key={v} label={v} size="small" />)}
                       </Box>
                     )}
                   >
-                    {serviceTypes.map(service => (
-                      <MenuItem key={service} value={service}>
-                        {service}
-                      </MenuItem>
-                    ))}
+                    {serviceTypes.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
                   </Select>
                 </FormControl>
               </Grid>
 
-              {/* Contract & Performance */}
-              <Grid item xs={12}>
-                <Typography variant='h6' gutterBottom sx={{ mt: 2 }}>
-                  Contract & Performance
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  type='date'
-                  label='Contract Start Date'
-                  name='contractStartDate'
-                  value={formData.contractStartDate}
-                  onChange={handleChange}
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  type='date'
-                  label='Contract End Date'
-                  name='contractEndDate'
-                  value={formData.contractEndDate}
-                  onChange={handleChange}
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
+              <Grid item xs={12}><Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mt: 1 }}>Contract & Performance</Typography></Grid>
+              <Grid item xs={12} sm={6}><TextField fullWidth type="date" label="Contract Start" name="contractStartDate" value={formData.contractStartDate} onChange={handleChange} InputLabelProps={{ shrink: true }} /></Grid>
+              <Grid item xs={12} sm={6}><TextField fullWidth type="date" label="Contract End" name="contractEndDate" value={formData.contractEndDate} onChange={handleChange} InputLabelProps={{ shrink: true }} /></Grid>
               <Grid item xs={12} sm={6}>
                 <Box>
-                  <Typography component='legend'>Performance Rating</Typography>
-                  <Rating
-                    name='performanceRating'
-                    value={formData.performanceRating}
-                    onChange={(event, newValue) => {
-                      setFormData(prev => ({
-                        ...prev,
-                        performanceRating: newValue,
-                      }));
-                    }}
-                  />
+                  <Typography sx={{ fontSize: 12, color: '#4B5563', mb: 0.5 }}>Performance Rating</Typography>
+                  <Rating name="performanceRating" value={formData.performanceRating} onChange={(_, newValue) => setFormData(prev => ({ ...prev, performanceRating: newValue }))} />
                 </Box>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Certification Status</InputLabel>
-                  <Select
-                    name='certificationStatus'
-                    value={formData.certificationStatus}
-                    label='Certification Status'
-                    onChange={handleChange}
-                  >
-                    {certificationStatuses.map(status => (
-                      <MenuItem key={status} value={status}>
-                        {status}
-                      </MenuItem>
-                    ))}
+                <FormControl fullWidth><InputLabel>Certification Status</InputLabel>
+                  <Select name="certificationStatus" value={formData.certificationStatus} label="Certification Status" onChange={handleChange}>
+                    {certificationStatuses.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
                   </Select>
                 </FormControl>
               </Grid>
 
-              {/* Comments */}
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={3}
-                  label='Comments'
-                  name='comments'
-                  value={formData.comments}
-                  onChange={handleChange}
-                />
-              </Grid>
+              <Grid item xs={12}><TextField fullWidth multiline rows={3} label="Comments" name="comments" value={formData.comments} onChange={handleChange} /></Grid>
             </Grid>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button
-            onClick={() => setShowDialog(false)}
-            startIcon={<CancelIcon />}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            variant='contained'
-            startIcon={<SaveIcon />}
-          >
-            {editingVendor ? 'Update Vendor' : 'Create Vendor'}
-          </Button>
+          <Button onClick={() => setShowDialog(false)}>Cancel</Button>
+          <Button onClick={handleSubmit} variant="contained">{editingVendor ? 'Update Vendor' : 'Create Vendor'}</Button>
         </DialogActions>
       </Dialog>
     </Box>

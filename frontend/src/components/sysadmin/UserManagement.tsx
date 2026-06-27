@@ -2,16 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Button,
-  TextField,
-  Alert,
   CircularProgress,
   Dialog,
   DialogTitle,
@@ -22,75 +12,65 @@ import {
   Select,
   MenuItem,
   Grid,
-  Chip,
-  IconButton,
-  Tooltip,
-  FormControlLabel,
-  Switch,
+  TextField,
+  Button,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  People as PeopleIcon,
-  Save as SaveIcon,
-  Cancel as CancelIcon,
-} from '@mui/icons-material';
 import { sysAdminApi } from '../../services/api';
 import logger from '../../utils/logger';
+import SearchBar from '../gtacpr/SearchBar';
+import DataTable, { DataTableRow } from '../gtacpr/DataTable';
+import UserAvatar from '../gtacpr/UserAvatar';
+import RoleChip from '../gtacpr/RoleChip';
+import StatusChip from '../gtacpr/StatusChip';
+import { PrimaryButton } from '../gtacpr/Buttons';
+
+const columns = [
+  { key: 'user', label: 'USER', width: '1.5fr' },
+  { key: 'email', label: 'EMAIL', width: '1.3fr' },
+  { key: 'role', label: 'ROLE', width: '0.8fr' },
+  { key: 'org', label: 'ORGANIZATION', width: '1.1fr' },
+  { key: 'mobile', label: 'MOBILE', width: '0.9fr' },
+  { key: 'status', label: 'STATUS', width: '0.7fr' },
+  { key: 'onboarded', label: 'ONBOARDED', width: '0.8fr' },
+  { key: 'actions', label: '', width: '0.5fr', align: 'right' as const },
+];
+
+const userRoles = ['admin', 'instructor', 'organization', 'student', 'accountant', 'sysadmin', 'hr'];
+const userStatuses = ['active', 'inactive', 'suspended'];
+
+function getInitials(user: any): string {
+  const first = user.firstName || '';
+  const last = user.lastName || '';
+  if (first || last) return `${first[0] || ''}${last[0] || ''}`.toUpperCase();
+  return (user.username || '?')[0].toUpperCase();
+}
 
 const UserManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
   const [users, setUsers] = useState<any[]>([]);
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [locations, setLocations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
 
   // Dialog state
   const [showDialog, setShowDialog] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    firstName: '',
-    lastName: '',
-    fullName: '',
-    role: '',
-    mobile: '',
-    organizationId: '',
-    locationId: '',
-    dateOnboarded: '',
-    userComments: '',
-    status: 'active',
+    username: '', email: '', password: '', firstName: '', lastName: '',
+    fullName: '', role: '', mobile: '', organizationId: '', locationId: '',
+    dateOnboarded: '', userComments: '', status: 'active',
   });
 
-  const userRoles = [
-    'admin',
-    'instructor',
-    'organization',
-    'student',
-    'accountant',
-    'sysadmin',
-    'hr',
-  ];
-
-  const userStatuses = ['active', 'inactive', 'suspended'];
-
-  useEffect(() => {
-    loadUsers();
-    loadOrganizations();
-  }, []);
+  useEffect(() => { loadUsers(); loadOrganizations(); }, []);
 
   const loadUsers = async () => {
     setLoading(true);
     try {
       const response = await sysAdminApi.getUsers();
       setUsers(response.data || []);
-      setError('');
     } catch (err: any) {
       logger.error('Error loading users:', err);
-      setError('Failed to load users');
       onShowSnackbar?.('Failed to load users', 'error');
     } finally {
       setLoading(false);
@@ -107,36 +87,20 @@ const UserManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
   };
 
   const loadLocations = async (orgId: any) => {
-    if (!orgId) {
-      setLocations([]);
-      return;
-    }
+    if (!orgId) { setLocations([]); return; }
     try {
       const response = await sysAdminApi.getOrganizationLocations(orgId);
       setLocations(response.data || []);
-    } catch (err: any) {
-      logger.error('Error loading locations:', err);
-      setLocations([]);
-    }
+    } catch { setLocations([]); }
   };
 
   const handleAddNew = () => {
     setEditingUser(null);
     setLocations([]);
     setFormData({
-      username: '',
-      email: '',
-      password: '',
-      firstName: '',
-      lastName: '',
-      fullName: '',
-      role: '',
-      mobile: '',
-      organizationId: '',
-      locationId: '',
-      dateOnboarded: '',
-      userComments: '',
-      status: 'active',
+      username: '', email: '', password: '', firstName: '', lastName: '',
+      fullName: '', role: '', mobile: '', organizationId: '', locationId: '',
+      dateOnboarded: '', userComments: '', status: 'active',
     });
     setShowDialog(true);
   };
@@ -144,37 +108,20 @@ const UserManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
   const handleEdit = async (user: any) => {
     setEditingUser(user);
     setFormData({
-      username: user.username || '',
-      email: user.email || '',
-      password: '', // Don't pre-fill password for security
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
-      fullName: user.fullName || '',
-      role: user.role || '',
-      mobile: user.mobile || '',
-      organizationId: user.organizationId || '',
-      locationId: user.locationId || '',
-      dateOnboarded: user.dateOnboarded
-        ? user.dateOnboarded.split('T')[0]
-        : '',
-      userComments: user.userComments || '',
-      status: user.status || 'active',
+      username: user.username || '', email: user.email || '', password: '',
+      firstName: user.firstName || '', lastName: user.lastName || '',
+      fullName: user.fullName || '', role: user.role || '', mobile: user.mobile || '',
+      organizationId: user.organizationId || '', locationId: user.locationId || '',
+      dateOnboarded: user.dateOnboarded ? user.dateOnboarded.split('T')[0] : '',
+      userComments: user.userComments || '', status: user.status || 'active',
     });
-    // Load locations if user has an organization
-    if (user.organizationId) {
-      await loadLocations(user.organizationId);
-    } else {
-      setLocations([]);
-    }
+    if (user.organizationId) await loadLocations(user.organizationId);
+    else setLocations([]);
     setShowDialog(true);
   };
 
   const handleDelete = async (user: any) => {
-    if (
-      window.confirm(
-        `Are you sure you want to deactivate the user "${user.username}"?`
-      )
-    ) {
+    if (window.confirm(`Are you sure you want to deactivate the user "${user.username}"?`)) {
       try {
         await sysAdminApi.deleteUser(user.id);
         onShowSnackbar?.('User deactivated successfully', 'success');
@@ -188,17 +135,12 @@ const UserManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-
     if (!formData.username.trim() || !formData.email.trim() || !formData.role) {
-      onShowSnackbar?.('Username, email, and role are required', 'error');
-      return;
+      onShowSnackbar?.('Username, email, and role are required', 'error'); return;
     }
-
     if (!editingUser && !formData.password.trim()) {
-      onShowSnackbar?.('Password is required for new users', 'error');
-      return;
+      onShowSnackbar?.('Password is required for new users', 'error'); return;
     }
-
     try {
       const submitData = {
         ...formData,
@@ -206,12 +148,8 @@ const UserManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
         locationId: formData.locationId || null,
         dateOnboarded: formData.dateOnboarded || null,
       };
-
-      // Remove password if it's empty (for updates)
       const mutableSubmitData: Record<string, unknown> = { ...submitData };
-      if (!mutableSubmitData.password) {
-        delete mutableSubmitData.password;
-      }
+      if (!mutableSubmitData.password) delete mutableSubmitData.password;
 
       if (editingUser) {
         await sysAdminApi.updateUser(editingUser.id, submitData);
@@ -220,431 +158,192 @@ const UserManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
         await sysAdminApi.createUser(submitData);
         onShowSnackbar?.('User created successfully', 'success');
       }
-
       setShowDialog(false);
       loadUsers();
     } catch (err: any) {
       logger.error('Error saving user:', err);
-
-      // Extract specific error message from API response
-      let errorMessage = 'Failed to save user';
-      if (err.response?.data?.error?.message) {
-        errorMessage = err.response.data.error.message;
-      } else if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-
+      const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || err.message || 'Failed to save user';
       onShowSnackbar?.(errorMessage, 'error');
     }
   };
 
   const handleChange = async (e: any) => {
     const { name, value, checked, type } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
-
-    // Load locations when organization changes
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
     if (name === 'organizationId') {
-      setFormData(prev => ({ ...prev, locationId: '' })); // Reset location when org changes
-      if (value) {
-        await loadLocations(value);
-      } else {
-        setLocations([]);
-      }
+      setFormData(prev => ({ ...prev, locationId: '' }));
+      if (value) await loadLocations(value);
+      else setLocations([]);
     }
   };
 
-  const formatDate = (dateString: any) => {
-    return dateString ? new Date(dateString).toLocaleDateString() : '-';
-  };
+  const formatDate = (dateString: any) => dateString ? new Date(dateString).toLocaleDateString() : '—';
 
-  const getRoleColor = (role: any) => {
-    switch (role) {
-      case 'admin':
-        return 'error';
-      case 'sysadmin':
-        return 'secondary';
-      case 'instructor':
-        return 'primary';
-      case 'organization':
-        return 'success';
-      case 'accountant':
-        return 'warning';
-      case 'student':
-        return 'info';
-      default:
-        return 'default';
-    }
-  };
+  const filtered = users.filter(u => {
+    if (roleFilter && u.role !== roleFilter) return false;
+    if (!searchTerm) return true;
+    const q = searchTerm.toLowerCase();
+    return (u.username || '').toLowerCase().includes(q)
+      || (u.email || '').toLowerCase().includes(q)
+      || (u.fullName || '').toLowerCase().includes(q)
+      || (`${u.firstName || ''} ${u.lastName || ''}`).toLowerCase().includes(q);
+  });
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: 400,
-        }}
-      >
-        <CircularProgress size={60} />
-        <Typography variant='body1' sx={{ ml: 2 }}>
-          Loading users...
-        </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+        <CircularProgress size={48} />
       </Box>
     );
   }
 
+  const allRoles = [...new Set(users.map(u => u.role).filter(Boolean))];
+
   return (
-    <Box>
-      {/* Header */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 3,
-        }}
-      >
-        <Box>
-          <Typography
-            variant='h5'
-            gutterBottom
-            sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-          >
-            <PeopleIcon color='primary' />
-            User Management
-          </Typography>
-          <Typography variant='body1' color='text.secondary'>
-            Create and manage user accounts, roles, and permissions
-          </Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Toolbar */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ flex: 1, maxWidth: 380 }}>
+          <SearchBar placeholder="Search users..." value={searchTerm} onChange={setSearchTerm} />
         </Box>
-        <Button
-          variant='contained'
-          startIcon={<AddIcon />}
-          onClick={handleAddNew}
-          sx={{ minWidth: 200 }}
-        >
-          Add New User
-        </Button>
+        {/* Role filter pills */}
+        <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
+          <Box
+            onClick={() => setRoleFilter('')}
+            sx={{
+              px: 1.5, py: 0.5, borderRadius: '20px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+              border: '1px solid', borderColor: !roleFilter ? 'rgba(204,31,31,.3)' : '#E5E7EB',
+              bgcolor: !roleFilter ? '#FFF0F0' : '#fff', color: !roleFilter ? '#CC1F1F' : '#4B5563',
+            }}
+          >
+            All
+          </Box>
+          {allRoles.map(role => (
+            <Box
+              key={role}
+              onClick={() => setRoleFilter(role)}
+              sx={{
+                px: 1.5, py: 0.5, borderRadius: '20px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                border: '1px solid', textTransform: 'capitalize',
+                borderColor: roleFilter === role ? 'rgba(204,31,31,.3)' : '#E5E7EB',
+                bgcolor: roleFilter === role ? '#FFF0F0' : '#fff',
+                color: roleFilter === role ? '#CC1F1F' : '#4B5563',
+              }}
+            >
+              {role}
+            </Box>
+          ))}
+        </Box>
+        <Box sx={{ ml: 'auto' }}>
+          <PrimaryButton onClick={handleAddNew}>+ New User</PrimaryButton>
+        </Box>
       </Box>
 
-      {error && (
-        <Alert severity='error' sx={{ mb: 2 }} onClose={() => setError('')}>
-          {error}
-        </Alert>
-      )}
+      <Typography sx={{ fontSize: 12, color: '#9CA3AF', mt: -1 }}>
+        {filtered.length} user{filtered.length !== 1 ? 's' : ''}
+      </Typography>
 
-      {/* Users Table */}
-      <TableContainer component={Paper} elevation={2}>
-        <Table stickyHeader>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 'bold' }}>Username</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Full Name</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Email</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Role</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Organization</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Location</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Mobile</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Date Onboarded</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {users.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={10} align='center'>
-                  <Typography
-                    variant='body1'
-                    color='text.secondary'
-                    sx={{ py: 4 }}
-                  >
-                    No users found. Click "Add New User" to get started.
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              users.map((user: any, index: any) => (
-                <TableRow
-                  key={user.id}
-                  hover
-                  sx={{
-                    backgroundColor: index % 2 !== 0 ? '#f9f9f9' : 'inherit',
-                  }}
-                >
-                  <TableCell>
-                    <Typography variant='body2' fontWeight='medium'>
-                      {user.username}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant='body2'>
-                      {user.fullName ||
-                        `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
-                        '-'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant='body2'>{user.email}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={user.role}
-                      size='small'
-                      color={getRoleColor(user.role)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant='body2'>
-                      {user.organizationName || '-'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant='body2'>
-                      {user.locationName || '-'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant='body2'>
-                      {user.mobile || '-'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={user.status || 'active'}
-                      color={user.status === 'active' ? 'success' : 'default'}
-                      size='small'
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant='body2'>
-                      {formatDate(user.dateOnboarded)}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      <Tooltip title='Edit User'>
-                        <IconButton
-                          onClick={() => handleEdit(user)}
-                          color='primary'
-                          size='small'
-                        >
-                          <EditIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title='Deactivate User'>
-                        <IconButton
-                          onClick={() => handleDelete(user)}
-                          color='error'
-                          size='small'
-                          disabled={user.status === 'inactive'}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      {/* Table */}
+      <DataTable columns={columns} shownCount={filtered.length} totalCount={users.length}>
+        {filtered.map(user => (
+          <DataTableRow key={user.id} columns={columns}>
+            {/* USER */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <UserAvatar initials={getInitials(user)} />
+              <Box>
+                <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  {user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username}
+                </Typography>
+                <Typography sx={{ fontSize: 11.5, color: '#9CA3AF' }}>{user.username}</Typography>
+              </Box>
+            </Box>
+            {/* EMAIL */}
+            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{user.email}</Typography>
+            {/* ROLE */}
+            <RoleChip role={user.role} />
+            {/* ORG */}
+            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{user.organizationName || '—'}</Typography>
+            {/* MOBILE */}
+            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{user.mobile || '—'}</Typography>
+            {/* STATUS */}
+            <StatusChip
+              kind={user.status === 'active' ? 'active' : user.status === 'suspended' ? 'danger' : 'inactive'}
+              label={user.status || 'active'}
+            />
+            {/* ONBOARDED */}
+            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatDate(user.dateOnboarded)}</Typography>
+            {/* ACTIONS */}
+            <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+              <Box onClick={() => handleEdit(user)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
+                Edit
+              </Box>
+              {user.status !== 'inactive' && (
+                <>
+                  <Typography sx={{ fontSize: 12, color: '#E5E7EB' }}>|</Typography>
+                  <Box onClick={() => handleDelete(user)} sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' } }}>
+                    Deactivate
+                  </Box>
+                </>
+              )}
+            </Box>
+          </DataTableRow>
+        ))}
+      </DataTable>
 
       {/* Add/Edit User Dialog */}
-      <Dialog
-        open={showDialog}
-        onClose={() => setShowDialog(false)}
-        maxWidth='md'
-        fullWidth
-      >
-        <DialogTitle>{editingUser ? 'Edit User' : 'Add New User'}</DialogTitle>
+      <Dialog open={showDialog} onClose={() => setShowDialog(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>{editingUser ? 'Edit User' : 'Add New User'}</DialogTitle>
         <DialogContent>
-          <Box component='form' onSubmit={handleSubmit} autoComplete='off' sx={{ mt: 2 }}>
+          <Box component="form" onSubmit={handleSubmit} autoComplete="off" sx={{ mt: 2 }}>
             <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}><TextField fullWidth required label="Username" name="username" value={formData.username} onChange={handleChange} autoComplete="off" /></Grid>
+              <Grid item xs={12} sm={6}><TextField fullWidth required type="email" label="Email" name="email" value={formData.email} onChange={handleChange} autoComplete="off" /></Grid>
               <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  required
-                  label='Username'
-                  name='username'
-                  value={formData.username}
-                  onChange={handleChange}
-                  autoComplete='off'
-                />
+                <TextField fullWidth type="password" label={editingUser ? 'New Password (leave blank to keep current)' : 'Password'} name="password" value={formData.password} onChange={handleChange} required={!editingUser} autoComplete="new-password" />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  required
-                  type='email'
-                  label='Email'
-                  name='email'
-                  value={formData.email}
-                  onChange={handleChange}
-                  autoComplete='off'
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  type='password'
-                  label={
-                    editingUser
-                      ? 'New Password (leave blank to keep current)'
-                      : 'Password'
-                  }
-                  name='password'
-                  value={formData.password}
-                  onChange={handleChange}
-                  required={!editingUser}
-                  autoComplete='new-password'
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth required>
-                  <InputLabel>Role</InputLabel>
-                  <Select
-                    name='role'
-                    value={formData.role}
-                    label='Role'
-                    onChange={handleChange}
-                  >
-                    {userRoles.map(role => (
-                      <MenuItem key={role} value={role}>
-                        {role.charAt(0).toUpperCase() + role.slice(1)}
-                      </MenuItem>
-                    ))}
+                <FormControl fullWidth required><InputLabel>Role</InputLabel>
+                  <Select name="role" value={formData.role} label="Role" onChange={handleChange}>
+                    {userRoles.map(role => <MenuItem key={role} value={role}>{role.charAt(0).toUpperCase() + role.slice(1)}</MenuItem>)}
                   </Select>
                 </FormControl>
               </Grid>
+              <Grid item xs={12} sm={6}><TextField fullWidth label="First Name" name="firstName" value={formData.firstName} onChange={handleChange} /></Grid>
+              <Grid item xs={12} sm={6}><TextField fullWidth label="Last Name" name="lastName" value={formData.lastName} onChange={handleChange} /></Grid>
+              <Grid item xs={12} sm={6}><TextField fullWidth label="Mobile" name="mobile" value={formData.mobile} onChange={handleChange} /></Grid>
               <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label='First Name'
-                  name='firstName'
-                  value={formData.firstName}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label='Last Name'
-                  name='lastName'
-                  value={formData.lastName}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label='Mobile'
-                  name='mobile'
-                  value={formData.mobile}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Organization</InputLabel>
-                  <Select
-                    name='organizationId'
-                    value={formData.organizationId}
-                    label='Organization'
-                    onChange={handleChange}
-                  >
-                    <MenuItem value=''>None</MenuItem>
-                    {organizations.map((org: any) => (
-                      <MenuItem key={org.id} value={org.id}>
-                        {org.organizationName}
-                      </MenuItem>
-                    ))}
+                <FormControl fullWidth><InputLabel>Organization</InputLabel>
+                  <Select name="organizationId" value={formData.organizationId} label="Organization" onChange={handleChange}>
+                    <MenuItem value="">None</MenuItem>
+                    {organizations.map((org: any) => <MenuItem key={org.id} value={org.id}>{org.organizationName}</MenuItem>)}
                   </Select>
                 </FormControl>
               </Grid>
               {formData.organizationId && formData.role === 'organization' && (
                 <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>Location</InputLabel>
-                    <Select
-                      name='locationId'
-                      value={formData.locationId}
-                      label='Location'
-                      onChange={handleChange}
-                    >
-                      <MenuItem value=''>Select Location</MenuItem>
-                      {locations.map((loc: any) => (
-                        <MenuItem key={loc.id} value={loc.id}>
-                          {loc.locationName}
-                        </MenuItem>
-                      ))}
+                  <FormControl fullWidth><InputLabel>Location</InputLabel>
+                    <Select name="locationId" value={formData.locationId} label="Location" onChange={handleChange}>
+                      <MenuItem value="">Select Location</MenuItem>
+                      {locations.map((loc: any) => <MenuItem key={loc.id} value={loc.id}>{loc.locationName}</MenuItem>)}
                     </Select>
                   </FormControl>
                 </Grid>
               )}
+              <Grid item xs={12} sm={6}><TextField fullWidth type="date" label="Date Onboarded" name="dateOnboarded" value={formData.dateOnboarded} onChange={handleChange} InputLabelProps={{ shrink: true }} /></Grid>
               <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  type='date'
-                  label='Date Onboarded'
-                  name='dateOnboarded'
-                  value={formData.dateOnboarded}
-                  onChange={handleChange}
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Status</InputLabel>
-                  <Select
-                    name='status'
-                    value={formData.status}
-                    label='Status'
-                    onChange={handleChange}
-                  >
-                    {userStatuses.map(status => (
-                      <MenuItem key={status} value={status}>
-                        {status.charAt(0).toUpperCase() + status.slice(1)}
-                      </MenuItem>
-                    ))}
+                <FormControl fullWidth><InputLabel>Status</InputLabel>
+                  <Select name="status" value={formData.status} label="Status" onChange={handleChange}>
+                    {userStatuses.map(status => <MenuItem key={status} value={status}>{status.charAt(0).toUpperCase() + status.slice(1)}</MenuItem>)}
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={3}
-                  label='Comments'
-                  name='userComments'
-                  value={formData.userComments}
-                  onChange={handleChange}
-                />
-              </Grid>
+              <Grid item xs={12}><TextField fullWidth multiline rows={3} label="Comments" name="userComments" value={formData.userComments} onChange={handleChange} /></Grid>
             </Grid>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button
-            onClick={() => setShowDialog(false)}
-            startIcon={<CancelIcon />}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            variant='contained'
-            startIcon={<SaveIcon />}
-          >
-            {editingUser ? 'Update User' : 'Create User'}
-          </Button>
+          <Button onClick={() => setShowDialog(false)}>Cancel</Button>
+          <Button onClick={handleSubmit} variant="contained">{editingUser ? 'Update User' : 'Create User'}</Button>
         </DialogActions>
       </Dialog>
     </Box>

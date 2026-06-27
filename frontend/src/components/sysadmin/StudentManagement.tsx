@@ -2,18 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
-  TextField,
-  InputAdornment,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  Tooltip,
-  Chip,
   CircularProgress,
   Dialog,
   DialogTitle,
@@ -21,22 +9,32 @@ import {
   DialogActions,
   Button,
   Grid,
+  TextField,
   Switch,
-  FormControlLabel,
 } from '@mui/material';
-import {
-  Search as SearchIcon,
-  Visibility as ViewIcon,
-  Edit as EditIcon,
-  School as SchoolIcon,
-  People as PeopleIcon,
-  CheckCircle as ConsentIcon,
-  Cancel as NoConsentIcon,
-} from '@mui/icons-material';
 import { sysAdminApi } from '../../services/api';
+import SearchBar from '../gtacpr/SearchBar';
+import DataTable, { DataTableRow } from '../gtacpr/DataTable';
+import UserAvatar from '../gtacpr/UserAvatar';
+import StatusChip from '../gtacpr/StatusChip';
 
 interface StudentManagementProps {
   onShowSnackbar: (message: string, severity: 'success' | 'error' | 'warning' | 'info') => void;
+}
+
+const columns = [
+  { key: 'name', label: 'STUDENT', width: '1.5fr' },
+  { key: 'email', label: 'EMAIL', width: '1.4fr' },
+  { key: 'phone', label: 'PHONE', width: '0.9fr' },
+  { key: 'org', label: 'ORGANIZATION', width: '1.2fr' },
+  { key: 'courses', label: 'COURSES', width: '0.6fr', align: 'center' as const },
+  { key: 'lastCourse', label: 'LAST COURSE', width: '0.9fr' },
+  { key: 'marketing', label: 'MARKETING', width: '0.7fr', align: 'center' as const },
+  { key: 'actions', label: '', width: '0.6fr', align: 'right' as const },
+];
+
+function getInitials(first?: string, last?: string): string {
+  return `${(first || '')[0] || ''}${(last || '')[0] || ''}`.toUpperCase();
 }
 
 const StudentManagement = ({ onShowSnackbar }: StudentManagementProps) => {
@@ -134,124 +132,103 @@ const StudentManagement = ({ onShowSnackbar }: StudentManagementProps) => {
   if (loading && students.length === 0) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress size={60} />
+        <CircularProgress size={48} />
       </Box>
     );
   }
 
   return (
-    <Box>
-      {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box>
-          <Typography variant='h5' sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <PeopleIcon color='primary' /> Student Directory
-          </Typography>
-          <Typography variant='body1' color='text.secondary'>
-            {students.length} student{students.length !== 1 ? 's' : ''} — search by name or email
-          </Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Search + count */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ flex: 1, maxWidth: 420 }}>
+          <SearchBar
+            placeholder="Search students by name or email..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+          />
         </Box>
-      </Box>
-
-      {/* Search */}
-      <Box sx={{ mb: 3 }}>
-        <TextField
-          fullWidth
-          placeholder='Search students by name or email...'
-          value={searchTerm}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position='start'>
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ maxWidth: 500 }}
-        />
+        <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>
+          {students.length} student{students.length !== 1 ? 's' : ''}
+        </Typography>
       </Box>
 
       {/* Table */}
-      <TableContainer component={Paper} elevation={2}>
-        <Table stickyHeader>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 'bold' }}>Name</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Email</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Phone</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Organization</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }} align='center'>Courses</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Last Course</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }} align='center'>Marketing</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }} align='center'>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {students.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} align='center'>
-                  <Typography variant='body1' color='text.secondary' sx={{ py: 4 }}>
-                    {searchTerm ? 'No students match your search.' : 'No students found.'}
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              students.map((student, index) => (
-                <TableRow key={student.id} hover sx={{ backgroundColor: index % 2 !== 0 ? '#f9f9f9' : 'inherit' }}>
-                  <TableCell>
-                    <Typography variant='body2' fontWeight='bold'>
-                      {student.last_name}, {student.first_name}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>{student.email}</TableCell>
-                  <TableCell>{student.phone || '—'}</TableCell>
-                  <TableCell>{student.organization_name || '—'}</TableCell>
-                  <TableCell align='center'>
-                    <Chip
-                      label={student.course_count || 0}
-                      size='small'
-                      color={student.course_count > 0 ? 'primary' : 'default'}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {student.last_course_date
-                      ? new Date(student.last_course_date).toLocaleDateString()
-                      : '—'}
-                  </TableCell>
-                  <TableCell align='center'>
-                    <Tooltip title={student.marketing_consent ? 'Consent granted' : 'No consent'}>
-                      <IconButton size='small' onClick={() => handleConsentToggle(student)}>
-                        {student.marketing_consent
-                          ? <ConsentIcon color='success' fontSize='small' />
-                          : <NoConsentIcon color='disabled' fontSize='small' />}
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell align='center'>
-                    <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-                      <Tooltip title='View Course History'>
-                        <IconButton onClick={() => handleViewStudent(student)} color='primary' size='small'>
-                          <ViewIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title='Edit'>
-                        <IconButton onClick={() => handleEditOpen(student)} color='primary' size='small'>
-                          <EditIcon />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      {students.length === 0 ? (
+        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ color: '#9CA3AF', fontSize: 14 }}>
+            {searchTerm ? 'No students match your search.' : 'No students found.'}
+          </Typography>
+        </Box>
+      ) : (
+        <DataTable columns={columns} shownCount={students.length} totalCount={students.length}>
+          {students.map((student) => (
+            <DataTableRow key={student.id} columns={columns}>
+              {/* STUDENT */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <UserAvatar initials={getInitials(student.first_name, student.last_name)} />
+                <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  {student.last_name}, {student.first_name}
+                </Typography>
+              </Box>
+              {/* EMAIL */}
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                {student.email}
+              </Typography>
+              {/* PHONE */}
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                {student.phone || '—'}
+              </Typography>
+              {/* ORGANIZATION */}
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                {student.organization_name || '—'}
+              </Typography>
+              {/* COURSES */}
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'center' }}>
+                {student.course_count || 0}
+              </Typography>
+              {/* LAST COURSE */}
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                {student.last_course_date
+                  ? new Date(student.last_course_date).toLocaleDateString()
+                  : '—'}
+              </Typography>
+              {/* MARKETING */}
+              <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                <Switch
+                  size="small"
+                  checked={!!student.marketing_consent}
+                  onChange={() => handleConsentToggle(student)}
+                  sx={{
+                    '& .MuiSwitch-switchBase.Mui-checked': { color: '#16A34A' },
+                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#16A34A' },
+                  }}
+                />
+              </Box>
+              {/* ACTIONS */}
+              <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                <Box
+                  onClick={() => handleViewStudent(student)}
+                  sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                >
+                  View
+                </Box>
+                <Typography sx={{ fontSize: 12, color: '#E5E7EB' }}>|</Typography>
+                <Box
+                  onClick={() => handleEditOpen(student)}
+                  sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                >
+                  Edit
+                </Box>
+              </Box>
+            </DataTableRow>
+          ))}
+        </DataTable>
+      )}
 
       {/* Detail Dialog — Course History */}
-      <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} maxWidth='md' fullWidth>
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <SchoolIcon color='primary' />
+      <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>
           {selectedStudent ? `${selectedStudent.first_name} ${selectedStudent.last_name}` : 'Student'} — Course History
         </DialogTitle>
         <DialogContent>
@@ -260,63 +237,51 @@ const StudentManagement = ({ onShowSnackbar }: StudentManagementProps) => {
               <CircularProgress />
             </Box>
           ) : courseHistory.length === 0 ? (
-            <Typography color='text.secondary' sx={{ py: 4, textAlign: 'center' }}>
+            <Typography sx={{ color: '#9CA3AF', py: 4, textAlign: 'center', fontSize: 14 }}>
               No course history found.
             </Typography>
           ) : (
-            <TableContainer sx={{ mt: 1 }}>
-              <Table size='small'>
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Course</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Organization</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Instructor</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Location</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }} align='center'>Attended</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }} align='center'>Cert Status</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {courseHistory.map((course: any) => {
-                    let certStatus: { label: string; color: 'success' | 'warning' | 'error' | 'default' } = { label: '—', color: 'default' };
-                    if (course.certificate_expires_at) {
-                      const daysLeft = Math.ceil((new Date(course.certificate_expires_at).getTime() - Date.now()) / 86400000);
-                      if (daysLeft < 0) certStatus = { label: 'Expired', color: 'error' };
-                      else if (daysLeft <= 90) certStatus = { label: `${daysLeft}d left`, color: 'warning' };
-                      else certStatus = { label: 'Active', color: 'success' };
-                    }
-                    return (
-                    <TableRow key={course.id} hover>
-                      <TableCell>{course.course_type_name}</TableCell>
-                      <TableCell>{course.organization_name}</TableCell>
-                      <TableCell>{course.instructor_name || '—'}</TableCell>
-                      <TableCell>{course.location || '—'}</TableCell>
-                      <TableCell>
-                        {course.completed_at
-                          ? new Date(course.completed_at).toLocaleDateString()
-                          : '—'}
-                      </TableCell>
-                      <TableCell align='center'>
-                        <Chip
-                          label={course.attended ? 'Yes' : 'No'}
-                          size='small'
-                          color={course.attended ? 'success' : 'default'}
-                        />
-                      </TableCell>
-                      <TableCell align='center'>
-                        <Chip label={certStatus.label} size='small' color={certStatus.color} />
-                      </TableCell>
-                    </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {courseHistory.map((course: any) => {
+                let chipKind: 'active' | 'warning' | 'danger' | 'neutral' = 'neutral';
+                let chipLabel = '—';
+                if (course.certificate_expires_at) {
+                  const daysLeft = Math.ceil((new Date(course.certificate_expires_at).getTime() - Date.now()) / 86400000);
+                  if (daysLeft < 0) { chipKind = 'danger'; chipLabel = 'Expired'; }
+                  else if (daysLeft <= 90) { chipKind = 'warning'; chipLabel = `${daysLeft}d left`; }
+                  else { chipKind = 'active'; chipLabel = 'Active'; }
+                }
+                return (
+                  <Box
+                    key={course.id}
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: '1.5fr 1fr 1fr 0.8fr 0.8fr 0.8fr',
+                      alignItems: 'center',
+                      p: '10px 14px',
+                      borderRadius: '8px',
+                      border: '1px solid #E5E7EB',
+                      gap: 1,
+                    }}
+                  >
+                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{course.course_type_name}</Typography>
+                    <Typography sx={{ fontSize: 12, color: '#4B5563' }}>{course.organization_name}</Typography>
+                    <Typography sx={{ fontSize: 12, color: '#4B5563' }}>{course.instructor_name || '—'}</Typography>
+                    <Typography sx={{ fontSize: 12, color: '#4B5563' }}>{course.location || '—'}</Typography>
+                    <Typography sx={{ fontSize: 12, color: '#4B5563' }}>
+                      {course.completed_at ? new Date(course.completed_at).toLocaleDateString() : '—'}
+                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <StatusChip kind={chipKind} label={chipLabel} />
+                    </Box>
+                  </Box>
+                );
+              })}
+            </Box>
           )}
           {selectedStudent && (
-            <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-              <Typography variant='body2' color='text.secondary'>
+            <Box sx={{ mt: 2, p: 2, bgcolor: '#F9FAFB', borderRadius: '8px' }}>
+              <Typography sx={{ fontSize: 12, color: '#4B5563' }}>
                 <strong>Email:</strong> {selectedStudent.email} &nbsp;|&nbsp;
                 <strong>Phone:</strong> {selectedStudent.phone || '—'} &nbsp;|&nbsp;
                 <strong>Marketing consent:</strong> {selectedStudent.marketing_consent ? 'Yes' : 'No'}
@@ -333,51 +298,29 @@ const StudentManagement = ({ onShowSnackbar }: StudentManagementProps) => {
       </Dialog>
 
       {/* Edit Dialog */}
-      <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth='sm' fullWidth>
-        <DialogTitle>Edit Student</DialogTitle>
+      <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Edit Student</DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 2 }}>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label='First Name'
-                  value={editData.first_name}
-                  onChange={(e) => setEditData({ ...editData, first_name: e.target.value })}
-                />
+                <TextField fullWidth label="First Name" value={editData.first_name} onChange={(e) => setEditData({ ...editData, first_name: e.target.value })} />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label='Last Name'
-                  value={editData.last_name}
-                  onChange={(e) => setEditData({ ...editData, last_name: e.target.value })}
-                />
+                <TextField fullWidth label="Last Name" value={editData.last_name} onChange={(e) => setEditData({ ...editData, last_name: e.target.value })} />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label='Phone'
-                  value={editData.phone}
-                  onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
-                />
+                <TextField fullWidth label="Phone" value={editData.phone} onChange={(e) => setEditData({ ...editData, phone: e.target.value })} />
               </Grid>
               <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label='Notes'
-                  value={editData.notes}
-                  onChange={(e) => setEditData({ ...editData, notes: e.target.value })}
-                  multiline
-                  rows={2}
-                />
+                <TextField fullWidth label="Notes" value={editData.notes} onChange={(e) => setEditData({ ...editData, notes: e.target.value })} multiline rows={2} />
               </Grid>
             </Grid>
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditOpen(false)}>Cancel</Button>
-          <Button onClick={handleEditSave} variant='contained'>Save</Button>
+          <Button onClick={handleEditSave} variant="contained">Save</Button>
         </DialogActions>
       </Dialog>
     </Box>

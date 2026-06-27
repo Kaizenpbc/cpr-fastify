@@ -1,39 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  CircularProgress,
-  Alert,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Paper,
-  Chip,
-} from '@mui/material';
-import {
-  People as PeopleIcon,
-  Business as BusinessIcon,
-  School as SchoolIcon,
-  Store as VendorIcon,
-  Person as PersonIcon,
-  MenuBook as CourseIcon,
-  TrendingUp as TrendingUpIcon,
-} from '@mui/icons-material';
+import { Box, Typography, CircularProgress, Alert } from '@mui/material';
 import { sysAdminApi } from '../../services/api';
 import logger from '../../utils/logger';
+import StatCard from '../gtacpr/StatCard';
+import StatusChip from '../gtacpr/StatusChip';
+import DataTable, { DataTableRow } from '../gtacpr/DataTable';
+import RoleChip from '../gtacpr/RoleChip';
+
+const userColumns = [
+  { key: 'user', label: 'USERNAME', width: '1.2fr' },
+  { key: 'role', label: 'ROLE', width: '0.8fr' },
+  { key: 'date', label: 'CREATED', width: '1fr', align: 'right' as const },
+];
+
+const courseColumns = [
+  { key: 'name', label: 'COURSE', width: '1.5fr' },
+  { key: 'code', label: 'CODE', width: '0.8fr' },
+  { key: 'date', label: 'CREATED', width: '1fr', align: 'right' as const },
+];
 
 const SystemAdminDashboard = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
+  useEffect(() => { loadDashboardData(); }, []);
 
   const loadDashboardData = async () => {
     setLoading(true);
@@ -50,260 +41,103 @@ const SystemAdminDashboard = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
     }
   };
 
-  const formatDate = (dateString: any) => {
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  const StatCard = ({ title, value, icon, color = 'primary' }: { title: any; value: any; icon: any; color?: any }) => (
-    <Card elevation={2} sx={{ height: '100%' }}>
-      <CardContent>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <Box>
-            <Typography color='textSecondary' gutterBottom variant='body2'>
-              {title}
-            </Typography>
-            <Typography variant='h4' component='div' color={`${color}.main`}>
-              {value}
-            </Typography>
-          </Box>
-          <Box sx={{ color: `${color}.main` }}>{icon}</Box>
-        </Box>
-      </CardContent>
-    </Card>
-  );
+  const formatDate = (dateString: any) => new Date(dateString).toLocaleDateString();
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: 400,
-        }}
-      >
-        <CircularProgress size={60} />
-        <Typography variant='body1' sx={{ ml: 2 }}>
-          Loading dashboard...
-        </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+        <CircularProgress size={48} />
       </Box>
     );
   }
 
   if (error) {
-    return (
-      <Alert severity='error' sx={{ mt: 2 }}>
-        {error}
-      </Alert>
-    );
+    return <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>;
   }
 
   const { summary, recentActivity } = dashboardData || {};
 
   return (
-    <Box>
-      {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography
-          variant='h4'
-          gutterBottom
-          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-        >
-          <TrendingUpIcon color='primary' />
-          System Overview
-        </Typography>
-        <Typography variant='body1' color='text.secondary'>
-          Monitor and manage your CPR training platform
-        </Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* KPI cards */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+        <StatCard label="Total Users" value={summary?.totalUsers || 0} sub="All registered accounts" dotColor="#CC1F1F" />
+        <StatCard label="Organizations" value={summary?.totalOrganizations || 0} sub="Active organizations" dotColor="#16A34A" />
+        <StatCard label="Course Types" value={summary?.totalCourses || 0} sub="In course catalog" dotColor="#ED6C02" />
+        <StatCard label="Active Vendors" value={summary?.totalVendors || 0} sub="Vendor partnerships" dotColor="#4B5563" />
       </Box>
 
-      {/* Stats Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title='Total Users'
-            value={summary?.totalUsers || 0}
-            icon={<PeopleIcon sx={{ fontSize: 40 }} />}
-            color='primary'
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title='Organizations'
-            value={summary?.totalOrganizations || 0}
-            icon={<BusinessIcon sx={{ fontSize: 40 }} />}
-            color='success'
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title='Active Courses'
-            value={summary?.totalCourses || 0}
-            icon={<SchoolIcon sx={{ fontSize: 40 }} />}
-            color='info'
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title='Active Vendors'
-            value={summary?.totalVendors || 0}
-            icon={<VendorIcon sx={{ fontSize: 40 }} />}
-            color='warning'
-          />
-        </Grid>
-      </Grid>
+      {/* Two-column recent activity */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        {/* Recent Users */}
+        <Box>
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1.5 }}>
+            Recent Users
+          </Typography>
+          {recentActivity?.users?.length > 0 ? (
+            <DataTable columns={userColumns} shownCount={recentActivity.users.length} totalCount={recentActivity.users.length}>
+              {recentActivity.users.map((user: any, i: number) => (
+                <DataTableRow key={i} columns={userColumns}>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{user.username}</Typography>
+                  <RoleChip role={user.role} />
+                  <Typography sx={{ fontSize: 12.5, color: '#9CA3AF', textAlign: 'right' }}>{formatDate(user.createdAt)}</Typography>
+                </DataTableRow>
+              ))}
+            </DataTable>
+          ) : (
+            <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 4, textAlign: 'center' }}>
+              <Typography sx={{ color: '#9CA3AF', fontSize: 13 }}>No recent user activity</Typography>
+            </Box>
+          )}
+        </Box>
 
-      {/* Recent Activity */}
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
-          <Paper elevation={2} sx={{ p: 3 }}>
-            <Typography
-              variant='h6'
-              gutterBottom
-              sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-            >
-              <PersonIcon color='primary' />
-              Recent Users
-            </Typography>
-            {recentActivity?.users?.length > 0 ? (
-              <List>
-                {recentActivity.users.map((user: any, index: any) => (
-                  <ListItem
-                    key={index}
-                    divider={index < recentActivity.users.length - 1}
-                  >
-                    <ListItemIcon>
-                      <PersonIcon color='action' />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={user.username}
-                      secondary={
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            mt: 0.5,
-                          }}
-                        >
-                          <Chip
-                            label={user.role}
-                            size='small'
-                            color={
-                              user.role === 'admin'
-                                ? 'error'
-                                : user.role === 'instructor'
-                                  ? 'primary'
-                                  : user.role === 'organization'
-                                    ? 'success'
-                                    : 'default'
-                            }
-                          />
-                          <Typography variant='caption' color='text.secondary'>
-                            {formatDate(user.createdAt)}
-                          </Typography>
-                        </Box>
-                      }
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            ) : (
-              <Typography variant='body2' color='text.secondary'>
-                No recent user activity
-              </Typography>
-            )}
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <Paper elevation={2} sx={{ p: 3 }}>
-            <Typography
-              variant='h6'
-              gutterBottom
-              sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-            >
-              <CourseIcon color='primary' />
-              Recent Courses
-            </Typography>
-            {recentActivity?.courses?.length > 0 ? (
-              <List>
-                {recentActivity.courses.map((course: any, index: any) => (
-                  <ListItem
-                    key={index}
-                    divider={index < recentActivity.courses.length - 1}
-                  >
-                    <ListItemIcon>
-                      <CourseIcon color='action' />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={course.name}
-                      secondary={
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            mt: 0.5,
-                          }}
-                        >
-                          <Chip
-                            label={course.courseCode || 'N/A'}
-                            size='small'
-                            variant='outlined'
-                          />
-                          <Typography variant='caption' color='text.secondary'>
-                            {formatDate(course.createdAt)}
-                          </Typography>
-                        </Box>
-                      }
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            ) : (
-              <Typography variant='body2' color='text.secondary'>
-                No recent course activity
-              </Typography>
-            )}
-          </Paper>
-        </Grid>
-      </Grid>
+        {/* Recent Courses */}
+        <Box>
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1.5 }}>
+            Recent Courses
+          </Typography>
+          {recentActivity?.courses?.length > 0 ? (
+            <DataTable columns={courseColumns} shownCount={recentActivity.courses.length} totalCount={recentActivity.courses.length}>
+              {recentActivity.courses.map((course: any, i: number) => (
+                <DataTableRow key={i} columns={courseColumns}>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{course.name}</Typography>
+                  <Typography sx={{ fontSize: 12, fontFamily: 'monospace', color: '#4B5563' }}>{course.courseCode || '—'}</Typography>
+                  <Typography sx={{ fontSize: 12.5, color: '#9CA3AF', textAlign: 'right' }}>{formatDate(course.createdAt)}</Typography>
+                </DataTableRow>
+              ))}
+            </DataTable>
+          ) : (
+            <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 4, textAlign: 'center' }}>
+              <Typography sx={{ color: '#9CA3AF', fontSize: 13 }}>No recent course activity</Typography>
+            </Box>
+          )}
+        </Box>
+      </Box>
 
       {/* System Status */}
-      <Paper elevation={1} sx={{ p: 3, mt: 4, backgroundColor: 'grey.50' }}>
-        <Typography variant='h6' gutterBottom>
-          🛡️ System Status
+      <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: '20px 24px' }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
+          System Status
         </Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <Typography variant='body2' sx={{ mb: 1 }}>
-              <strong>Platform Status:</strong>{' '}
-              <Chip label='Operational' color='success' size='small' />
-            </Typography>
-            <Typography variant='body2' sx={{ mb: 1 }}>
-              <strong>Database:</strong>{' '}
-              <Chip label='Connected' color='success' size='small' />
-            </Typography>
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <Typography variant='body2' sx={{ mb: 1 }}>
-              <strong>Last Backup:</strong>{' '}
-              <span style={{ color: '#666' }}>Today 02:00 AM</span>
-            </Typography>
-            <Typography variant='body2' sx={{ mb: 1 }}>
-              <strong>System Version:</strong>{' '}
-              <span style={{ color: '#666' }}>v1.0.0</span>
-            </Typography>
-          </Grid>
-        </Grid>
-      </Paper>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Platform</Typography>
+            <StatusChip kind="active" label="Operational" />
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Database</Typography>
+            <StatusChip kind="active" label="Connected" />
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Last Backup</Typography>
+            <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Today 02:00 AM</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Version</Typography>
+            <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', fontFamily: 'monospace' }}>v1.0.0</Typography>
+          </Box>
+        </Box>
+      </Box>
     </Box>
   );
 };
