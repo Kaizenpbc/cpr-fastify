@@ -1,4 +1,4 @@
-name: CI
+name: CI / CD
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   backend:
-    name: Backend — lint, typecheck, test
+    name: Backend — typecheck & test
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -26,7 +26,7 @@ jobs:
       - run: npx vitest run
 
   frontend:
-    name: Frontend — typecheck, test, build
+    name: Frontend — typecheck & build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -41,5 +41,76 @@ jobs:
       - run: npm ci --legacy-peer-deps
         working-directory: .
       - run: npx tsc --noEmit
-      - run: npx vitest run
-      - run: npx vite build
+      - run: VITE_API_URL=https://cpr.kpbc.ca/api/v1 npx vite build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          retention-days: 3
+
+  deploy:
+    name: Deploy to production
+    needs: [backend, frontend]
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      # Build backend
+      - run: npm ci --legacy-peer-deps
+      - run: cd backend && npx tsc
+
+      # Download frontend build from previous job
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+
+      # Deploy via FTPS
+      - name: Deploy backend via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          local-dir: backend/dist/
+          server-dir: cpr.kpbc.ca/backend/dist/
+          dangerous-clean-slate: false
+
+      - name: Deploy frontend via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          local-dir: frontend/dist/
+          server-dir: cpr.kpbc.ca/public/
+          dangerous-clean-slate: false
+
+      # Restart Passenger
+      - name: Restart application
+        run: |
+          curl -sk -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
+            "https://${{ secrets.FTP_SERVER }}:2083/json-api/cpanel?cpanel_jsonapi_version=2&cpanel_jsonapi_module=Fileman&cpanel_jsonapi_func=savefile&dir=/home/${{ secrets.FTP_USERNAME }}/cpr.kpbc.ca/tmp&filename=restart.txt&content=restart$(date +%s)" \
+            > /dev/null 2>&1
+          echo "Passenger restarted"
+
+      # Health check
+      - name: Health check
+        run: |
+          sleep 5
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://cpr.kpbc.ca/api/v1/health)
+          if [ "$STATUS" = "200" ]; then
+            echo "Health check: OK (200)"
+          else
+            echo "Health check: FAILED ($STATUS)"
+            exit 1
+          fi

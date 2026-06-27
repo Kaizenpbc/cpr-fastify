@@ -3,9 +3,9 @@
 # Usage: bash deploy.sh [backend|frontend|all]
 set -e
 
-SERVER="69.72.136.201"
-USER="kaizenmo"
-PASS='!Register001'
+SERVER="${FTP_SERVER:-69.72.136.201}"
+USER="${FTP_USERNAME:-kaizenmo}"
+PASS="${FTP_PASSWORD:-!Register001}"
 APP_DIR="cpr.kpbc.ca"
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 TARGET="${1:-all}"
