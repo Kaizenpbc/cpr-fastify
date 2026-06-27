@@ -1,29 +1,6 @@
-import React, { useState } from 'react';
-import {
-  Box,
-  Drawer,
-  AppBar,
-  Toolbar,
-  Typography,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Divider,
-  IconButton,
-  useTheme,
-  useMediaQuery,
-} from '@mui/material';
-import {
-  Menu as MenuIcon,
-  Logout as LogoutIcon,
-  Refresh as RefreshIcon,
-} from '@mui/icons-material';
-import { NavLink } from 'react-router-dom';
-import ThemeToggle from '../../common/ThemeToggle';
-import NotificationBell from '../../common/NotificationBell';
+import React from 'react';
+import { AdminShell } from '../../gtacpr';
 
-// TypeScript interfaces
 interface User {
   id: number;
   username: string;
@@ -52,6 +29,18 @@ export interface OrganizationLayoutProps {
   drawerWidth: number;
 }
 
+const viewConfig: Record<string, { eyebrow: string; title: string }> = {
+  dashboard: { eyebrow: 'Overview', title: 'Dashboard' },
+  courses: { eyebrow: 'Training', title: 'My Courses' },
+  archive: { eyebrow: 'Training', title: 'Archive' },
+  schedule: { eyebrow: 'Training', title: 'Schedule a Course' },
+  billing: { eyebrow: 'Finance', title: 'Bills Payable' },
+  'paid-invoices': { eyebrow: 'Finance', title: 'Paid Invoices' },
+  pricing: { eyebrow: 'Finance', title: 'Pricing' },
+  profile: { eyebrow: 'Account', title: 'Profile' },
+  analytics: { eyebrow: 'Insights', title: 'Analytics' },
+};
+
 const OrganizationLayout: React.FC<OrganizationLayoutProps> = ({
   children,
   user,
@@ -62,174 +51,31 @@ const OrganizationLayout: React.FC<OrganizationLayoutProps> = ({
   navigationItems,
   drawerWidth,
 }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const config = viewConfig[currentView || 'dashboard'] || { eyebrow: 'Organization', title: 'Organization Portal' };
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  const navItems = navigationItems.map((item) => ({
+    label: item.label,
+    path: item.id,
+  }));
 
-  // Drawer content
-  const drawerContent = (
-    <Box>
-      <Box sx={{ p: 2, textAlign: 'center' }}>
-        <Typography variant="h6" color="primary">
-          Organization Portal
-        </Typography>
-        {user?.organizationName && (
-          <Typography variant="body2" color="text.secondary">
-            {user.organizationName}
-          </Typography>
-        )}
-        {user?.locationName && (
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-            {user.locationName}
-          </Typography>
-        )}
-      </Box>
-      <Divider />
-      <List>
-        {navigationItems.map((item) => (
-          <NavLink
-            key={item.id}
-            to={`/organization/${item.id}`}
-            style={({ isActive }) => ({
-              textDecoration: 'none',
-              color: 'inherit',
-              display: 'block',
-              backgroundColor: isActive ? '#e3f2fd' : undefined,
-            })}
-          >
-            <ListItem
-              sx={{
-                '&.Mui-selected': {
-                  backgroundColor: 'primary.light',
-                  '&:hover': {
-                    backgroundColor: 'primary.light',
-                  },
-                },
-              }}
-            >
-              <ListItemIcon>
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText primary={item.label} />
-            </ListItem>
-          </NavLink>
-        ))}
-      </List>
-    </Box>
-  );
+  const orgName = user?.organizationName
+    ? `${user.organizationName}${user.locationName ? ` - ${user.locationName}` : ''}`
+    : undefined;
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      {/* App Bar */}
-      <AppBar
-        position="fixed"
-        sx={{
-          width: { md: `calc(100% - ${drawerWidth}px)` },
-          ml: { md: `${drawerWidth}px` },
-          color: 'primary.contrastText',
-          borderBottom: 1,
-          borderColor: 'divider',
-          boxShadow: 'none',
-        }}
-      >
-        <Toolbar sx={{ minHeight: { xs: '56px', sm: '64px' } }}>
-          {isMobile && (
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              edge="start"
-              onClick={handleDrawerToggle}
-              sx={{ mr: 2 }}
-            >
-              <MenuIcon />
-            </IconButton>
-          )}
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
-            {isMobile && currentView
-              ? (navigationItems.find(item => item.id === currentView)?.label || 'Organization Portal')
-              : 'Organization Portal'}
-          </Typography>
-
-          {!isMobile && (
-            <Typography variant="body1" sx={{ mr: 2, color: 'white', fontWeight: 500 }}>
-              Welcome, {user?.username || 'User'}
-            </Typography>
-          )}
-          <ThemeToggle size="small" />
-          <NotificationBell size="small" color="inherit" />
-          {onRefresh && (
-            <IconButton
-              color="inherit"
-              onClick={onRefresh}
-              size="small"
-              sx={{ mr: 1, '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' } }}
-            >
-              <RefreshIcon />
-            </IconButton>
-          )}
-          <IconButton
-            color="inherit"
-            onClick={onLogout}
-            sx={{ ml: 1, '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' } }}
-            aria-label="logout"
-          >
-            <LogoutIcon />
-          </IconButton>
-        </Toolbar>
-      </AppBar>
-
-      {/* Drawer */}
-      <Box
-        component="nav"
-        sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
-      >
-        {/* Mobile drawer */}
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true, // Better open performance on mobile.
-          }}
-          sx={{
-            display: { xs: 'block', md: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
-        >
-          {drawerContent}
-        </Drawer>
-        
-        {/* Desktop drawer */}
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: 'none', md: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
-          open
-        >
-          {drawerContent}
-        </Drawer>
-      </Box>
-
-      {/* Main content */}
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          p: 3,
-          width: { md: `calc(100% - ${drawerWidth}px)` },
-          mt: '64px', // AppBar height
-        }}
-      >
-        {children}
-      </Box>
-    </Box>
+    <AdminShell
+      eyebrow={config.eyebrow}
+      title={config.title}
+      portalName="Organization Portal"
+      basePath="dashboard"
+      navItems={navItems}
+      activePath={currentView}
+      onNavigate={(path) => onViewChange?.(path)}
+      subtitle={orgName}
+    >
+      {children}
+    </AdminShell>
   );
 };
 
-export default OrganizationLayout; 
+export default OrganizationLayout;

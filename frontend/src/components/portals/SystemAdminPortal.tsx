@@ -1,35 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Routes, Route } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import {
-  Box,
-  Container,
-  Typography,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Divider,
-  AppBar,
-  Toolbar,
-  Alert,
-  Snackbar,
-} from '@mui/material';
-import {
-  Dashboard as DashboardIcon,
-  School as CourseIcon,
-  People as UsersIcon,
-  Business as BusinessIcon,
-  Store as StoreIcon,
-  Logout as LogoutIcon,
-  Settings as SettingsIcon,
-  AttachMoney as PricingIcon,
-  ContactPhone as StudentIcon,
-  VerifiedUser as CertIcon,
-} from '@mui/icons-material';
+import React, { useState } from 'react';
+import { useLocation, Routes, Route } from 'react-router-dom';
+import { Alert, Snackbar } from '@mui/material';
 import ErrorBoundary from '../common/ErrorBoundary';
-import ThemeToggle from '../common/ThemeToggle';
+import { AdminShell } from '../gtacpr';
 import SystemAdminDashboard from '../sysadmin/SystemAdminDashboard';
 import CourseManagement from '../sysadmin/CourseManagement';
 import UserManagement from '../sysadmin/UserManagement';
@@ -40,11 +13,19 @@ import OrganizationPricingManager from '../admin/OrganizationPricingManager';
 import StudentManagement from '../sysadmin/StudentManagement';
 import CertificationTracking from '../sysadmin/CertificationTracking';
 
-const drawerWidth = 240;
+const pageConfig: Record<string, { eyebrow: string; title: string }> = {
+  '/sysadmin': { eyebrow: 'Overview', title: 'System Dashboard' },
+  '/sysadmin/courses': { eyebrow: 'Catalog & Scheduling', title: 'Course Management' },
+  '/sysadmin/organizations': { eyebrow: 'Accounts', title: 'Organization Management' },
+  '/sysadmin/pricing': { eyebrow: 'Billing', title: 'Organization Pricing' },
+  '/sysadmin/users': { eyebrow: 'Access', title: 'User Management' },
+  '/sysadmin/vendors': { eyebrow: 'Suppliers', title: 'Vendor Management' },
+  '/sysadmin/students': { eyebrow: 'People', title: 'Student Directory' },
+  '/sysadmin/certifications': { eyebrow: 'System Administration', title: 'Certification Tracking' },
+  '/sysadmin/configuration': { eyebrow: 'Settings', title: 'System Configuration' },
+};
 
 const SystemAdminPortal = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
@@ -60,263 +41,122 @@ const SystemAdminPortal = () => {
     setSnackbar({ open: true, message, severity });
   };
 
-  const handleLogout = () => {
-    const firstName = user?.firstName || 'System Admin';
-    const logoutMessage = `Goodbye ${firstName}, System Secured!`;
-    showSnackbar(logoutMessage, 'info');
-
-    setTimeout(() => {
-      logout();
-      navigate('/');
-    }, 1500);
-  };
-
   const handleError = (error: Error, errorInfo: React.ErrorInfo) => {
     console.error('[SystemAdminPortal] Error caught by boundary:', error, errorInfo);
   };
 
-  const menuItems = [
-    {
-      key: 'dashboard',
-      label: 'System Dashboard',
-      icon: <DashboardIcon />,
-      path: '/sysadmin',
-    },
-    {
-      key: 'courses',
-      label: 'Course Management',
-      icon: <CourseIcon />,
-      path: '/sysadmin/courses',
-    },
-    {
-      key: 'organizations',
-      label: 'Organization Management',
-      icon: <BusinessIcon />,
-      path: '/sysadmin/organizations',
-    },
-    {
-      key: 'pricing',
-      label: 'Organization Pricing',
-      icon: <PricingIcon />,
-      path: '/sysadmin/pricing',
-    },
-    {
-      key: 'users',
-      label: 'User Management',
-      icon: <UsersIcon />,
-      path: '/sysadmin/users',
-    },
-    {
-      key: 'vendors',
-      label: 'Vendor Management',
-      icon: <StoreIcon />,
-      path: '/sysadmin/vendors',
-    },
-    {
-      key: 'students',
-      label: 'Student Directory',
-      icon: <StudentIcon />,
-      path: '/sysadmin/students',
-    },
-    {
-      key: 'certifications',
-      label: 'Certification Tracking',
-      icon: <CertIcon />,
-      path: '/sysadmin/certifications',
-    },
-    {
-      key: 'configuration',
-      label: 'System Configuration',
-      icon: <SettingsIcon />,
-      path: '/sysadmin/configuration',
-    },
-  ];
+  const config = pageConfig[location.pathname] || { eyebrow: 'Admin', title: 'System Admin' };
 
   return (
     <ErrorBoundary context="system_admin_portal" onError={handleError}>
-      <Box sx={{ display: 'flex' }}>
-        <AppBar
-          position='fixed'
-          sx={{ zIndex: theme => theme.zIndex.drawer + 1 }}
-        >
-          <Toolbar>
-            <SettingsIcon sx={{ mr: 2 }} />
-            <Typography variant='h6' noWrap component='div' sx={{ flexGrow: 1 }}>
-              System Administration Portal
-            </Typography>
-            <Typography variant='body1' noWrap sx={{ mr: 2 }}>
-              Welcome {user?.username || 'System Administrator'}!
-            </Typography>
-            <ThemeToggle size="small" />
-          </Toolbar>
-        </AppBar>
+      <AdminShell
+        eyebrow={config.eyebrow}
+        title={config.title}
+        portalName="Admin Console"
+        basePath="/sysadmin"
+        navItems={[
+          { label: 'System Dashboard', path: '/sysadmin' },
+          { label: 'Course Management', path: '/sysadmin/courses' },
+          { label: 'Organizations', path: '/sysadmin/organizations' },
+          { label: 'Organization Pricing', path: '/sysadmin/pricing' },
+          { label: 'User Management', path: '/sysadmin/users' },
+          { label: 'Vendor Management', path: '/sysadmin/vendors' },
+          { label: 'Student Directory', path: '/sysadmin/students' },
+          { label: 'Certification Tracking', path: '/sysadmin/certifications' },
+          { label: 'System Configuration', path: '/sysadmin/configuration' },
+        ]}
+      >
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <ErrorBoundary context="system_admin_dashboard" onError={handleError}>
+                <SystemAdminDashboard onShowSnackbar={showSnackbar} />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/courses"
+            element={
+              <ErrorBoundary context="system_admin_courses" onError={handleError}>
+                <CourseManagement onShowSnackbar={showSnackbar} />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/organizations"
+            element={
+              <ErrorBoundary context="system_admin_organizations" onError={handleError}>
+                <OrganizationManagement />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/pricing"
+            element={
+              <ErrorBoundary context="system_admin_pricing" onError={handleError}>
+                <OrganizationPricingManager />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/users"
+            element={
+              <ErrorBoundary context="system_admin_users" onError={handleError}>
+                <UserManagement onShowSnackbar={showSnackbar} />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/vendors"
+            element={
+              <ErrorBoundary context="system_admin_vendors" onError={handleError}>
+                <VendorManagement onShowSnackbar={showSnackbar} />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/students"
+            element={
+              <ErrorBoundary context="system_admin_students" onError={handleError}>
+                <StudentManagement onShowSnackbar={showSnackbar} />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/certifications"
+            element={
+              <ErrorBoundary context="system_admin_certifications" onError={handleError}>
+                <CertificationTracking onShowSnackbar={showSnackbar} />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/configuration"
+            element={
+              <ErrorBoundary context="system_admin_configuration" onError={handleError}>
+                <SystemConfiguration />
+              </ErrorBoundary>
+            }
+          />
+        </Routes>
+      </AdminShell>
 
-        <Drawer
-          variant='permanent'
-          sx={{
-            width: drawerWidth,
-            flexShrink: 0,
-            '& .MuiDrawer-paper': {
-              width: drawerWidth,
-              boxSizing: 'border-box',
-            },
-          }}
-        >
-          <Toolbar />
-          <Box sx={{ overflow: 'auto' }}>
-            <List>
-              {menuItems.map(item => (
-                <ListItem
-                  key={item.key}
-                  component='div'
-                  selected={location.pathname === item.path}
-                  onClick={() => navigate(item.path)}
-                  sx={{
-                    cursor: 'pointer',
-                    py: 1.5,
-                    backgroundColor:
-                      location.pathname === item.path
-                        ? 'primary.light'
-                        : 'transparent',
-                    color:
-                      location.pathname === item.path
-                        ? 'primary.dark'
-                        : 'inherit',
-                    '& .MuiListItemIcon-root': {
-                      color:
-                        location.pathname === item.path
-                          ? 'primary.dark'
-                          : 'inherit',
-                    },
-                    '&:hover': {
-                      backgroundColor:
-                        location.pathname === item.path
-                          ? 'primary.main'
-                          : 'action.hover',
-                    },
-                  }}
-                >
-                  <ListItemIcon>{item.icon}</ListItemIcon>
-                  <ListItemText primary={item.label} />
-                </ListItem>
-              ))}
-              <Divider sx={{ my: 1 }} />
-              <ListItem
-                component='div'
-                onClick={handleLogout}
-                sx={{
-                  cursor: 'pointer',
-                  py: 1.5,
-                  '&:hover': {
-                    backgroundColor: 'action.hover',
-                  },
-                }}
-              >
-                <ListItemIcon>
-                  <LogoutIcon />
-                </ListItemIcon>
-                <ListItemText primary='Logout' />
-              </ListItem>
-            </List>
-          </Box>
-        </Drawer>
-
-        <Box component='main' sx={{ flexGrow: 1, p: 3 }}>
-          <Toolbar />
-          <Container maxWidth='xl'>
-            <Routes>
-              <Route
-                path='/'
-                element={
-                  <ErrorBoundary context="system_admin_dashboard" onError={handleError}>
-                    <SystemAdminDashboard onShowSnackbar={showSnackbar} />
-                  </ErrorBoundary>
-                }
-              />
-              <Route
-                path='/courses'
-                element={
-                  <ErrorBoundary context="system_admin_courses" onError={handleError}>
-                    <CourseManagement onShowSnackbar={showSnackbar} />
-                  </ErrorBoundary>
-                }
-              />
-              <Route
-                path='/organizations'
-                element={
-                  <ErrorBoundary context="system_admin_organizations" onError={handleError}>
-                    <OrganizationManagement />
-                  </ErrorBoundary>
-                }
-              />
-              <Route
-                path='/pricing'
-                element={
-                  <ErrorBoundary context="system_admin_pricing" onError={handleError}>
-                    <OrganizationPricingManager />
-                  </ErrorBoundary>
-                }
-              />
-              <Route
-                path='/users'
-                element={
-                  <ErrorBoundary context="system_admin_users" onError={handleError}>
-                    <UserManagement onShowSnackbar={showSnackbar} />
-                  </ErrorBoundary>
-                }
-              />
-              <Route
-                path='/vendors'
-                element={
-                  <ErrorBoundary context="system_admin_vendors" onError={handleError}>
-                    <VendorManagement onShowSnackbar={showSnackbar} />
-                  </ErrorBoundary>
-                }
-              />
-              <Route
-                path='/students'
-                element={
-                  <ErrorBoundary context="system_admin_students" onError={handleError}>
-                    <StudentManagement onShowSnackbar={showSnackbar} />
-                  </ErrorBoundary>
-                }
-              />
-              <Route
-                path='/certifications'
-                element={
-                  <ErrorBoundary context="system_admin_certifications" onError={handleError}>
-                    <CertificationTracking onShowSnackbar={showSnackbar} />
-                  </ErrorBoundary>
-                }
-              />
-              <Route
-                path='/configuration'
-                element={
-                  <ErrorBoundary context="system_admin_configuration" onError={handleError}>
-                    <SystemConfiguration />
-                  </ErrorBoundary>
-                }
-              />
-            </Routes>
-          </Container>
-        </Box>
-
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={6000}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
           onClose={() => setSnackbar({ ...snackbar, open: false })}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ width: '100%' }}
         >
-          <Alert
-            onClose={() => setSnackbar({ ...snackbar, open: false })}
-            severity={snackbar.severity}
-            variant='filled'
-            sx={{ width: '100%' }}
-          >
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
-      </Box>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </ErrorBoundary>
   );
 };

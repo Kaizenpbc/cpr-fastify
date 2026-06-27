@@ -1,54 +1,14 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  Drawer,
-  AppBar,
-  Toolbar,
-  List,
-  Typography,
-  Divider,
-  IconButton,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Container,
-  Paper,
-  Grid,
-  Card,
-  CardContent,
-  Chip,
-} from '@mui/material';
-import {
-  Menu as MenuIcon,
-  Dashboard as DashboardIcon,
-  People as PeopleIcon,
-  Assignment as AssignmentIcon,
-  Assessment as AssessmentIcon,
-  Notifications as NotificationsIcon,
-  AccountCircle as AccountCircleIcon,
-  Logout as LogoutIcon,
-  Person as PersonIcon,
-  Business as BusinessIcon,
-  Schedule as ScheduleIcon,
-  Payment as PaymentIcon,
-  AttachMoney as MoneyIcon,
-  Warning as WarningIcon,
-} from '@mui/icons-material';
-import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-
-// Import the new components
+import { Box, Typography } from '@mui/material';
+import { AdminShell } from '../gtacpr';
 import HRDashboard from './HRDashboard';
 import PersonnelManagement from './PersonnelManagement';
-import TestProfileChanges from '../TestProfileChanges';
 import TimesheetManagement from '../hr/TimesheetManagement';
 import PayrollManagement from '../hr/PayrollManagement';
 import PayRateManagement from '../hr/PayRateManagement';
 import NotificationsPanel from '../hr/NotificationsPanel';
 import ReturnedPaymentRequests from '../hr/ReturnedPaymentRequests';
 
-// Placeholder components for Phase 2
 const HRReports = () => (
   <Box>
     <Typography variant="h4" gutterBottom>HR Reports</Typography>
@@ -56,27 +16,21 @@ const HRReports = () => (
   </Box>
 );
 
+const views = [
+  { key: 'dashboard', label: 'Dashboard', eyebrow: 'Overview' },
+  { key: 'personnel', label: 'Personnel Management', eyebrow: 'People' },
+  { key: 'timesheet', label: 'Timesheet Management', eyebrow: 'Time & Pay' },
+  { key: 'payrates', label: 'Pay Rate Management', eyebrow: 'Time & Pay' },
+  { key: 'payroll', label: 'Instructor Payroll', eyebrow: 'Time & Pay' },
+  { key: 'returned-payments', label: 'Returned Payments', eyebrow: 'Time & Pay' },
+  { key: 'notifications', label: 'Notifications', eyebrow: 'System' },
+  { key: 'reports', label: 'HR Reports', eyebrow: 'Analytics' },
+];
+
 const HRPortal: React.FC = () => {
   const [selectedView, setSelectedView] = useState('dashboard');
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const { logout } = useAuth();
-  const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, value: 'dashboard' },
-    { text: 'Personnel Management', icon: <PeopleIcon />, value: 'personnel' },
-    { text: 'Timesheet Management', icon: <AssignmentIcon />, value: 'timesheet' },
-    { text: 'Pay Rate Management', icon: <MoneyIcon />, value: 'payrates' },
-    { text: 'Instructor Payroll', icon: <PaymentIcon />, value: 'payroll' },
-    { text: 'Returned Payment Requests', icon: <WarningIcon />, value: 'returned-payments' },
-    { text: 'Notifications', icon: <NotificationsIcon />, value: 'notifications' },
-    { text: 'HR Reports', icon: <AssessmentIcon />, value: 'reports' },
-  ];
+  const current = views.find((v) => v.key === selectedView) || views[0];
 
   const renderView = () => {
     switch (selectedView) {
@@ -101,106 +55,21 @@ const HRPortal: React.FC = () => {
     }
   };
 
+  const navItems = views.map((v) => ({ label: v.label, path: v.key }));
+
   return (
-    <Box sx={{ display: 'flex' }}>
-      {/* App Bar */}
-      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
-        <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={() => setDrawerOpen(!drawerOpen)}
-            sx={{ mr: 2 }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            GTACPR HR Portal
-          </Typography>
-          <IconButton color="inherit">
-            <NotificationsIcon />
-          </IconButton>
-          <IconButton color="inherit">
-            <AccountCircleIcon />
-          </IconButton>
-          <IconButton color="inherit" onClick={handleLogout}>
-            <LogoutIcon />
-          </IconButton>
-        </Toolbar>
-      </AppBar>
-
-      {/* Sidebar Drawer */}
-      <Drawer
-        variant="permanent"
-        sx={{
-          width: 240,
-          flexShrink: 0,
-          '& .MuiDrawer-paper': {
-            width: 240,
-            boxSizing: 'border-box',
-            marginTop: '64px',
-          },
-        }}
-      >
-        <Box sx={{ overflow: 'auto' }}>
-          <List>
-            {menuItems.map((item) => (
-              <ListItem key={item.text} disablePadding>
-                <ListItemButton
-                  selected={selectedView === item.value}
-                  onClick={() => setSelectedView(item.value)}
-                >
-                  <ListItemIcon>{item.icon}</ListItemIcon>
-                  <ListItemText primary={item.text} />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-          <Divider />
-          <List>
-            <ListItem>
-              <ListItemText 
-                primary="Quick Actions" 
-                primaryTypographyProps={{ variant: 'subtitle2', color: 'textSecondary' }}
-              />
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => setSelectedView('personnel')}>
-                <ListItemIcon><PersonIcon /></ListItemIcon>
-                <ListItemText primary="Instructor Profiles" />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => setSelectedView('personnel')}>
-                <ListItemIcon><BusinessIcon /></ListItemIcon>
-                <ListItemText primary="Organization Profiles" />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => setSelectedView('timesheet')}>
-                <ListItemIcon><ScheduleIcon /></ListItemIcon>
-                <ListItemText primary="Timesheet Approval" />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => setSelectedView('payroll')}>
-                <ListItemIcon><PaymentIcon /></ListItemIcon>
-                <ListItemText primary="Instructor Payroll" />
-              </ListItemButton>
-            </ListItem>
-          </List>
-        </Box>
-      </Drawer>
-
-      {/* Main Content */}
-      <Box component="main" sx={{ flexGrow: 1, p: 3, marginTop: '64px' }}>
-        <Container maxWidth="xl">
-          {renderView()}
-        </Container>
-      </Box>
-    </Box>
+    <AdminShell
+      eyebrow={current.eyebrow}
+      title={current.label}
+      portalName="HR Portal"
+      basePath="dashboard"
+      navItems={navItems}
+      activePath={selectedView}
+      onNavigate={(path) => setSelectedView(path)}
+    >
+      {renderView()}
+    </AdminShell>
   );
 };
 
-export default HRPortal; 
+export default HRPortal;

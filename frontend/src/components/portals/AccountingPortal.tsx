@@ -1,42 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  Box, Typography, Paper, Container, Button, 
-  Menu, MenuItem, ListItemIcon, ListItemText,
-  Divider, Chip, CircularProgress
-} from '@mui/material';
-import NotificationBell from '../common/NotificationBell';
 import {
-  Dashboard as DashboardIcon,
-  ReceiptLong as BillingIcon,
-  RequestQuote as ReceivablesIcon,
-  History as HistoryIcon,
-  Assessment as ReportsIcon,
-  TrendingUp as AgingIcon,
-  Payment as PaymentIcon,
-  VerifiedUser as VerificationIcon,
-  Undo as ReverseIcon,
-  Logout as LogoutIcon,
-  Assignment as PaymentRequestsIcon,
-  Store as VendorIcon,
-  AccountBalance as FinancialIcon,
-  Business as OrganizationIcon,
-  ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon,
-  CheckCircle as PaidIcon,
-  HourglassEmpty as HourglassEmptyIcon,
-  Cancel as RejectedIcon,
-} from '@mui/icons-material';
+  Box, Typography, Paper, Button,
+  CircularProgress
+} from '@mui/material';
 import ErrorBoundary from '../common/ErrorBoundary';
-import ThemeToggle from '../common/ThemeToggle';
+import { AdminShell } from '../gtacpr';
 import AccountingDashboard from './accounting/AccountingDashboard';
 import PaymentRequestsDashboard from '../accounting/PaymentRequestsDashboard';
 import VendorInvoiceManagement from './accounting/VendorInvoiceManagement';
 import PaidVendorInvoices from './accounting/PaidVendorInvoices';
 import FinancialSummaryView from '../accounting/FinancialSummaryView';
 
-import { NavLink, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
-// Import all the missing components
 import ReadyForBillingTable from '../tables/ReadyForBillingTable';
 import AccountsReceivableTable from '../tables/AccountsReceivableTable';
 import TransactionHistoryView from '../views/TransactionHistoryView';
@@ -48,7 +24,6 @@ import RecordPaymentDialog from '../dialogs/RecordPaymentDialog';
 import { getBillingQueue, createInvoice, getInvoices, getPendingApprovals, approveInvoice, rejectInvoice, getRejectedInvoices, resubmitInvoice } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSnackbar } from '../../contexts/SnackbarContext';
-import { NotificationProvider } from '../../contexts/NotificationContext';
 
 interface BillingQueueItem {
   id: number;
@@ -64,19 +39,6 @@ interface Invoice {
   paymentstatus?: string;
   approval_status?: string;
   [key: string]: unknown;
-}
-
-interface MenuGroup {
-  label: string;
-  icon: React.ReactNode;
-  items: MenuItem[];
-}
-
-interface MenuItem {
-  label: string;
-  icon: React.ReactNode;
-  path: string;
-  component: React.ReactNode;
 }
 
 // Billing Ready View Component
@@ -106,20 +68,12 @@ const ReadyForBillingView: React.FC = () => {
 
   const handleCreateInvoice = async (courseId: string | number) => {
     try {
-      console.log('🔍 [INVOICE] Creating invoice for course:', courseId);
       const response = await createInvoice(courseId as number);
-      console.log('✅ [INVOICE] Invoice created successfully:', response);
-      
-      // Show success message
       showSuccess(response.data.message || 'Invoice created successfully! The course has been removed from the billing queue and moved to the Organizational Receivables Queue.');
-      
-      // Refresh the billing queue after creating invoice
       const updatedQueue = await getBillingQueue();
       setBillingQueue(updatedQueue.data || []);
     } catch (error: unknown) {
-      console.error('❌ [INVOICE] Error creating invoice:', error);
       const axiosErr = error as { response?: { data?: { error?: { message?: string }; message?: string } }; message?: string };
-      // Show error message to user
       const errorMessage = axiosErr.response?.data?.error?.message ||
                           axiosErr.response?.data?.message ||
                           axiosErr.message ||
@@ -131,12 +85,12 @@ const ReadyForBillingView: React.FC = () => {
   return (
     <Box>
       <Typography variant="h5" gutterBottom>
-        📋 Ready for Billing
+        Ready for Billing
       </Typography>
       <Typography variant="body1" color="textSecondary" sx={{ mb: 3 }}>
         Review completed courses and create invoices for billing
       </Typography>
-      
+
       <ReadyForBillingTable
         courses={billingQueue}
         onCreateInvoice={handleCreateInvoice}
@@ -158,46 +112,40 @@ const AccountsReceivableView: React.FC = () => {
   const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null);
   const { showSuccess, showError } = useSnackbar();
 
-  React.useEffect(() => {
-    const fetchInvoices = async () => {
-      setIsLoading(true);
-      setError('');
-      try {
-        const data = await getInvoices();
-        // Filter to show only approved invoices with outstanding balances for AR
-        const arInvoices = (data || []).filter((invoice: Invoice) => {
-          const balanceDue = parseFloat(String(invoice.balancedue || 0));
-          const paymentStatus = invoice.paymentstatus?.toLowerCase();
-          const approvalStatus = invoice.approval_status?.toLowerCase();
-          // Only show approved invoices with outstanding balance
-          return approvalStatus === 'approved' && balanceDue > 0 && paymentStatus !== 'paid';
-        });
-        setInvoices(arInvoices);
-      } catch (err: unknown) {
-        const errObj = err as { message?: string };
-        setError(errObj.message || 'Failed to load invoices.');
-        setInvoices([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchInvoices();
+  const fetchInvoices = useCallback(async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const data = await getInvoices();
+      const arInvoices = (data || []).filter((invoice: Invoice) => {
+        const balanceDue = parseFloat(String(invoice.balancedue || 0));
+        const paymentStatus = invoice.paymentstatus?.toLowerCase();
+        const approvalStatus = invoice.approval_status?.toLowerCase();
+        return approvalStatus === 'approved' && balanceDue > 0 && paymentStatus !== 'paid';
+      });
+      setInvoices(arInvoices);
+    } catch (err: unknown) {
+      const errObj = err as { message?: string };
+      setError(errObj.message || 'Failed to load invoices.');
+      setInvoices([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
+  React.useEffect(() => {
+    fetchInvoices();
+  }, [fetchInvoices]);
+
   const handleRecordPaymentClick = (invoice: Invoice) => {
-    console.log('Record payment for invoice:', invoice);
     setSelectedInvoiceForPayment(invoice);
     setShowRecordPaymentDialog(true);
   };
 
   const handleViewDetailsClick = (invoiceId: string | number) => {
-    console.log('View details for invoice:', invoiceId);
     setSelectedInvoiceId(invoiceId as number);
     setShowInvoiceDetailDialog(true);
   };
-
-
 
   const handleInvoiceDetailDialogClose = () => {
     setShowInvoiceDetailDialog(false);
@@ -206,29 +154,6 @@ const AccountsReceivableView: React.FC = () => {
 
   const handleInvoiceActionSuccess = (message: string) => {
     showSuccess(message);
-    // Refresh invoices after approval action
-    const fetchInvoices = async () => {
-      setIsLoading(true);
-      setError('');
-      try {
-        const data = await getInvoices();
-        // Filter to show only approved invoices with outstanding balances for AR
-        const arInvoices = (data || []).filter((invoice: Invoice) => {
-          const balanceDue = parseFloat(String(invoice.balancedue || 0));
-          const paymentStatus = invoice.paymentstatus?.toLowerCase();
-          const approvalStatus = invoice.approval_status?.toLowerCase();
-          // Only show approved invoices with outstanding balance
-          return approvalStatus === 'approved' && balanceDue > 0 && paymentStatus !== 'paid';
-        });
-        setInvoices(arInvoices);
-      } catch (err: unknown) {
-        const errObj = err as { message?: string };
-        setError(errObj.message || 'Failed to load invoices.');
-        setInvoices([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchInvoices();
   };
 
@@ -240,21 +165,6 @@ const AccountsReceivableView: React.FC = () => {
     showSuccess(message);
     setShowRecordPaymentDialog(false);
     setSelectedInvoiceForPayment(null);
-    // Refresh invoices after payment record
-    const fetchInvoices = async () => {
-      setIsLoading(true);
-      setError('');
-      try {
-        const data = await getInvoices();
-        setInvoices(data || []);
-      } catch (err: unknown) {
-        const errObj = err as { message?: string };
-        setError(errObj.message || 'Failed to load invoices.');
-        setInvoices([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchInvoices();
   };
 
@@ -270,29 +180,27 @@ const AccountsReceivableView: React.FC = () => {
   return (
     <Box>
       <Typography variant="h5" gutterBottom>
-        💰 Organization Receivables
+        Organization Receivables
       </Typography>
       <Typography variant="body1" color="textSecondary" sx={{ mb: 3 }}>
         Manage outstanding invoices from organizations and payment tracking
       </Typography>
-      
+
       <AccountsReceivableTable
         invoices={invoices}
         onRecordPaymentClick={handleRecordPaymentClick}
         onViewDetailsClick={handleViewDetailsClick}
       />
 
-      {/* Invoice Detail Dialog */}
       <InvoiceDetailDialog
         open={showInvoiceDetailDialog}
         onClose={handleInvoiceDetailDialogClose}
         invoiceId={selectedInvoiceId}
         onActionSuccess={handleInvoiceActionSuccess}
         onActionError={handleInvoiceActionError}
-        showPostToOrgButton={true} // Show Post to Org button in AR section
+        showPostToOrgButton={true}
       />
 
-      {/* Record Payment Dialog */}
       <RecordPaymentDialog
         open={showRecordPaymentDialog}
         onClose={handleRecordPaymentDialogClose}
@@ -475,7 +383,6 @@ const PendingApprovalsView: React.FC = () => {
         </Paper>
       )}
 
-      {/* Invoice Detail Dialog for reviewing before approval/rejection */}
       <InvoiceDetailDialog
         open={showInvoiceDetailDialog}
         onClose={handleInvoiceDetailDialogClose}
@@ -491,7 +398,7 @@ const PendingApprovalsView: React.FC = () => {
   );
 };
 
-// Rejected Invoices View Component - for accountant to fix and resubmit
+// Rejected Invoices View Component
 const RejectedInvoicesView: React.FC = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -673,7 +580,6 @@ const RejectedInvoicesView: React.FC = () => {
         </Paper>
       )}
 
-      {/* Invoice Detail Dialog for viewing/editing */}
       <InvoiceDetailDialog
         open={showInvoiceDetailDialog}
         onClose={handleInvoiceDetailDialogClose}
@@ -686,140 +592,55 @@ const RejectedInvoicesView: React.FC = () => {
   );
 };
 
-// Grouped menu structure
-const menuGroups = [
-  {
-    label: 'Financial Management',
-    icon: <FinancialIcon />,
-    items: [
-      { 
-        label: 'Financial Dashboard', 
-        icon: <DashboardIcon />, 
-        path: 'dashboard', 
-        component: <AccountingDashboard /> 
-      },
-      {
-        label: 'Aging Report',
-        icon: <AgingIcon />,
-        path: 'aging',
-        component: <AgingReportView />
-      },
-      {
-        label: 'Financial Summary',
-        icon: <FinancialIcon />,
-        path: 'financial-summary',
-        component: <FinancialSummaryView />
-      },
-    ]
-  },
-  {
-    label: 'Billing & Receivables',
-    icon: <OrganizationIcon />,
-    items: [
-      {
-        label: 'Ready for Billing',
-        icon: <BillingIcon />,
-        path: 'billing',
-        component: <ReadyForBillingView />
-      },
-      {
-        label: 'Pending Approvals',
-        icon: <HourglassEmptyIcon />,
-        path: 'pending-approvals',
-        component: <PendingApprovalsView />
-      },
-      {
-        label: 'Rejected Invoices',
-        icon: <RejectedIcon />,
-        path: 'rejected-invoices',
-        component: <RejectedInvoicesView />
-      },
-      {
-        label: 'Organization Receivables',
-        icon: <ReceivablesIcon />,
-        path: 'receivables',
-        component: <AccountsReceivableView />
-      },
-      { 
-        label: 'Invoice History', 
-        icon: <HistoryIcon />, 
-        path: 'history', 
-        component: <TransactionHistoryView /> 
-      },
-    ]
-  },
-  {
-    label: 'Payment Processing',
-    icon: <PaymentIcon />,
-    items: [
-      { 
-        label: 'Instructor Payment Requests', 
-        icon: <PaymentRequestsIcon />, 
-        path: 'payment-requests', 
-        component: <PaymentRequestsDashboard /> 
-      },
-      { 
-        label: 'Payment Verification', 
-        icon: <VerificationIcon />, 
-        path: 'verification', 
-        component: <PaymentVerificationView /> 
-      },
-      { 
-        label: 'Payment Reversal', 
-        icon: <ReverseIcon />, 
-        path: 'reversal', 
-        component: <PaymentReversalView /> 
-      },
-    ]
-  },
-  {
-    label: 'Vendor Management',
-    icon: <VendorIcon />,
-    items: [
-      { 
-        label: 'Vendor Invoices', 
-        icon: <VendorIcon />, 
-        path: 'vendor-invoices', 
-        component: <VendorInvoiceManagement /> 
-      },
-      { 
-        label: 'Paid Vendor Invoices', 
-        icon: <PaidIcon />, 
-        path: 'paid-vendor-invoices', 
-        component: <PaidVendorInvoices /> 
-      },
-    ]
-  },
+const pageConfig: Record<string, { eyebrow: string; title: string }> = {
+  dashboard: { eyebrow: 'Overview', title: 'Financial Dashboard' },
+  aging: { eyebrow: 'Financial', title: 'Aging Report' },
+  'financial-summary': { eyebrow: 'Financial', title: 'Financial Summary' },
+  billing: { eyebrow: 'Billing', title: 'Ready for Billing' },
+  'pending-approvals': { eyebrow: 'Billing', title: 'Pending Approvals' },
+  'rejected-invoices': { eyebrow: 'Billing', title: 'Rejected Invoices' },
+  receivables: { eyebrow: 'Billing', title: 'Organization Receivables' },
+  history: { eyebrow: 'Billing', title: 'Invoice History' },
+  'payment-requests': { eyebrow: 'Payments', title: 'Instructor Payment Requests' },
+  verification: { eyebrow: 'Payments', title: 'Payment Verification' },
+  reversal: { eyebrow: 'Payments', title: 'Payment Reversal' },
+  'vendor-invoices': { eyebrow: 'Vendors', title: 'Vendor Invoices' },
+  'paid-vendor-invoices': { eyebrow: 'Vendors', title: 'Paid Vendor Invoices' },
+};
+
+const navItems = [
+  { label: 'Financial Dashboard', path: '/accounting/dashboard' },
+  { label: 'Aging Report', path: '/accounting/aging' },
+  { label: 'Financial Summary', path: '/accounting/financial-summary' },
+  { label: 'Ready for Billing', path: '/accounting/billing' },
+  { label: 'Pending Approvals', path: '/accounting/pending-approvals' },
+  { label: 'Rejected Invoices', path: '/accounting/rejected-invoices' },
+  { label: 'Organization Receivables', path: '/accounting/receivables' },
+  { label: 'Invoice History', path: '/accounting/history' },
+  { label: 'Instructor Payments', path: '/accounting/payment-requests' },
+  { label: 'Payment Verification', path: '/accounting/verification' },
+  { label: 'Payment Reversal', path: '/accounting/reversal' },
+  { label: 'Vendor Invoices', path: '/accounting/vendor-invoices' },
+  { label: 'Paid Vendor Invoices', path: '/accounting/paid-vendor-invoices' },
 ];
 
-// Flatten all items for routing
-const allRoutes = menuGroups.flatMap(group => group.items);
-
 const AccountingPortal: React.FC = () => {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+  const currentPath = location.pathname.split('/').pop() || 'dashboard';
+  const config = pageConfig[currentPath] || { eyebrow: 'Accounting', title: 'Accounting Portal' };
+
   const handleError = (error: Error, errorInfo: React.ErrorInfo) => {
     console.error('[AccountingPortal] Error caught by boundary:', error, errorInfo);
   };
 
-  const { logout, user, loading } = useAuth();
-  const { showSuccess } = useSnackbar();
-  const location = useLocation();
-  const currentPath = location.pathname.split('/').pop();
-
-  console.log('[AccountingPortal] Auth state:', { user: user?.username, role: user?.role, loading, pathname: location.pathname });
-
-  // Role-based access control - redirect vendors to vendor portal
+  // Role-based access control - redirect non-accounting users
   if (user && user.role === 'vendor') {
-    console.log('[AccountingPortal] Vendor detected, redirecting to vendor portal');
-    console.log('[AccountingPortal] User details:', { id: user.id, username: user.username, role: user.role });
-    console.log('[AccountingPortal] Current location:', location.pathname);
-    console.log('[AccountingPortal] Forcing redirect to vendor portal...');
     return <Navigate to="/vendor/dashboard" replace />;
   }
 
-  // Additional check: if user is not an accountant or admin, redirect to appropriate portal
   if (user && !['accountant', 'admin'].includes(user.role)) {
-    console.log('[AccountingPortal] Non-accounting user detected, redirecting to appropriate portal');
-    const roleRoutes = {
+    const roleRoutes: Record<string, string> = {
       instructor: '/instructor/dashboard',
       organization: '/organization/dashboard',
       superadmin: '/superadmin/dashboard',
@@ -827,12 +648,10 @@ const AccountingPortal: React.FC = () => {
       hr: '/hr',
       vendor: '/vendor/dashboard',
     };
-    const targetRoute = roleRoutes[user.role as keyof typeof roleRoutes] || '/vendor/dashboard';
-    console.log('[AccountingPortal] Redirecting to:', targetRoute);
+    const targetRoute = roleRoutes[user.role] || '/vendor/dashboard';
     return <Navigate to={targetRoute} replace />;
   }
 
-  // Show loading while auth is being checked
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
@@ -841,176 +660,34 @@ const AccountingPortal: React.FC = () => {
     );
   }
 
-  // Menu state management
-  const [menuAnchors, setMenuAnchors] = useState<{ [key: string]: HTMLElement | null }>({});
-
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, groupLabel: string) => {
-    setMenuAnchors(prev => ({ ...prev, [groupLabel]: event.currentTarget }));
-  };
-
-  const handleMenuClose = (groupLabel: string) => {
-    setMenuAnchors(prev => ({ ...prev, [groupLabel]: null }));
-  };
-
-  // Helper function to check if a group contains the current active route
-  const isGroupActive = (group: MenuGroup) => {
-    return group.items.some((item) => `/accounting/${item.path}` === location.pathname);
-  };
-
-  const handleLogout = async () => {
-    try {
-      const firstName = user?.username || 'Accounting User';
-      const logoutMessage = `Goodbye ${firstName}, Have a Great Day!`;
-      showSuccess(logoutMessage);
-      
-      setTimeout(() => {
-        logout();
-      }, 1500);
-    } catch (error: any) {
-      console.error('Logout error:', error);
-    }
-  };
-
   return (
     <ErrorBoundary context="accounting_portal" onError={handleError}>
-      <Container maxWidth='xl' sx={{ mt: 2, mb: 4 }}>
-        <Paper elevation={1} sx={{ mb: 3, p: 2 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Box>
-              <Typography variant='h4' component='h1' gutterBottom>
-                🏦 Accounting Portal
-              </Typography>
-              <Typography variant='subtitle1' color='textSecondary'>
-                Financial management and course pricing administration
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <ThemeToggle size="small" />
-              <Button
-                variant="outlined"
-                color="secondary"
-                startIcon={<LogoutIcon />}
-                onClick={handleLogout}
-                sx={{ minWidth: 120 }}
-              >
-                Logout
-              </Button>
-            </Box>
-          </Box>
-        </Paper>
-
-        <Paper elevation={1}>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', overflowX: 'auto', p: 1 }}>
-            {menuGroups.map((group) => (
-              <Box key={group.label} sx={{ position: 'relative' }}>
-                <Button
-                  variant="text"
-                  color={isGroupActive(group) ? "primary" : "inherit"}
-                  startIcon={group.icon}
-                  endIcon={menuAnchors[group.label] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                  onClick={(e) => handleMenuOpen(e, group.label)}
-                  sx={{
-                    textTransform: 'none',
-                    fontWeight: isGroupActive(group) ? 'bold' : 'medium',
-                    px: 2,
-                    py: 1.5,
-                    borderBottom: isGroupActive(group) ? '2px solid #1976d2' : 'none',
-                    '&:hover': {
-                      backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                    }
-                  }}
-                >
-                  {group.label}
-                </Button>
-                <Menu
-                  anchorEl={menuAnchors[group.label]}
-                  open={Boolean(menuAnchors[group.label])}
-                  onClose={() => handleMenuClose(group.label)}
-                  anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'left',
-                  }}
-                  transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'left',
-                  }}
-                  PaperProps={{
-                    sx: {
-                      minWidth: 250,
-                      mt: 1,
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                    }
-                  }}
-                >
-                  {group.items.map((item) => (
-                    <MenuItem
-                      key={item.label}
-                      component={NavLink}
-                      to={`/accounting/${item.path}`}
-                      onClick={() => handleMenuClose(group.label)}
-                      sx={{
-                        py: 1.5,
-                        px: 2,
-                        '&.active': {
-                          backgroundColor: 'primary.light',
-                          color: 'primary.contrastText',
-                          '&:hover': {
-                            backgroundColor: 'primary.main',
-                          }
-                        }
-                      }}
-                    >
-                      <ListItemIcon sx={{ minWidth: 40 }}>
-                        {item.icon}
-                      </ListItemIcon>
-                      <ListItemText 
-                        primary={item.label}
-                        primaryTypographyProps={{
-                          fontSize: '0.9rem',
-                          fontWeight: 'medium'
-                        }}
-                      />
-                    </MenuItem>
-                  ))}
-                </Menu>
-              </Box>
-            ))}
-          </Box>
-
-          <Box sx={{ p: 3 }}>
-            <Routes>
-              <Route index element={
-                <ErrorBoundary context="accounting_dashboard" onError={handleError}>
-                  <AccountingDashboard />
-                </ErrorBoundary>
-              } />
-              {allRoutes.map((route) => (
-                <Route
-                  key={route.path}
-                  path={route.path}
-                  element={
-                    <ErrorBoundary context={`accounting_${route.path}`} onError={handleError}>
-                      {route.component}
-                    </ErrorBoundary>
-                  }
-                />
-              ))}
-              <Route path="*" element={
-                <Box sx={{ p: 3 }}>
-                  <Typography variant="h6">View not found</Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Current path: {location.pathname}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Available routes: {allRoutes.map(r => r.path).join(', ')}
-                  </Typography>
-                </Box>
-              } />
-            </Routes>
-          </Box>
-        </Paper>
-      </Container>
-      </ErrorBoundary>
+      <AdminShell
+        eyebrow={config.eyebrow}
+        title={config.title}
+        portalName="Accounting"
+        basePath="/accounting/dashboard"
+        navItems={navItems}
+      >
+        <Routes>
+          <Route path="dashboard" element={<AccountingDashboard />} />
+          <Route path="aging" element={<AgingReportView />} />
+          <Route path="financial-summary" element={<FinancialSummaryView />} />
+          <Route path="billing" element={<ReadyForBillingView />} />
+          <Route path="pending-approvals" element={<PendingApprovalsView />} />
+          <Route path="rejected-invoices" element={<RejectedInvoicesView />} />
+          <Route path="receivables" element={<AccountsReceivableView />} />
+          <Route path="history" element={<TransactionHistoryView />} />
+          <Route path="payment-requests" element={<PaymentRequestsDashboard />} />
+          <Route path="verification" element={<PaymentVerificationView />} />
+          <Route path="reversal" element={<PaymentReversalView />} />
+          <Route path="vendor-invoices" element={<VendorInvoiceManagement />} />
+          <Route path="paid-vendor-invoices" element={<PaidVendorInvoices />} />
+          <Route path="" element={<Navigate to="dashboard" replace />} />
+          <Route path="*" element={<Box sx={{ p: 3 }}><Typography variant="h6">View not found</Typography></Box>} />
+        </Routes>
+      </AdminShell>
+    </ErrorBoundary>
   );
 };
 
