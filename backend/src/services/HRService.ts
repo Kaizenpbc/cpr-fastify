@@ -16,7 +16,17 @@ const PROFILE_CHANGE_COLUMN_MAP: Record<string, string> = {
   emergency_contact_name: 'emergency_contact_name',
   emergency_contact_phone: 'emergency_contact_phone',
   user_comments: 'user_comments',
-};
+} as const;
+
+const SAFE_COLUMN_RE = /^[a-z][a-z0-9_]{0,63}$/;
+
+function getSafeColumn(fieldName: string): string {
+  const col = PROFILE_CHANGE_COLUMN_MAP[fieldName];
+  if (!col || !SAFE_COLUMN_RE.test(col)) {
+    throw new HRError(`Field '${fieldName}' is not permitted for profile changes`);
+  }
+  return col;
+}
 
 export class HRError extends Error {
   constructor(message: string, public statusCode: number = 400) {
@@ -134,10 +144,7 @@ export class HRService {
       );
 
       if (action === 'approve') {
-        const safeColumn = PROFILE_CHANGE_COLUMN_MAP[change.field_name];
-        if (!safeColumn) {
-          throw new HRError(`Field '${change.field_name}' is not permitted for profile changes`);
-        }
+        const safeColumn = getSafeColumn(change.field_name);
         await conn.query(
           `UPDATE users SET \`${safeColumn}\` = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
           [change.new_value, change.user_id]
@@ -272,9 +279,7 @@ export class HRService {
   // --- Profile change submission (by any user) ---
 
   async submitProfileChange(userId: number, userRole: string, data: { fieldName: string; newValue: string; changeType: string; targetUserId?: number }) {
-    if (!PROFILE_CHANGE_COLUMN_MAP[data.fieldName]) {
-      throw new HRError(`Field '${data.fieldName}' is not permitted for profile changes`);
-    }
+    getSafeColumn(data.fieldName);
 
     if (!['instructor', 'organization'].includes(data.changeType)) {
       throw new HRError('change_type must be "instructor" or "organization"');
