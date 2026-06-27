@@ -2,7 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { getPool } from '../config/database.js';
 import { requireAuth, requireRole } from '../plugins/auth.js';
-import { HST_RATE } from '../utils/taxConfig.js';
+import { getHSTRate } from '../utils/taxConfig.js';
 
 const createPricingSchema = z.object({
   organizationId: z.number().int().positive(),
@@ -83,7 +83,7 @@ export async function organizationPricingRoutes(app: FastifyInstance) {
 
     const pricePerStudent = Number(rows[0].price_per_student);
     const subtotal = pricePerStudent * studentCount;
-    const hst = subtotal * HST_RATE;
+    const hst = subtotal * getHSTRate();
     const total = subtotal + hst;
 
     return { success: true, data: { pricePerStudent, studentCount, subtotal, hst, total } };

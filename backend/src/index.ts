@@ -3,6 +3,7 @@ import { env } from './config/env.js';
 import { logger } from './config/logger.js';
 import { connectDatabase, closeDatabaseConnections } from './config/database.js';
 import { runMigrations } from './config/migrations.js';
+import { initTaxConfig } from './utils/taxConfig.js';
 
 // Initialize Sentry (optional — gracefully skipped if package not installed)
 if (env.SENTRY_DSN) {
@@ -22,6 +23,7 @@ if (env.SENTRY_DSN) {
 async function start() {
   await connectDatabase();
   await runMigrations();
+  await initTaxConfig();
 
   const app = await buildApp();
   const address = await app.listen({ port: env.PORT, host: '0.0.0.0' });

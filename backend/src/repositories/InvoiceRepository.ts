@@ -1,7 +1,7 @@
 import { BaseRepository } from './BaseRepository.js';
 import { getPool } from '../config/database.js';
 import { RowDataPacket } from 'mysql2/promise';
-import { HST_RATE } from '../utils/taxConfig.js';
+import { getHSTRate } from '../utils/taxConfig.js';
 
 export interface Invoice {
   id: number;
@@ -126,7 +126,7 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
          AND (cr.invoiced IS NULL OR cr.invoiced = FALSE)
        ORDER BY cr.ready_for_billing_at DESC
        LIMIT 200`,
-      [1 + HST_RATE]
+      [1 + getHSTRate()]
     );
   }
 

@@ -46,6 +46,8 @@ export async function billingRoutes(app: FastifyInstance) {
   const acctRole = [requireRole('accountant', 'admin', 'sysadmin')];
 
   // ===== Dashboard =====
+  // Cross-org aggregation is intentional: accountants/admins need full financial visibility.
+  // Org-scoped dashboards are served via /organization/dashboard (filtered by userOrgId).
   app.get('/dashboard', { preHandler: acctRole }, async () => {
     return { success: true, data: await service.getDashboard() };
   });

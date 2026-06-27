@@ -1,12 +1,44 @@
 /**
  * Tax configuration.
- * Set HST_RATE env var to override the default 13% (Ontario HST).
- * Validated via Zod in config/env.ts.
+ * Primary source: system_config table in the database.
+ * Fallback: HST_RATE env var, then default 13% (Ontario HST).
+ *
+ * Call initTaxConfig() once at startup (after DB is ready) to load from DB.
+ * All consumers use getHSTRate() / getHSTLabel() which always reflect the
+ * current DB value.
  */
 import { env } from '../config/env.js';
+import { getPool } from '../config/database.js';
+import { logger } from '../config/logger.js';
 
-export const HST_RATE: number = env.HST_RATE ?? 0.13;
+let _rate: number = env.HST_RATE ?? 0.13;
 
-export const HST_RATE_PERCENT: number = HST_RATE * 100;
+export function getHSTRate(): number {
+  return _rate;
+}
 
-export const HST_LABEL: string = `HST (${HST_RATE_PERCENT % 1 === 0 ? HST_RATE_PERCENT.toFixed(0) : HST_RATE_PERCENT}%)`;
+export function getHSTLabel(): string {
+  const pct = _rate * 100;
+  return `HST (${pct % 1 === 0 ? pct.toFixed(0) : pct}%)`;
+}
+
+/** Load tax rate from system_config table. Call once at startup after DB pool is ready. */
+export async function initTaxConfig(): Promise<void> {
+  try {
+    const pool = getPool();
+    const [rows] = await pool.query<any[]>(
+      `SELECT config_value FROM system_config WHERE config_key = 'tax_rate'`
+    );
+    if (rows.length > 0) {
+      const dbRate = parseFloat(rows[0].config_value);
+      if (!isNaN(dbRate) && dbRate >= 0 && dbRate <= 1) {
+        _rate = dbRate;
+        logger.info({ taxRate: _rate, source: 'database' }, 'Tax rate loaded from system_config');
+        return;
+      }
+    }
+  } catch {
+    // system_config table may not exist yet (pre-migration). Fall through to default.
+  }
+  logger.info({ taxRate: _rate, source: 'env/default' }, 'Tax rate using env/default');
+}

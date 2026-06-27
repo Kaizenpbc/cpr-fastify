@@ -1,5 +1,5 @@
 import PDFDocument from 'pdfkit';
-import { HST_RATE, HST_LABEL } from '../utils/taxConfig.js';
+import { getHSTRate, getHSTLabel } from '../utils/taxConfig.js';
 import { env } from '../config/env.js';
 
 const APP_URL = env.FRONTEND_URL;
@@ -98,7 +98,7 @@ export class PDFService {
         if (!ratePerStudent) throw new Error('Pricing not configured for this invoice.');
 
         const subtotal = studentsBilled * ratePerStudent;
-        const hst = subtotal * HST_RATE;
+        const hst = subtotal * getHSTRate();
         const total = subtotal + hst;
         const attendanceList = Array.isArray(invoice.attendance_list) ? invoice.attendance_list : [];
         const present = attendanceList.filter(s => s.attended).length;
@@ -159,7 +159,7 @@ export class PDFService {
         doc.moveTo(50, costBoxY).lineTo(50, costBoxY + 60).strokeColor(GREEN).lineWidth(4).stroke();
         doc.fontSize(12).fillColor(GREEN).text('Cost Breakdown', 60, costBoxY + 10);
         doc.fontSize(9).fillColor(GRAY);
-        doc.text('Base Cost', 80, costBoxY + 30); doc.text(`Tax (${HST_LABEL})`, 230, costBoxY + 30); doc.text('Total Amount', 380, costBoxY + 30);
+        doc.text('Base Cost', 80, costBoxY + 30); doc.text(`Tax (${getHSTLabel()})`, 230, costBoxY + 30); doc.text('Total Amount', 380, costBoxY + 30);
         doc.fontSize(14).fillColor('#000000');
         doc.text(formatCurrency(subtotal), 80, costBoxY + 42); doc.text(formatCurrency(hst), 230, costBoxY + 42);
         doc.fillColor(BLUE).text(formatCurrency(total), 380, costBoxY + 42);
@@ -231,7 +231,7 @@ export class PDFService {
     const studentsBilled = invoice.students_billed || 0;
     const ratePerStudent = Number(invoice.rate_per_student) || 0;
     const subtotal = studentsBilled * ratePerStudent;
-    const hst = subtotal * HST_RATE;
+    const hst = subtotal * getHSTRate();
     const total = subtotal + hst;
     const attendanceList = Array.isArray(invoice.attendance_list) ? invoice.attendance_list : [];
     const present = attendanceList.filter(s => s.attended).length;
@@ -244,7 +244,7 @@ export class PDFService {
 <div class="section"><h3>Invoice Details</h3><p><strong>Invoice #:</strong> ${invoice.invoice_number}</p><p><strong>Date:</strong> ${invoiceDate} | <strong>Due:</strong> ${dueDate}</p><p><strong>Status:</strong> ${invoice.status}</p></div>
 <div class="section"><h3>Bill To</h3><p><strong>${invoice.organization_name}</strong></p><p>${invoice.contact_email}</p></div>
 <div class="section"><h3>Course Information</h3><p><strong>Course:</strong> ${invoice.course_type_name} | <strong>Location:</strong> ${invoice.location}</p><p><strong>Date:</strong> ${courseDate} | <strong>Students:</strong> ${studentsBilled}</p></div>
-<div class="section"><h3>Cost Breakdown</h3><p>Base Cost (${studentsBilled} x ${formatCurrency(ratePerStudent)}): ${formatCurrency(subtotal)}</p><p>${HST_LABEL}: ${formatCurrency(hst)}</p><p class="total">Total: ${formatCurrency(total)}</p></div>
+<div class="section"><h3>Cost Breakdown</h3><p>Base Cost (${studentsBilled} x ${formatCurrency(ratePerStudent)}): ${formatCurrency(subtotal)}</p><p>${getHSTLabel()}: ${formatCurrency(hst)}</p><p class="total">Total: ${formatCurrency(total)}</p></div>
 ${attendanceList.length > 0 ? `<div class="section" style="border-left-color:#ff9800"><h3 style="color:#ff9800">Attendance (${present} Present, ${absent} Absent)</h3><table><tr><th>Name</th><th>Email</th><th>Status</th></tr>${attendanceList.map(s => `<tr><td>${s.first_name} ${s.last_name}</td><td>${s.email || 'N/A'}</td><td style="color:${s.attended ? 'green' : 'red'}">${s.attended ? 'Present' : 'Absent'}</td></tr>`).join('')}</table></div>` : ''}
 </body></html>`;
   }

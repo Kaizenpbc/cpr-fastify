@@ -3,7 +3,7 @@ import { logger } from '../config/logger.js';
 import { InvoiceRepository, Invoice, InvoiceWithDetails, DashboardData } from '../repositories/InvoiceRepository.js';
 import { CoursePricingRepository, CoursePricing } from '../repositories/CoursePricingRepository.js';
 import { InvoiceNumberService } from './InvoiceNumberService.js';
-import { HST_RATE } from '../utils/taxConfig.js';
+import { getHSTRate } from '../utils/taxConfig.js';
 
 const INVOICE_DUE_DAYS = 30;
 
@@ -105,7 +105,7 @@ export class BillingService {
       }
 
       const baseCost = course.students_attended * course.price_per_student;
-      const taxAmount = baseCost * HST_RATE;
+      const taxAmount = baseCost * getHSTRate();
       const totalAmount = baseCost + taxAmount;
       const invoiceNumber = await this.invoiceNumberService.allocate(course.organization_id, conn);
 
@@ -285,7 +285,7 @@ export class BillingService {
 
       const inv = rows[0];
       const baseCost = inv.students_billed * inv.price_per_student;
-      const totalAmount = baseCost + baseCost * HST_RATE;
+      const totalAmount = baseCost + baseCost * getHSTRate();
 
       await conn.query(
         `UPDATE invoices SET amount = ?, rate_per_student = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
@@ -311,14 +311,44 @@ export class BillingService {
   async recordPayment(invoiceId: number, amount: number, paymentMethod: string, reference?: string): Promise<any> {
     if (!amount || amount <= 0) throw new BillingError('Valid payment amount is required');
 
-    const invoice = await this.invoiceRepo.findById(invoiceId);
-    if (!invoice) throw new BillingError('Invoice not found', 404);
-
     const pool = getPool();
     const conn = await pool.getConnection();
 
     try {
       await conn.beginTransaction();
+
+      // Lock the invoice row and get current payment totals in one atomic query
+      const [locked] = await conn.query<any[]>(
+        `SELECT i.id, i.amount, i.status,
+                COALESCE(SUM(CASE WHEN p.status = 'verified' AND p.deleted_at IS NULL THEN p.amount ELSE 0 END), 0) as total_paid
+         FROM invoices i
+         LEFT JOIN payments p ON i.id = p.invoice_id
+         WHERE i.id = ? AND i.deleted_at IS NULL
+         GROUP BY i.id, i.amount, i.status
+         FOR UPDATE`,
+        [invoiceId]
+      );
+
+      if (!locked.length) {
+        await conn.rollback();
+        throw new BillingError('Invoice not found', 404);
+      }
+
+      const invoice = locked[0];
+      const alreadyPaid = Number(invoice.total_paid);
+      const remaining = Number(invoice.amount) - alreadyPaid;
+
+      if (remaining <= 0) {
+        await conn.rollback();
+        throw new BillingError('Invoice is already fully paid');
+      }
+
+      if (amount > remaining + 0.01) {
+        await conn.rollback();
+        throw new BillingError(
+          `Payment of $${amount.toFixed(2)} exceeds remaining balance of $${remaining.toFixed(2)}`
+        );
+      }
 
       const [result] = await conn.query<any>(
         `INSERT INTO payments (invoice_id, amount, payment_method, reference_number,
@@ -326,14 +356,9 @@ export class BillingService {
         [invoiceId, amount, paymentMethod, reference ?? null]
       );
 
-      // Check if fully paid
-      const [paid] = await conn.query<any[]>(
-        `SELECT SUM(amount) as total FROM payments WHERE invoice_id = ? AND status = 'verified' AND deleted_at IS NULL`,
-        [invoiceId]
-      );
-      const totalPaid = Number(paid[0]?.total ?? 0);
+      const totalPaid = alreadyPaid + amount;
 
-      if (totalPaid >= invoice.amount) {
+      if (totalPaid >= Number(invoice.amount)) {
         await conn.query(
           `UPDATE invoices SET status = 'paid', paid_date = CURRENT_DATE, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
           [invoiceId]

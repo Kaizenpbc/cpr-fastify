@@ -159,6 +159,28 @@ const migrations: Migration[] = [
       logger.info({ backfilled: result.affectedRows }, 'Certificate dates backfilled');
     },
   },
+  {
+    version: 11,
+    name: 'create_system_config',
+    up: async (pool: Pool) => {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS system_config (
+          config_key VARCHAR(100) NOT NULL PRIMARY KEY,
+          config_value VARCHAR(500) NOT NULL,
+          description VARCHAR(255) DEFAULT NULL,
+          updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      `);
+      // Seed the tax rate from current env or default
+      const hstRate = process.env.HST_RATE ?? '0.13';
+      await pool.query(
+        `INSERT IGNORE INTO system_config (config_key, config_value, description)
+         VALUES ('tax_rate', ?, 'HST rate as decimal (e.g. 0.13 = 13%)')`,
+        [hstRate]
+      );
+      logger.info({ taxRate: hstRate }, 'system_config table created with tax_rate');
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {
