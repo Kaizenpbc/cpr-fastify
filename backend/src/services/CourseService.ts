@@ -3,6 +3,7 @@ import { logger } from '../config/logger.js';
 import { CourseRequestRepository, CourseRequest, CourseWithDetails } from '../repositories/CourseRequestRepository.js';
 import { CourseStudentRepository, CourseStudent } from '../repositories/CourseStudentRepository.js';
 import { UserRepository } from '../repositories/UserRepository.js';
+import { emailService } from './EmailService.js';
 
 // --- Error types ---
 
@@ -60,6 +61,70 @@ export class CourseService {
     private studentRepo: CourseStudentRepository,
     private userRepo: UserRepository,
   ) {}
+
+  // --- Helpers ---
+
+  private async getOrgAdminEmails(organizationId: number): Promise<string[]> {
+    const pool = getPool();
+    const [rows] = await pool.query<any[]>(
+      `SELECT email FROM users
+       WHERE organization_id = ? AND role IN ('org_admin', 'organization') AND status = 'active' AND email IS NOT NULL`,
+      [organizationId]
+    );
+    return rows.map((r: any) => r.email).filter(Boolean);
+  }
+
+  private async shouldSendEmail(userId: number, notificationType: string): Promise<boolean> {
+    try {
+      const pool = getPool();
+      const [rows] = await pool.query<any[]>(
+        'SELECT email_enabled FROM notification_preferences WHERE user_id = ? AND notification_type = ?',
+        [userId, notificationType]
+      );
+      // If no preference row exists, send by default
+      if (rows.length === 0) return true;
+      return rows[0].email_enabled !== false;
+    } catch {
+      // If table doesn't exist or query fails, send by default
+      return true;
+    }
+  }
+
+  private async getOrgAdminEmailsWithPreference(organizationId: number, notificationType: string): Promise<string[]> {
+    const pool = getPool();
+    const [rows] = await pool.query<any[]>(
+      `SELECT id, email FROM users
+       WHERE organization_id = ? AND role IN ('org_admin', 'organization') AND status = 'active' AND email IS NOT NULL`,
+      [organizationId]
+    );
+
+    const emails: string[] = [];
+    for (const row of rows) {
+      const shouldSend = await this.shouldSendEmail(row.id, notificationType);
+      if (shouldSend) emails.push(row.email);
+    }
+    return emails;
+  }
+
+  private async getCourseDetails(courseId: number): Promise<{ courseName: string; date: string; location: string; organizationId: number }> {
+    const pool = getPool();
+    const [rows] = await pool.query<any[]>(
+      `SELECT cr.organization_id, cr.location,
+              COALESCE(cr.confirmed_date, cr.scheduled_date) as course_date,
+              ct.name as course_name
+       FROM course_requests cr
+       LEFT JOIN class_types ct ON cr.course_type_id = ct.id
+       WHERE cr.id = ?`,
+      [courseId]
+    );
+    const row = rows[0];
+    return {
+      courseName: row?.course_name ?? 'Unknown Course',
+      date: row?.course_date ? new Date(row.course_date).toISOString().split('T')[0] : '',
+      location: row?.location ?? '',
+      organizationId: row?.organization_id,
+    };
+  }
 
   // --- Course request creation (org users) ---
 
@@ -189,6 +254,22 @@ export class CourseService {
 
       const updated = await this.courseRepo.findById(input.courseId);
       logger.info({ courseId: input.courseId, instructorId: input.instructorId }, 'Instructor assigned');
+
+      // Fire-and-forget: send course confirmed email to org admins
+      this.getCourseDetails(input.courseId).then(async (details) => {
+        const emails = await this.getOrgAdminEmailsWithPreference(course.organization_id, 'course_status_change');
+        for (const email of emails) {
+          emailService.sendCourseConfirmedEmail(email, {
+            courseName: details.courseName,
+            date: details.date,
+            location: details.location,
+            instructorName: instructor.username ?? instructor.full_name ?? 'TBD',
+            startTime: input.startTime,
+            endTime: input.endTime,
+          }).catch(err => logger.error({ err, courseId: input.courseId }, 'Failed to send course confirmed email'));
+        }
+      }).catch(err => logger.error({ err, courseId: input.courseId }, 'Failed to send course confirmed notifications'));
+
       return updated!;
     } catch (err) {
       await conn.rollback();
@@ -254,6 +335,19 @@ export class CourseService {
 
       const updated = await this.courseRepo.findById(courseId);
       logger.info({ courseId, reason }, 'Course cancelled');
+
+      // Fire-and-forget: send course cancelled email to org admins
+      this.getCourseDetails(courseId).then(async (details) => {
+        const emails = await this.getOrgAdminEmailsWithPreference(course.organization_id, 'course_status_change');
+        for (const email of emails) {
+          emailService.sendCourseCancelledEmail(email, {
+            courseName: details.courseName,
+            date: details.date,
+            reason,
+          }).catch(err => logger.error({ err, courseId }, 'Failed to send course cancelled email'));
+        }
+      }).catch(err => logger.error({ err, courseId }, 'Failed to send course cancelled notifications'));
+
       return updated!;
     } catch (err) {
       await conn.rollback();

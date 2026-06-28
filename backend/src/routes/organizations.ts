@@ -170,11 +170,21 @@ export async function organizationRoutes(app: FastifyInstance) {
     if (from) { invoiceDateFilter += ' AND i.created_at >= ?'; invoiceDateParams.push(from); }
     if (to) { invoiceDateFilter += ' AND i.created_at <= ?'; invoiceDateParams.push(to); }
 
-    const [[activeCourses], [completedCourses], [pendingInvoices], [totalSpent]] = await Promise.all([
+    const [[activeCourses], [completedCourses], [pendingInvoices], [totalSpent],
+           [coursesThisYear], [coursesLastYear], [studentsThisYear], [studentsLastYear], [revenueThisYear], [revenueLastYear]] = await Promise.all([
       pool.query<any[]>(`SELECT COUNT(*) as count FROM course_requests cr WHERE cr.organization_id = ? AND cr.status = 'confirmed'${dateFilter}`, [orgId, ...dateParams]),
       pool.query<any[]>(`SELECT COUNT(*) as count FROM course_requests cr WHERE cr.organization_id = ? AND cr.status = 'completed'${dateFilter}`, [orgId, ...dateParams]),
       pool.query<any[]>(`SELECT COUNT(*) as count FROM invoices i WHERE i.organization_id = ? AND i.status IN ('posted_to_org', 'overdue')${invoiceDateFilter}`, [orgId, ...invoiceDateParams]),
       pool.query<any[]>(`SELECT COALESCE(SUM(p.amount), 0) as total FROM payments p JOIN invoices i ON p.invoice_id = i.id WHERE i.organization_id = ?${invoiceDateFilter}`, [orgId, ...invoiceDateParams]),
+      // YoY: courses this year vs last year
+      pool.query<any[]>(`SELECT COUNT(*) as count FROM course_requests WHERE organization_id = ? AND YEAR(created_at) = YEAR(CURDATE())`, [orgId]),
+      pool.query<any[]>(`SELECT COUNT(*) as count FROM course_requests WHERE organization_id = ? AND YEAR(created_at) = YEAR(CURDATE()) - 1`, [orgId]),
+      // YoY: students this year vs last year
+      pool.query<any[]>(`SELECT COALESCE(SUM(cr.registered_students), 0) as count FROM course_requests cr WHERE cr.organization_id = ? AND YEAR(cr.created_at) = YEAR(CURDATE())`, [orgId]),
+      pool.query<any[]>(`SELECT COALESCE(SUM(cr.registered_students), 0) as count FROM course_requests cr WHERE cr.organization_id = ? AND YEAR(cr.created_at) = YEAR(CURDATE()) - 1`, [orgId]),
+      // YoY: revenue this year vs last year
+      pool.query<any[]>(`SELECT COALESCE(SUM(p.amount), 0) as total FROM payments p JOIN invoices i ON p.invoice_id = i.id WHERE i.organization_id = ? AND YEAR(p.created_at) = YEAR(CURDATE())`, [orgId]),
+      pool.query<any[]>(`SELECT COALESCE(SUM(p.amount), 0) as total FROM payments p JOIN invoices i ON p.invoice_id = i.id WHERE i.organization_id = ? AND YEAR(p.created_at) = YEAR(CURDATE()) - 1`, [orgId]),
     ]);
 
     return {
@@ -184,6 +194,12 @@ export async function organizationRoutes(app: FastifyInstance) {
         completedCourses: Number(completedCourses[0]?.count ?? 0),
         pendingInvoices: Number(pendingInvoices[0]?.count ?? 0),
         totalSpent: Number(totalSpent[0]?.total ?? 0),
+        coursesThisYear: Number(coursesThisYear[0]?.count ?? 0),
+        coursesLastYear: Number(coursesLastYear[0]?.count ?? 0),
+        studentsThisYear: Number(studentsThisYear[0]?.count ?? 0),
+        studentsLastYear: Number(studentsLastYear[0]?.count ?? 0),
+        revenueThisYear: Number(revenueThisYear[0]?.total ?? 0),
+        revenueLastYear: Number(revenueLastYear[0]?.total ?? 0),
       },
     };
   });

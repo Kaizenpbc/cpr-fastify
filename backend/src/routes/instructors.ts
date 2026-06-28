@@ -4,6 +4,7 @@ import { getPool } from '../config/database.js';
 import { requireRole } from '../plugins/auth.js';
 import { logger } from '../config/logger.js';
 import { StudentRepository } from '../repositories/StudentRepository.js';
+import { emailService } from '../services/EmailService.js';
 
 const addStudentSchema = z.object({
   firstName: z.string().min(1),
@@ -385,6 +386,54 @@ export async function instructorRoutes(app: FastifyInstance) {
     );
 
     logger.info({ courseId: classId, instructorId: request.userId }, 'Course completed');
+
+    // Fire-and-forget: send course completed email to org admins
+    (async () => {
+      try {
+        const [courseInfo] = await pool.query<any[]>(
+          `SELECT cr.organization_id, cr.registered_students, cr.location,
+                  COALESCE(cr.confirmed_date, cr.scheduled_date) as course_date,
+                  ct.name as course_name,
+                  (SELECT COUNT(*) FROM course_students cs WHERE cs.course_request_id = cr.id AND cs.attended = true) as students_attended
+           FROM course_requests cr
+           LEFT JOIN class_types ct ON cr.course_type_id = ct.id
+           WHERE cr.id = ?`,
+          [classId]
+        );
+        if (courseInfo.length === 0) return;
+        const info = courseInfo[0];
+
+        const [admins] = await pool.query<any[]>(
+          `SELECT u.id, u.email FROM users u
+           WHERE u.organization_id = ? AND u.role IN ('org_admin', 'organization') AND u.status = 'active' AND u.email IS NOT NULL`,
+          [info.organization_id]
+        );
+
+        for (const admin of admins) {
+          // Check notification preference
+          let shouldSend = true;
+          try {
+            const [prefs] = await pool.query<any[]>(
+              'SELECT email_enabled FROM notification_preferences WHERE user_id = ? AND notification_type = ?',
+              [admin.id, 'course_status_change']
+            );
+            if (prefs.length > 0 && prefs[0].email_enabled === false) shouldSend = false;
+          } catch { /* table may not exist, send by default */ }
+
+          if (shouldSend) {
+            emailService.sendCourseCompletedEmail(admin.email, {
+              courseName: info.course_name ?? 'Unknown Course',
+              date: info.course_date ? new Date(info.course_date).toISOString().split('T')[0] : '',
+              studentsAttended: Number(info.students_attended ?? 0),
+              totalStudents: Number(info.registered_students ?? 0),
+            }).catch(err => logger.error({ err, courseId: classId }, 'Failed to send course completed email'));
+          }
+        }
+      } catch (err) {
+        logger.error({ err, courseId: classId }, 'Failed to send course completed notifications');
+      }
+    })();
+
     const [rows] = await pool.query<any[]>(
       'SELECT id, status, completed_at, updated_at FROM course_requests WHERE id = ?', [classId]
     );

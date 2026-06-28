@@ -157,6 +157,59 @@ const EMAIL_TEMPLATES = {
     `,
   }),
 
+  COURSE_CONFIRMED: (d: { courseName: string; date: string; location: string; instructorName: string; startTime: string; endTime: string }) => ({
+    subject: 'Course Confirmed',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #007bff;">Course Confirmed</h2>
+        <p>Your course has been confirmed with the following details:</p>
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <p><strong>Course:</strong> ${d.courseName}</p>
+          <p><strong>Date:</strong> ${formatDate(d.date)}</p>
+          <p><strong>Time:</strong> ${d.startTime} - ${d.endTime}</p>
+          <p><strong>Location:</strong> ${d.location}</p>
+          <p><strong>Instructor:</strong> ${d.instructorName}</p>
+        </div>
+        <p>You can view the full details through your organization portal.</p>
+        <p style="color: #6c757d; font-size: 0.9em;">This is an automated message, please do not reply.</p>
+      </div>
+    `,
+  }),
+
+  COURSE_CANCELLED: (d: { courseName: string; date: string; reason: string }) => ({
+    subject: 'Course Cancelled',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #d32f2f;">Course Cancelled</h2>
+        <p>The following course has been cancelled:</p>
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <p><strong>Course:</strong> ${d.courseName}</p>
+          <p><strong>Date:</strong> ${formatDate(d.date)}</p>
+          <p><strong>Reason:</strong> ${d.reason}</p>
+        </div>
+        <p>If you have any questions, please contact our team.</p>
+        <p style="color: #6c757d; font-size: 0.9em;">This is an automated message, please do not reply.</p>
+      </div>
+    `,
+  }),
+
+  COURSE_COMPLETED: (d: { courseName: string; date: string; studentsAttended: number; totalStudents: number }) => ({
+    subject: 'Course Completed',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #28a745;">Course Completed</h2>
+        <p>The following course has been completed:</p>
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <p><strong>Course:</strong> ${d.courseName}</p>
+          <p><strong>Date:</strong> ${formatDate(d.date)}</p>
+          <p><strong>Attendance:</strong> ${d.studentsAttended} of ${d.totalStudents} students attended</p>
+        </div>
+        <p>You can view the full details and attendance records through your organization portal.</p>
+        <p style="color: #6c757d; font-size: 0.9em;">This is an automated message, please do not reply.</p>
+      </div>
+    `,
+  }),
+
   INVOICE_POSTED: (d: InvoiceData) => ({
     subject: `Invoice ${d.invoiceNumber} - Complete with Attendance`,
     html: `
@@ -313,6 +366,30 @@ export class EmailService {
   async sendCourseScheduledToOrganization(orgEmail: string, courseDetails: CourseDetails) {
     const t = EMAIL_TEMPLATES.COURSE_SCHEDULED_ORGANIZATION(courseDetails);
     return this.sendEmail(orgEmail, t.subject, t.html);
+  }
+
+  async sendCourseConfirmedEmail(
+    to: string,
+    data: { courseName: string; date: string; location: string; instructorName: string; startTime: string; endTime: string }
+  ) {
+    const t = EMAIL_TEMPLATES.COURSE_CONFIRMED(data);
+    return this.sendEmail(to, t.subject, t.html);
+  }
+
+  async sendCourseCancelledEmail(
+    to: string,
+    data: { courseName: string; date: string; reason: string }
+  ) {
+    const t = EMAIL_TEMPLATES.COURSE_CANCELLED(data);
+    return this.sendEmail(to, t.subject, t.html);
+  }
+
+  async sendCourseCompletedEmail(
+    to: string,
+    data: { courseName: string; date: string; studentsAttended: number; totalStudents: number }
+  ) {
+    const t = EMAIL_TEMPLATES.COURSE_COMPLETED(data);
+    return this.sendEmail(to, t.subject, t.html);
   }
 
   async sendInvoicePostedNotification(orgEmail: string, invoiceData: InvoiceData) {

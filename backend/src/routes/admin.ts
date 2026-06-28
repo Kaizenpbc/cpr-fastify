@@ -328,11 +328,21 @@ export async function adminRoutes(app: FastifyInstance) {
     if (from) { orgDateFilter += ' AND created_at >= ?'; orgDateParams.push(from); }
     if (to) { orgDateFilter += ' AND created_at <= ?'; orgDateParams.push(to); }
 
-    const [[userCount], [orgCount], [courseCount], [vendorCount]] = await Promise.all([
+    const [[userCount], [orgCount], [courseCount], [vendorCount],
+           [usersThisYear], [usersLastYear], [orgsThisYear], [orgsLastYear], [coursesThisYear], [coursesLastYear]] = await Promise.all([
       pool.query<any[]>(`SELECT COUNT(*) as count FROM users WHERE 1=1${userDateFilter}`, userDateParams),
       pool.query<any[]>(`SELECT COUNT(*) as count FROM organizations WHERE 1=1${orgDateFilter}`, orgDateParams),
       pool.query<any[]>('SELECT COUNT(*) as count FROM class_types WHERE is_active = true'),
       pool.query<any[]>('SELECT COUNT(*) as count FROM vendors WHERE is_active = true'),
+      // YoY: users this year vs last year
+      pool.query<any[]>('SELECT COUNT(*) as count FROM users WHERE YEAR(created_at) = YEAR(CURDATE())'),
+      pool.query<any[]>('SELECT COUNT(*) as count FROM users WHERE YEAR(created_at) = YEAR(CURDATE()) - 1'),
+      // YoY: organizations this year vs last year
+      pool.query<any[]>('SELECT COUNT(*) as count FROM organizations WHERE YEAR(created_at) = YEAR(CURDATE())'),
+      pool.query<any[]>('SELECT COUNT(*) as count FROM organizations WHERE YEAR(created_at) = YEAR(CURDATE()) - 1'),
+      // YoY: course types this year vs last year
+      pool.query<any[]>('SELECT COUNT(*) as count FROM class_types WHERE is_active = true AND YEAR(created_at) = YEAR(CURDATE())'),
+      pool.query<any[]>('SELECT COUNT(*) as count FROM class_types WHERE is_active = true AND YEAR(created_at) = YEAR(CURDATE()) - 1'),
     ]);
 
     const [recentUsers] = await pool.query<any[]>(
@@ -352,6 +362,12 @@ export async function adminRoutes(app: FastifyInstance) {
           totalOrganizations: Number(orgCount[0]?.count ?? 0),
           totalCourses: Number(courseCount[0]?.count ?? 0),
           totalVendors: Number(vendorCount[0]?.count ?? 0),
+          usersThisYear: Number(usersThisYear[0]?.count ?? 0),
+          usersLastYear: Number(usersLastYear[0]?.count ?? 0),
+          orgsThisYear: Number(orgsThisYear[0]?.count ?? 0),
+          orgsLastYear: Number(orgsLastYear[0]?.count ?? 0),
+          coursesThisYear: Number(coursesThisYear[0]?.count ?? 0),
+          coursesLastYear: Number(coursesLastYear[0]?.count ?? 0),
         },
         recentActivity: { users: recentUsers, courses: recentCourses },
       },

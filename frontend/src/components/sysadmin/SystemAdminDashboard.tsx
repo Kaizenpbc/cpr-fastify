@@ -69,15 +69,28 @@ const SystemAdminDashboard = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
 
   const { summary, recentActivity } = dashboardData || {};
 
+  const getYoyLabel = (current: number, previous: number): { text: string; color: string } => {
+    if (previous === 0) return current > 0 ? { text: 'New this year', color: '#16A34A' } : { text: '', color: '' };
+    const pct = ((current - previous) / previous * 100).toFixed(0);
+    const num = Number(pct);
+    if (num > 0) return { text: `+${pct}% vs last year`, color: '#16A34A' };
+    if (num < 0) return { text: `${pct}% vs last year`, color: '#CC1F1F' };
+    return { text: '0% vs last year', color: '#6B7280' };
+  };
+
+  const usersYoy = getYoyLabel(summary?.usersThisYear ?? 0, summary?.usersLastYear ?? 0);
+  const orgsYoy = getYoyLabel(summary?.orgsThisYear ?? 0, summary?.orgsLastYear ?? 0);
+  const coursesYoy = getYoyLabel(summary?.coursesThisYear ?? 0, summary?.coursesLastYear ?? 0);
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <DateRangeFilter from={dateFrom} to={dateTo} onChange={handleDateChange} />
 
       {/* KPI cards */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: '16px' }}>
-        <StatCard label="Total Users" value={summary?.totalUsers || 0} sub="All registered accounts" dotColor="#CC1F1F" />
-        <StatCard label="Organizations" value={summary?.totalOrganizations || 0} sub="Active organizations" dotColor="#16A34A" />
-        <StatCard label="Course Types" value={summary?.totalCourses || 0} sub="In course catalog" dotColor="#ED6C02" />
+        <StatCard label="Total Users" value={summary?.totalUsers || 0} sub={usersYoy.text || 'All registered accounts'} subColor={usersYoy.text ? usersYoy.color : undefined} dotColor="#CC1F1F" />
+        <StatCard label="Organizations" value={summary?.totalOrganizations || 0} sub={orgsYoy.text || 'Active organizations'} subColor={orgsYoy.text ? orgsYoy.color : undefined} dotColor="#16A34A" />
+        <StatCard label="Course Types" value={summary?.totalCourses || 0} sub={coursesYoy.text || 'In course catalog'} subColor={coursesYoy.text ? coursesYoy.color : undefined} dotColor="#ED6C02" />
         <StatCard label="Active Vendors" value={summary?.totalVendors || 0} sub="Vendor partnerships" dotColor="#4B5563" />
       </Box>
 

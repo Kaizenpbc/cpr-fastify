@@ -548,6 +548,10 @@ export const courseAdminApi = {
 
 // Organization endpoints
 export const organizationApi = {
+  getDashboard: async () => {
+    const response = await api.get('/organization/dashboard');
+    return response.data;
+  },
   getMyCourses: async () => {
     const response = await api.get('/organization/courses');
     return extractData(response);

@@ -58,7 +58,7 @@
 ### **Analytics & Reporting**
 - [ ] **Real-time dashboards**: Add live data updates using WebSockets
 - [x] **Export functionality**: CSV export for organizations, students, expiring certifications, and invoices (backend endpoints + frontend Export CSV buttons)
-- [ ] **Custom date ranges**: Allow custom date range selection in analytics
+- [x] **Custom date ranges**: DateRangeFilter component with presets (7/30/90 days, year, all time). Integrated into OrganizationAnalytics, OrganizationDashboard, SystemAdminDashboard. Backend date filtering on org and sysadmin endpoints.
 - [ ] **Comparative analytics**: Add year-over-year comparison features
 - [ ] **Predictive analytics**: Implement demand forecasting
 
@@ -87,9 +87,9 @@
 - [ ] **🔴 Offboarding / cancellation policy (BIZ-2)**: If a customer stops paying, what happens to their data? PIPEDA requires a clear answer. Define: notice period, data export window, deletion timeline. Document in ToS and implement in sysadmin tools.
 - [ ] **🟡 Demo / trial environment (BIZ-3)**: No way for prospects to try the app before buying. Options: shared demo org with sample data, or a sandboxed trial account flow. Needed once you start selling actively.
 - [ ] **🟡 Support channel (BIZ-4)**: No defined support process. At minimum: a support email address, expected response time, and a process for you to investigate issues. Document before first paying customer.
-- [x] **🟡 Data export for customers (BIZ-5)**: CSV export endpoints for organizations, students, expiring certifications, and invoices. Export CSV buttons in sysadmin OrganizationManagement and CertificationTracking UIs. Per-org portal export still TODO.
+- [x] **🟡 Data export for customers (BIZ-5)**: CSV export endpoints for organizations, students, expiring certifications, and invoices. Export CSV buttons in sysadmin OrganizationManagement and CertificationTracking UIs. Per-org portal: courses, roster, and invoice CSV export with Export buttons in OrganizationCourses, OrganizationBilling, OrganizationArchive.
 - [ ] **🟡 Per-org branding / white-label (BIZ-6)**: All orgs see "CPR Training Portal." B2B customers may expect their name/logo. Decide if white-labeling is part of the offering; if yes, add org logo upload and name override.
-- [ ] **🟢 Audit log visibility for admins (BIZ-7)**: Audit trail exists internally but no UI to view it. Paying customers (especially larger orgs) may want to see who did what. Add a read-only audit log view in the admin portal.
+- [x] **🟢 Audit log visibility for admins (BIZ-7)**: AuditLogViewer in sysadmin portal — migration v13 (audit_logs table), auditLog.ts utility, GET /audit-logs with pagination/filters/CSV export, stats endpoint. Audit logging on login/logout/password change/user CRUD.
 
 ### **Student Data & LMS**
 - [x] **Students master table** — `students` table with email-based dedup, org FK, marketing consent flag. Write-through on org roster upload and instructor add. Backfill migration links existing `course_students` to master records. `StudentRepository` with findOrCreate, bulk ops, search, course history. 9 unit tests.
@@ -98,7 +98,7 @@
 - [x] **Certification renewal reminder emails** — CertReminderService sends reminders at 30/60/90 day windows before expiry. Daily scheduler (60s after startup + 24h interval) + manual trigger `POST /certifications/send-reminders`. Dedup via `certification_reminders` table (migration v12).
 - [ ] **LMS integration** — Capture online course evaluations from home-grown LMS into `student_evaluations` table (score, pass/fail, attempts, time spent). Link to `students` master record. Phase 2 after LMS architecture is decided.
 - [ ] **Student marketing emails** — Use `students.marketing_consent` + certification expiry data to send renewal reminders. Requires PIPEDA consent opt-in flow.
-- [ ] **WSIB reporting** — Cross-course training history per student for WSIB compliance. Data model complete; needs reporting UI/export.
+- [x] **WSIB reporting** — WSIBReporting.tsx in sysadmin portal: training history + compliance summary + CSV export endpoints. Stats cards (trained/compliant/expiring/expired/rate), filters (search/org/course type/compliance status), server-paginated DataTable with StatusChip indicators.
 
 ### **Billing & Invoicing**
 - [x] **Configurable per-organization invoice numbers** — `InvoiceNumberService` with atomic `SELECT FOR UPDATE` allocation, format tokens ({PREFIX}, {YYYY}, {YY}, {MM}, {DD}, {N+}), reset policies (none/yearly/monthly), admin CRUD endpoints (GET/PUT/DELETE `/accounting/invoice-sequences`), preview endpoint, migration v3 (`invoice_number_sequences` table), 14 unit tests. Fallback to `INV-YYYY-NNNNNNNN` when no org sequence configured.

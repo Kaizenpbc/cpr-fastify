@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Box, Grid, Typography, LinearProgress } from '@mui/material';
 import {
   PieChart,
@@ -19,6 +19,7 @@ import DataTable, { DataTableRow } from '../../../gtacpr/DataTable';
 import StatusChip from '../../../gtacpr/StatusChip';
 import { GhostButton } from '../../../gtacpr/Buttons';
 import DateRangeFilter from '../../../gtacpr/DateRangeFilter';
+import { organizationApi } from '../../../../services/api';
 
 interface OrganizationData {
   id: number;
@@ -87,6 +88,34 @@ const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
   const navigate = useNavigate();
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [yoyData, setYoyData] = useState<{
+    coursesThisYear: number; coursesLastYear: number;
+    studentsThisYear: number; studentsLastYear: number;
+    revenueThisYear: number; revenueLastYear: number;
+  } | null>(null);
+
+  useEffect(() => {
+    organizationApi.getDashboard().then((res: any) => {
+      const d = res?.data;
+      if (d) setYoyData({
+        coursesThisYear: d.coursesThisYear ?? 0,
+        coursesLastYear: d.coursesLastYear ?? 0,
+        studentsThisYear: d.studentsThisYear ?? 0,
+        studentsLastYear: d.studentsLastYear ?? 0,
+        revenueThisYear: d.revenueThisYear ?? 0,
+        revenueLastYear: d.revenueLastYear ?? 0,
+      });
+    }).catch(() => { /* silently ignore */ });
+  }, []);
+
+  const getYoyLabel = (current: number, previous: number): { text: string; color: string } => {
+    if (previous === 0) return current > 0 ? { text: 'New this year', color: '#16A34A' } : { text: '', color: '' };
+    const pct = ((current - previous) / previous * 100).toFixed(0);
+    const num = Number(pct);
+    if (num > 0) return { text: `+${pct}% vs last year`, color: '#16A34A' };
+    if (num < 0) return { text: `${pct}% vs last year`, color: '#CC1F1F' };
+    return { text: '0% vs last year', color: '#6B7280' };
+  };
 
   const handleDateChange = (from: string, to: string) => {
     setDateFrom(from);
@@ -140,10 +169,16 @@ const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
 
       {/* Stats */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(6, 1fr)' }, gap: 2 }}>
-        <StatCard label="Total Courses" value={allCourses.length} />
-        <StatCard label="Total Students" value={totalStudents} />
+        <StatCard label="Total Courses" value={allCourses.length}
+          sub={yoyData ? getYoyLabel(yoyData.coursesThisYear, yoyData.coursesLastYear).text : undefined}
+          subColor={yoyData ? getYoyLabel(yoyData.coursesThisYear, yoyData.coursesLastYear).color : undefined} />
+        <StatCard label="Total Students" value={totalStudents}
+          sub={yoyData ? getYoyLabel(yoyData.studentsThisYear, yoyData.studentsLastYear).text : undefined}
+          subColor={yoyData ? getYoyLabel(yoyData.studentsThisYear, yoyData.studentsLastYear).color : undefined} />
         <StatCard label="Pending Invoices" value={Number(billingSummary?.pending_invoices || 0)} dotColor="#ED6C02" />
-        <StatCard label="Total Billed" value={`$${Number(billingSummary?.total_amount || 0).toFixed(2)}`} />
+        <StatCard label="Total Billed" value={`$${Number(billingSummary?.total_amount || 0).toFixed(2)}`}
+          sub={yoyData ? getYoyLabel(yoyData.revenueThisYear, yoyData.revenueLastYear).text : undefined}
+          subColor={yoyData ? getYoyLabel(yoyData.revenueThisYear, yoyData.revenueLastYear).color : undefined} />
         <StatCard label="Total Paid" value={`$${Number(billingSummary?.paid_amount || 0).toFixed(2)}`} dotColor="#16A34A" />
         <StatCard label="Balance Due" value={`$${Number((billingSummary?.total_amount || 0) - (billingSummary?.paid_amount || 0)).toFixed(2)}`} dotColor="#CC1F1F" />
       </Box>

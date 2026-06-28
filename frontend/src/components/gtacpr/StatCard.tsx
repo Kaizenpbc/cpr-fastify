@@ -5,10 +5,11 @@ interface StatCardProps {
   label: string;
   value: string | number;
   sub?: string;
+  subColor?: string;
   dotColor?: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ label, value, sub, dotColor }) => (
+const StatCard: React.FC<StatCardProps> = ({ label, value, sub, subColor, dotColor }) => (
   <Card
     sx={{
       border: (theme) => `1px solid ${theme.palette.divider}`,
@@ -45,7 +46,7 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, sub, dotColor }) => (
       {value}
     </Typography>
     {sub && (
-      <Typography sx={{ fontSize: '11.5px', color: (theme) => theme.palette.text.secondary, mt: '7px' }}>
+      <Typography sx={{ fontSize: '11.5px', color: subColor || ((theme) => theme.palette.text.secondary), mt: '7px', fontWeight: subColor ? 600 : 400 }}>
         {sub}
       </Typography>
     )}
