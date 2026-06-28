@@ -70,7 +70,7 @@ const OrganizationLayout: React.FC<OrganizationLayoutProps> = ({
       basePath="dashboard"
       navItems={navItems}
       activePath={currentView}
-      onNavigate={(path) => onViewChange?.(path)}
+      onNavigate={onViewChange}
       subtitle={orgName}
     >
       {children}
