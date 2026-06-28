@@ -63,7 +63,7 @@
 - [ ] **Predictive analytics**: Implement demand forecasting
 
 ### **User Experience**
-- [ ] **Mobile responsiveness**: Optimize for mobile devices
+- [x] **Mobile responsiveness**: Responsive CSS grids across all 8 portals (30 files). AdminShell sidebar collapses to hamburger on mobile. DataTable horizontal scroll. Instructor TodayClassesList mobile-friendly buttons.
 - [ ] **Offline support**: Add offline capabilities with service workers
 - [ ] **Push notifications**: Implement browser push notifications
 - [x] **Dark mode**: Dark theme toggle in sidebar (ThemeContext + ThemeToggle)
@@ -151,6 +151,22 @@
 - [ ] **Disaster recovery**: Document and test DR procedures
 - [ ] **Change management**: Formal change approval process
 
+## 🚧 **Business Blockers — Must Resolve Before First Paying Customer**
+
+These items are **non-technical blockers** that must be addressed before accepting payment from any customer. They span legal, business, and operational domains.
+
+| ID | Category | Blocker | Status | Notes |
+|----|----------|---------|--------|-------|
+| **LEGAL-2** | Legal | Customer MSA / contract | ❌ Not started | No signed agreement exists. Must cover: scope of service, data ownership, liability limits, acceptable use, payment terms, termination. Draft a B2B Master Service Agreement or SaaS subscription terms. |
+| **LEGAL-3** | Legal | PIPEDA breach notification SOP | ❌ Not started | PIPEDA requires notifying Privacy Commissioner + affected individuals within ~72 hours. No procedure exists. Define: detection → assessment → notification steps, responsible parties, record-keeping. |
+| **BIZ-1** | Business | SaaS pricing & billing model | ❌ Not started | How do you charge? Options: manual invoicing, Stripe subscriptions, per-org flat fee, per-student, per-course. Affects whether app needs subscription management UI. |
+| **BIZ-2** | Business | Offboarding / cancellation policy | ❌ Not started | What happens when a customer stops paying? PIPEDA requires clear answer. Define: notice period, data export window, deletion timeline. ToS mentions 30-day notice + 30-day export, but no internal process exists. |
+| **BACKUP-2** | Ops | Offsite DB backups | ❌ Not started | Daily mysqldump runs but both copies live on the same TMD server. If server fails, backups are lost. Push `cpr_*.sql.gz` to S3/B2/FTP after each dump. |
+
+**Action required**: Resolve LEGAL-2 and BIZ-1 at minimum before accepting any payment. LEGAL-3, BIZ-2, and BACKUP-2 should follow immediately after.
+
+---
+
 ## 🎯 **Priority Levels**
 
 ### **🔴 Must do before first paying customer**
@@ -160,8 +176,11 @@
 4. ~~**LEGAL-1**~~ ✅ Terms of Service page live at `/terms`
 5. ~~**SECURITY-2**~~ ✅ Org data isolation audit complete — 9 issues fixed
 6. ~~**SECURITY-3**~~ ✅ Multi-tenant pentest passed — IDOR, role escalation, SQLi, XSS, JWT forgery all blocked
-7. **BIZ-1** — Decide SaaS pricing & billing model *(deferred — options: flat monthly fee, per-student, per-course, or manual invoicing for early customers)*
-7. **BIZ-2** — Define offboarding / cancellation policy *(deferred — ToS already covers 30-day notice, 30-day data export window, then anonymization; formalize as internal process when first customer churns)*
+7. **BIZ-1** — Decide SaaS pricing & billing model *(see Business Blockers table above)*
+8. **BIZ-2** — Define offboarding / cancellation policy *(see Business Blockers table above)*
+9. **LEGAL-2** — Customer MSA / contract *(see Business Blockers table above)*
+10. **LEGAL-3** — PIPEDA breach notification SOP *(see Business Blockers table above)*
+11. **BACKUP-2** — Offsite DB backups *(see Business Blockers table above)*
 
 ### **🟡 Medium Priority**
 - ~~**EMAIL-1**~~ ✅ Email delivery confirmed via Resend API on staging (noreply@kpbc.ca, domain verified)

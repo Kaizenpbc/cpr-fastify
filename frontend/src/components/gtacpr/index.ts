@@ -9,3 +9,4 @@ export { default as DataTable, DataTableRow } from './DataTable';
 export { default as DetailDrawer, DrawerSection } from './DetailDrawer';
 export { PrimaryButton, GhostButton } from './Buttons';
 export { default as AdminShell } from './AdminShell';
+export { default as DateRangeFilter } from './DateRangeFilter';

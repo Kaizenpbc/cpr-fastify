@@ -4,6 +4,7 @@ import { AuthService, AuthError } from '../services/AuthService.js';
 import { UserRepository } from '../repositories/UserRepository.js';
 import { requireAuth } from '../plugins/auth.js';
 import { getPool } from '../config/database.js';
+import { logAudit } from '../utils/auditLog.js';
 
 const loginSchema = z.object({
   username: z.string().min(1),
@@ -66,9 +67,11 @@ export async function authRoutes(app: FastifyInstance) {
       });
 
       const enrichedUser = await enrichUser(result.user as Record<string, unknown>);
+      logAudit({ userId: result.user.id, username: body.username, action: 'login', ipAddress: request.ip });
       return { success: true, data: { user: enrichedUser, accessToken: result.tokens.accessToken } };
     } catch (err) {
       if (err instanceof AuthError) {
+        logAudit({ username: body.username, action: 'login_failed', details: { reason: err.message }, ipAddress: request.ip });
         return reply.status(401).send({ error: err.message });
       }
       throw err;
@@ -110,7 +113,8 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   // POST /api/v1/auth/logout
-  app.post('/logout', async (_request, reply) => {
+  app.post('/logout', async (request, reply) => {
+    logAudit({ userId: request.userId ?? undefined, action: 'logout', ipAddress: request.ip });
     reply.clearCookie('refreshToken', { path: '/api/v1/auth/refresh' });
     return { success: true, data: { message: 'Logged out' } };
   });
@@ -124,6 +128,7 @@ export async function authRoutes(app: FastifyInstance) {
 
     try {
       await authService.changePassword(userId, body.currentPassword, body.newPassword);
+      logAudit({ userId, action: 'change_password', entityType: 'user', entityId: userId, ipAddress: request.ip });
       return { message: 'Password changed' };
     } catch (err) {
       if (err instanceof AuthError) {

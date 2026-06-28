@@ -75,7 +75,18 @@ export class OrganizationRepository extends BaseRepository<Organization> {
     return this.findById(id);
   }
 
-  async getOrgCourses(orgId: number, options: { archived: boolean; limit: number; offset: number }): Promise<{ rows: any[]; total: number }> {
+  async getOrgCourses(orgId: number, options: { archived: boolean; limit: number; offset: number; from?: string; to?: string }): Promise<{ rows: any[]; total: number }> {
+    let dateFilter = '';
+    const dateParams: unknown[] = [];
+    if (options.from) {
+      dateFilter += ' AND cr.date_scheduled >= ?';
+      dateParams.push(options.from);
+    }
+    if (options.to) {
+      dateFilter += ' AND cr.date_scheduled <= ?';
+      dateParams.push(options.to);
+    }
+
     const rows = await this.query(
       `SELECT cr.*, cr.date_requested as request_submitted_date,
               ct.name as course_type_name, u.username as instructor,
@@ -83,15 +94,15 @@ export class OrganizationRepository extends BaseRepository<Organization> {
        FROM course_requests cr
        LEFT JOIN class_types ct ON cr.course_type_id = ct.id
        LEFT JOIN users u ON cr.instructor_id = u.id
-       WHERE cr.organization_id = ? AND cr.archived = ?
+       WHERE cr.organization_id = ? AND cr.archived = ?${dateFilter}
        ORDER BY ${options.archived ? 'cr.archived_at' : 'cr.created_at'} DESC
        LIMIT ? OFFSET ?`,
-      [orgId, options.archived, options.limit, options.offset]
+      [orgId, options.archived, ...dateParams, options.limit, options.offset]
     );
 
     const [{ total }] = await this.query<{ total: number }>(
-      `SELECT COUNT(*) as total FROM course_requests WHERE organization_id = ? AND archived = ?`,
-      [orgId, options.archived]
+      `SELECT COUNT(*) as total FROM course_requests WHERE organization_id = ? AND archived = ?${dateFilter}`,
+      [orgId, options.archived, ...dateParams]
     );
 
     return { rows, total };

@@ -8,6 +8,7 @@ import { CourseStudentRepository } from '../repositories/CourseStudentRepository
 import { UserRepository } from '../repositories/UserRepository.js';
 import { getPool } from '../config/database.js';
 import { requireAuth, requireRole } from '../plugins/auth.js';
+import { toCSV } from '../utils/csv.js';
 
 const updateProfileSchema = z.object({
   name: z.string().min(1),
@@ -57,6 +58,66 @@ export async function organizationRoutes(app: FastifyInstance) {
     } catch (err) { return handleError(err, reply); }
   });
 
+  // ===== Org user: export courses CSV =====
+  app.get('/courses/export/csv', { preHandler: orgRole }, async (request, reply) => {
+    if (!request.userOrgId) return reply.status(400).send({ error: 'No organization linked' });
+    const pool = getPool();
+    const [rows] = await pool.query<any[]>(
+      `SELECT cr.scheduled_date, ct.name as course_type, cr.location,
+              CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, '')) as instructor,
+              cr.registered_students, cr.status
+       FROM course_requests cr
+       LEFT JOIN class_types ct ON cr.course_type_id = ct.id
+       LEFT JOIN users u ON cr.instructor_id = u.id
+       WHERE cr.organization_id = ?
+       ORDER BY cr.scheduled_date DESC`,
+      [request.userOrgId]
+    );
+    const csv = toCSV(rows, [
+      { key: 'scheduled_date', label: 'Scheduled Date' },
+      { key: 'course_type', label: 'Course Type' },
+      { key: 'location', label: 'Location' },
+      { key: 'instructor', label: 'Instructor' },
+      { key: 'registered_students', label: 'Students Registered' },
+      { key: 'status', label: 'Status' },
+    ]);
+    reply.header('Content-Type', 'text/csv;charset=utf-8');
+    reply.header('Content-Disposition', `attachment; filename="courses-${new Date().toISOString().split('T')[0]}.csv"`);
+    return reply.send(csv);
+  });
+
+  // ===== Org user: export roster CSV =====
+  app.get('/roster/export/csv', { preHandler: orgRole }, async (request, reply) => {
+    if (!request.userOrgId) return reply.status(400).send({ error: 'No organization linked' });
+    const pool = getPool();
+    const [rows] = await pool.query<any[]>(
+      `SELECT s.first_name, s.last_name, s.email, s.phone,
+              ct.name as course_type, cr.scheduled_date as course_date,
+              cs.attended, cs.certificate_number, cs.certificate_expires_at
+       FROM course_students cs
+       JOIN students s ON cs.student_id = s.id
+       JOIN course_requests cr ON cs.course_request_id = cr.id
+       LEFT JOIN class_types ct ON cr.course_type_id = ct.id
+       WHERE cr.organization_id = ?
+       ORDER BY cr.scheduled_date DESC, s.last_name, s.first_name`,
+      [request.userOrgId]
+    );
+    const csv = toCSV(rows, [
+      { key: 'first_name', label: 'First Name' },
+      { key: 'last_name', label: 'Last Name' },
+      { key: 'email', label: 'Email' },
+      { key: 'phone', label: 'Phone' },
+      { key: 'course_type', label: 'Course' },
+      { key: 'course_date', label: 'Date' },
+      { key: 'attended', label: 'Attendance' },
+      { key: 'certificate_number', label: 'Certificate Number' },
+      { key: 'certificate_expires_at', label: 'Certificate Expiry' },
+    ]);
+    reply.header('Content-Type', 'text/csv;charset=utf-8');
+    reply.header('Content-Disposition', `attachment; filename="roster-${new Date().toISOString().split('T')[0]}.csv"`);
+    return reply.send(csv);
+  });
+
   // ===== Admin: get any org =====
   app.get('/:id', { preHandler: adminRole }, async (request, reply) => {
     const { id } = request.params as { id: string };
@@ -77,15 +138,18 @@ export async function organizationRoutes(app: FastifyInstance) {
   // ===== Org user: own courses =====
   app.get('/courses', { preHandler: orgRole }, async (request, reply) => {
     if (!request.userOrgId) return reply.status(400).send({ error: 'No organization linked' });
-    const { page = '1', limit = '50' } = request.query as Record<string, string>;
-    const result = await service.getCourses(request.userOrgId, parseInt(page), parseInt(limit));
+    const { page = '1', limit = '50', from, to } = request.query as Record<string, string>;
+    const dateRange = (from || to) ? { from, to } : undefined;
+    const result = await service.getCourses(request.userOrgId, parseInt(page), parseInt(limit), dateRange);
     return { success: true, data: result.rows, pagination: { page: parseInt(page), limit: parseInt(limit), total: result.total } };
   });
 
   // ===== Org user: archived courses =====
   app.get('/archive', { preHandler: orgRole }, async (request, reply) => {
     if (!request.userOrgId) return reply.status(400).send({ error: 'No organization linked' });
-    const result = await service.getArchivedCourses(request.userOrgId);
+    const { from, to } = request.query as Record<string, string>;
+    const dateRange = (from || to) ? { from, to } : undefined;
+    const result = await service.getArchivedCourses(request.userOrgId, dateRange);
     return { success: true, data: result.rows };
   });
 
@@ -94,12 +158,23 @@ export async function organizationRoutes(app: FastifyInstance) {
     if (!request.userOrgId) return reply.status(400).send({ error: 'No organization linked' });
     const pool = getPool();
     const orgId = request.userOrgId;
+    const { from, to } = request.query as Record<string, string>;
+
+    let dateFilter = '';
+    const dateParams: unknown[] = [];
+    if (from) { dateFilter += ' AND cr.date_scheduled >= ?'; dateParams.push(from); }
+    if (to) { dateFilter += ' AND cr.date_scheduled <= ?'; dateParams.push(to); }
+
+    let invoiceDateFilter = '';
+    const invoiceDateParams: unknown[] = [];
+    if (from) { invoiceDateFilter += ' AND i.created_at >= ?'; invoiceDateParams.push(from); }
+    if (to) { invoiceDateFilter += ' AND i.created_at <= ?'; invoiceDateParams.push(to); }
 
     const [[activeCourses], [completedCourses], [pendingInvoices], [totalSpent]] = await Promise.all([
-      pool.query<any[]>(`SELECT COUNT(*) as count FROM course_requests WHERE organization_id = ? AND status = 'confirmed'`, [orgId]),
-      pool.query<any[]>(`SELECT COUNT(*) as count FROM course_requests WHERE organization_id = ? AND status = 'completed'`, [orgId]),
-      pool.query<any[]>(`SELECT COUNT(*) as count FROM invoices WHERE organization_id = ? AND status IN ('posted_to_org', 'overdue')`, [orgId]),
-      pool.query<any[]>(`SELECT COALESCE(SUM(p.amount), 0) as total FROM payments p JOIN invoices i ON p.invoice_id = i.id WHERE i.organization_id = ?`, [orgId]),
+      pool.query<any[]>(`SELECT COUNT(*) as count FROM course_requests cr WHERE cr.organization_id = ? AND cr.status = 'confirmed'${dateFilter}`, [orgId, ...dateParams]),
+      pool.query<any[]>(`SELECT COUNT(*) as count FROM course_requests cr WHERE cr.organization_id = ? AND cr.status = 'completed'${dateFilter}`, [orgId, ...dateParams]),
+      pool.query<any[]>(`SELECT COUNT(*) as count FROM invoices i WHERE i.organization_id = ? AND i.status IN ('posted_to_org', 'overdue')${invoiceDateFilter}`, [orgId, ...invoiceDateParams]),
+      pool.query<any[]>(`SELECT COALESCE(SUM(p.amount), 0) as total FROM payments p JOIN invoices i ON p.invoice_id = i.id WHERE i.organization_id = ?${invoiceDateFilter}`, [orgId, ...invoiceDateParams]),
     ]);
 
     return {

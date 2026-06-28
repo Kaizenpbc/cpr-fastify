@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Box, Grid, Typography, LinearProgress } from '@mui/material';
 import {
   PieChart,
@@ -18,6 +18,7 @@ import StatCard from '../../../gtacpr/StatCard';
 import DataTable, { DataTableRow } from '../../../gtacpr/DataTable';
 import StatusChip from '../../../gtacpr/StatusChip';
 import { GhostButton } from '../../../gtacpr/Buttons';
+import DateRangeFilter from '../../../gtacpr/DateRangeFilter';
 
 interface OrganizationData {
   id: number;
@@ -84,9 +85,32 @@ const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
   billingSummary,
 }) => {
   const navigate = useNavigate();
-  const allCourses = [...(courses || []), ...(archivedCourses || [])];
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+
+  const handleDateChange = (from: string, to: string) => {
+    setDateFrom(from);
+    setDateTo(to);
+  };
+
+  const filterByDate = (items: Course[]) => {
+    if (!dateFrom && !dateTo) return items;
+    return items.filter((c) => {
+      const d = c.scheduledDate || c.requestSubmittedDate;
+      if (!d) return true;
+      const dateStr = d.slice(0, 10);
+      if (dateFrom && dateStr < dateFrom) return false;
+      if (dateTo && dateStr > dateTo) return false;
+      return true;
+    });
+  };
+
+  const filteredCourses = useMemo(() => filterByDate(courses || []), [courses, dateFrom, dateTo]);
+  const filteredArchived = useMemo(() => filterByDate(archivedCourses || []), [archivedCourses, dateFrom, dateTo]);
+
+  const allCourses = [...filteredCourses, ...filteredArchived];
   const totalStudents = allCourses.reduce((sum, course) => sum + Number(course?.registeredStudents || 0), 0);
-  const recentCourses = courses.slice(0, 5);
+  const recentCourses = filteredCourses.slice(0, 5);
 
   const invoiceStatusData = [
     { name: 'Paid', value: billingSummary?.paid_invoices || 0, color: '#16A34A' },
@@ -99,7 +123,7 @@ const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
   const hasInvoiceData = filteredInvoiceData.length > 0;
   const displayInvoiceData = hasInvoiceData ? filteredInvoiceData : [{ name: 'No Invoices', value: 1, color: '#9CA3AF' }];
 
-  const courseStatusData = courses.reduce((acc, course) => {
+  const courseStatusData = filteredCourses.reduce((acc, course) => {
     const status = course.status?.toLowerCase() || 'pending';
     acc[status] = (acc[status] || 0) + 1;
     return acc;
@@ -112,6 +136,8 @@ const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <DateRangeFilter from={dateFrom} to={dateTo} onChange={handleDateChange} />
+
       {/* Stats */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(6, 1fr)' }, gap: 2 }}>
         <StatCard label="Total Courses" value={allCourses.length} />
@@ -187,7 +213,7 @@ const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
               <Typography sx={{ fontSize: 14, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>No courses found</Typography>
             </Box>
           ) : (
-            <DataTable columns={recentColumns} shownCount={recentCourses.length} totalCount={courses.length}>
+            <DataTable columns={recentColumns} shownCount={recentCourses.length} totalCount={filteredCourses.length}>
               {recentCourses.map((course) => (
                 <DataTableRow key={course.id} columns={recentColumns}>
                   <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{course.courseTypeName}</Typography>

@@ -193,6 +193,24 @@ const migrations: Migration[] = [
       INDEX idx_dedup (course_student_id, reminder_type)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
   },
+  {
+    version: 13,
+    name: 'create_audit_logs',
+    up: `CREATE TABLE IF NOT EXISTS audit_logs (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT DEFAULT NULL,
+      username VARCHAR(100) DEFAULT NULL,
+      action VARCHAR(100) NOT NULL,
+      entity_type VARCHAR(50) DEFAULT NULL,
+      entity_id INT DEFAULT NULL,
+      details JSON DEFAULT NULL,
+      ip_address VARCHAR(45) DEFAULT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_audit_created (created_at),
+      INDEX idx_audit_user (user_id),
+      INDEX idx_audit_entity (entity_type, entity_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+  },
 ];
 
 export async function runMigrations(): Promise<void> {

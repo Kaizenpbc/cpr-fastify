@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getPool } from '../config/database.js';
 import { requireAuth, requireRole } from '../plugins/auth.js';
 import { logger } from '../config/logger.js';
+import { toCSV } from '../utils/csv.js';
 
 const INVOICE_SORT_COLS = new Set(['created_at', 'due_date', 'amount', 'status', 'invoice_date', 'invoice_number']);
 const PAID_SORT_COLS = new Set(['paid_date', 'created_at', 'amount', 'invoice_number']);
@@ -75,6 +76,42 @@ export async function orgBillingRoutes(app: FastifyInstance) {
         pagination: { current_page: parseInt(page), total_pages: Math.ceil(total / safeLimit), total_records: total, per_page: safeLimit },
       },
     };
+  });
+
+  // ===== Organization: Export invoices CSV =====
+  app.get('/organization/invoices/export/csv', { preHandler: orgRole }, async (request, reply) => {
+    const [rows] = await pool.query<any[]>(
+      `SELECT i.invoice_number, i.created_at as invoice_date, i.due_date,
+              ct.name as course_type, i.students_billed,
+              i.base_cost, i.tax_amount,
+              (i.base_cost + i.tax_amount) as total,
+              CASE
+                WHEN COALESCE(payments.total_paid, 0) >= (i.base_cost + i.tax_amount) THEN 'paid'
+                WHEN CURRENT_DATE > i.due_date THEN 'overdue'
+                ELSE 'pending'
+              END as payment_status
+       FROM invoice_with_breakdown i
+       LEFT JOIN course_requests cr ON i.course_request_id = cr.id
+       LEFT JOIN class_types ct ON cr.course_type_id = ct.id
+       LEFT JOIN (SELECT invoice_id, SUM(amount) as total_paid FROM payments WHERE status = 'verified' GROUP BY invoice_id) payments ON payments.invoice_id = i.id
+       WHERE i.organization_id = ? AND i.posted_to_org = TRUE
+       ORDER BY i.created_at DESC`,
+      [request.userOrgId]
+    );
+    const csv = toCSV(rows, [
+      { key: 'invoice_number', label: 'Invoice Number' },
+      { key: 'invoice_date', label: 'Date' },
+      { key: 'due_date', label: 'Due Date' },
+      { key: 'course_type', label: 'Course' },
+      { key: 'students_billed', label: 'Students Billed' },
+      { key: 'base_cost', label: 'Amount' },
+      { key: 'tax_amount', label: 'Tax' },
+      { key: 'total', label: 'Total' },
+      { key: 'payment_status', label: 'Payment Status' },
+    ]);
+    reply.header('Content-Type', 'text/csv;charset=utf-8');
+    reply.header('Content-Disposition', `attachment; filename="invoices-${new Date().toISOString().split('T')[0]}.csv"`);
+    return reply.send(csv);
   });
 
   // ===== Organization: Invoice detail =====

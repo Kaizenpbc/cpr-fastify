@@ -9,6 +9,7 @@ import { StudentRepository } from '../repositories/StudentRepository.js';
 import { parsePagination, paginatedQuery } from '../utils/pagination.js';
 import { toCSV } from '../utils/csv.js';
 import { CertReminderService } from '../services/CertReminderService.js';
+import { logAudit } from '../utils/auditLog.js';
 
 const createUserSchema = z.object({
   username: z.string().min(3).max(50).regex(/^[a-zA-Z0-9_-]+$/),
@@ -189,6 +190,7 @@ export async function adminRoutes(app: FastifyInstance) {
       'SELECT id, username, email, role, first_name, last_name, organization_id, created_at FROM users WHERE id = ?',
       [result.insertId]
     );
+    logAudit({ userId: request.userId, username: request.userRole, action: 'create_user', entityType: 'user', entityId: result.insertId, details: { username: data.username, role: data.role }, ipAddress: request.ip });
     return { success: true, message: 'User created successfully', data: rows[0] };
   });
 
@@ -214,6 +216,7 @@ export async function adminRoutes(app: FastifyInstance) {
               date_onboarded, date_offboarded, created_at, updated_at
        FROM users WHERE id = ?`, [id]
     );
+    logAudit({ userId: request.userId, action: 'update_user', entityType: 'user', entityId: parseInt(id), details: { username, email, role, status }, ipAddress: request.ip });
     return { success: true, message: 'User updated successfully', data: rows[0] };
   });
 
@@ -256,6 +259,7 @@ export async function adminRoutes(app: FastifyInstance) {
       [data.name, data.contact_email ?? null, data.contact_phone ?? null, data.address ?? null]
     );
     const [rows] = await pool.query<any[]>('SELECT * FROM organizations WHERE id = ?', [result.insertId]);
+    logAudit({ userId: request.userId, action: 'create_organization', entityType: 'organization', entityId: result.insertId, details: { name: data.name }, ipAddress: request.ip });
     return { success: true, message: 'Organization created successfully', data: rows[0] };
   });
 
@@ -270,6 +274,7 @@ export async function adminRoutes(app: FastifyInstance) {
     );
     if (result.affectedRows === 0) return reply.status(404).send({ error: 'Organization not found' });
     const [rows] = await pool.query<any[]>('SELECT * FROM organizations WHERE id = ?', [id]);
+    logAudit({ userId: request.userId, action: 'update_organization', entityType: 'organization', entityId: parseInt(id), details: { name }, ipAddress: request.ip });
     return { success: true, message: 'Organization updated successfully', data: rows[0] };
   });
 
@@ -310,16 +315,29 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   // ===== System admin dashboard =====
-  app.get('/dashboard', { preHandler: adminRole }, async () => {
+  app.get('/dashboard', { preHandler: adminRole }, async (request) => {
+    const { from, to } = request.query as Record<string, string>;
+
+    let userDateFilter = '';
+    const userDateParams: unknown[] = [];
+    if (from) { userDateFilter += ' AND created_at >= ?'; userDateParams.push(from); }
+    if (to) { userDateFilter += ' AND created_at <= ?'; userDateParams.push(to); }
+
+    let orgDateFilter = '';
+    const orgDateParams: unknown[] = [];
+    if (from) { orgDateFilter += ' AND created_at >= ?'; orgDateParams.push(from); }
+    if (to) { orgDateFilter += ' AND created_at <= ?'; orgDateParams.push(to); }
+
     const [[userCount], [orgCount], [courseCount], [vendorCount]] = await Promise.all([
-      pool.query<any[]>('SELECT COUNT(*) as count FROM users'),
-      pool.query<any[]>('SELECT COUNT(*) as count FROM organizations'),
+      pool.query<any[]>(`SELECT COUNT(*) as count FROM users WHERE 1=1${userDateFilter}`, userDateParams),
+      pool.query<any[]>(`SELECT COUNT(*) as count FROM organizations WHERE 1=1${orgDateFilter}`, orgDateParams),
       pool.query<any[]>('SELECT COUNT(*) as count FROM class_types WHERE is_active = true'),
       pool.query<any[]>('SELECT COUNT(*) as count FROM vendors WHERE is_active = true'),
     ]);
 
     const [recentUsers] = await pool.query<any[]>(
-      'SELECT username, role, created_at as createdAt FROM users ORDER BY created_at DESC LIMIT 5'
+      `SELECT username, role, created_at as createdAt FROM users WHERE 1=1${userDateFilter} ORDER BY created_at DESC LIMIT 5`,
+      userDateParams
     );
     const [recentCourses] = await pool.query<any[]>(
       `SELECT name, course_code as courseCode, created_at as createdAt
@@ -687,6 +705,100 @@ export async function adminRoutes(app: FastifyInstance) {
     return csv;
   });
 
+  // ===== Audit Logs (sysadmin only) =====
+  app.get('/audit-logs', { preHandler: sysadminRole }, async (request) => {
+    const { action, entity_type, user_id, from, to, search, startDate, endDate } = request.query as Record<string, string>;
+    const pg = parsePagination(request.query as Record<string, string>);
+
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+
+    if (action) { conditions.push('action = ?'); params.push(action); }
+    if (entity_type) { conditions.push('entity_type = ?'); params.push(entity_type); }
+    if (user_id) { conditions.push('user_id = ?'); params.push(parseInt(user_id)); }
+    if (search && search.trim().length >= 2) {
+      conditions.push('(username LIKE ? OR action LIKE ? OR CAST(details AS CHAR) LIKE ?)');
+      const term = `%${search.trim()}%`;
+      params.push(term, term, term);
+    }
+    // Support both from/to and startDate/endDate param names
+    const dateFrom = from || startDate;
+    const dateTo = to || endDate;
+    if (dateFrom) { conditions.push('created_at >= ?'); params.push(dateFrom); }
+    if (dateTo) { conditions.push('created_at <= ?'); params.push(`${dateTo} 23:59:59`); }
+
+    const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+
+    const result = await paginatedQuery(
+      `SELECT id, user_id, username, action, entity_type, entity_id, details, ip_address, created_at
+       FROM audit_logs ${where} ORDER BY created_at DESC`,
+      `SELECT COUNT(*) as count FROM audit_logs ${where}`,
+      params,
+      pg,
+    );
+    return { success: true, ...result };
+  });
+
+  app.get('/audit-logs/stats', { preHandler: sysadminRole }, async () => {
+    const [rows] = await pool.query<any[]>(`
+      SELECT
+        COUNT(*) as total_entries,
+        COUNT(CASE WHEN created_at >= CURDATE() THEN 1 END) as entries_today,
+        COUNT(DISTINCT user_id) as unique_users
+      FROM audit_logs
+    `);
+    const [topActions] = await pool.query<any[]>(`
+      SELECT action, COUNT(*) as count
+      FROM audit_logs
+      GROUP BY action
+      ORDER BY count DESC
+      LIMIT 5
+    `);
+    return {
+      success: true,
+      data: {
+        totalEntries: Number(rows[0]?.total_entries ?? 0),
+        entriesToday: Number(rows[0]?.entries_today ?? 0),
+        uniqueUsers: Number(rows[0]?.unique_users ?? 0),
+        topActions: topActions,
+      },
+    };
+  });
+
+  app.get('/audit-logs/export/csv', { preHandler: sysadminRole }, async (request, reply) => {
+    const { action, entity_type, user_id, from, to } = request.query as Record<string, string>;
+
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+
+    if (action) { conditions.push('action = ?'); params.push(action); }
+    if (entity_type) { conditions.push('entity_type = ?'); params.push(entity_type); }
+    if (user_id) { conditions.push('user_id = ?'); params.push(parseInt(user_id)); }
+    if (from) { conditions.push('created_at >= ?'); params.push(from); }
+    if (to) { conditions.push('created_at <= ?'); params.push(`${to} 23:59:59`); }
+
+    const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+
+    const [rows] = await pool.query<any[]>(
+      `SELECT id, user_id, username, action, entity_type, entity_id, details, ip_address, created_at
+       FROM audit_logs ${where} ORDER BY created_at DESC LIMIT 10000`,
+      params,
+    );
+
+    const csv = toCSV(rows, [
+      { key: 'created_at', label: 'Timestamp' },
+      { key: 'username', label: 'User' },
+      { key: 'action', label: 'Action' },
+      { key: 'entity_type', label: 'Entity Type' },
+      { key: 'entity_id', label: 'Entity ID' },
+      { key: 'ip_address', label: 'IP Address' },
+      { key: 'details', label: 'Details' },
+    ]);
+    reply.header('Content-Type', 'text/csv;charset=utf-8');
+    reply.header('Content-Disposition', `attachment; filename="audit-logs-${new Date().toISOString().split('T')[0]}.csv"`);
+    return csv;
+  });
+
   // CSV Export: Students
   app.get('/students/export/csv', { preHandler: adminRole }, async (request, reply) => {
     const { q, orgId } = request.query as { q?: string; orgId?: string };
@@ -732,5 +844,199 @@ export async function adminRoutes(app: FastifyInstance) {
     reply.header('Content-Type', 'text/csv;charset=utf-8');
     reply.header('Content-Disposition', `attachment; filename="students-${new Date().toISOString().split('T')[0]}.csv"`);
     return csv;
+  });
+
+  // ===== WSIB Training History Reporting =====
+
+  // Shared query builder for WSIB training history
+  function buildWSIBQuery(query: Record<string, string>) {
+    const conditions: string[] = ['cr.deleted_at IS NULL'];
+    const params: unknown[] = [];
+    const havingConditions: string[] = [];
+
+    if (query.org_id) {
+      conditions.push('s.organization_id = ?');
+      params.push(parseInt(query.org_id));
+    }
+    if (query.search) {
+      conditions.push('(s.first_name LIKE ? OR s.last_name LIKE ? OR s.email LIKE ?)');
+      const term = `%${query.search}%`;
+      params.push(term, term, term);
+    }
+    if (query.from) {
+      conditions.push('cr.scheduled_date >= ?');
+      params.push(query.from);
+    }
+    if (query.to) {
+      conditions.push('cr.scheduled_date <= ?');
+      params.push(query.to);
+    }
+    if (query.course_type_id) {
+      conditions.push('cr.course_type_id = ?');
+      params.push(parseInt(query.course_type_id));
+    }
+    if (query.course_type) {
+      conditions.push('ct.name LIKE ?');
+      params.push(`%${query.course_type}%`);
+    }
+    if (query.compliance_status) {
+      if (query.compliance_status === 'valid') {
+        conditions.push('cs.certificate_expires_at > NOW()');
+      } else if (query.compliance_status === 'expiring') {
+        conditions.push('cs.certificate_expires_at > NOW() AND cs.certificate_expires_at <= DATE_ADD(NOW(), INTERVAL 90 DAY)');
+      } else if (query.compliance_status === 'expired') {
+        conditions.push('(cs.certificate_expires_at IS NOT NULL AND cs.certificate_expires_at <= NOW())');
+      }
+    }
+
+    const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+
+    const selectSQL = `SELECT s.first_name, s.last_name, s.email,
+              o.name as organization_name,
+              ct.name as course_type_name,
+              cr.scheduled_date as course_date,
+              cr.location,
+              cs.attended,
+              cs.certificate_number,
+              cs.certificate_issued_at,
+              cs.certificate_expires_at,
+              COALESCE(NULLIF(TRIM(CONCAT(COALESCE(u.first_name,''),' ',COALESCE(u.last_name,''))), ''), u.username) as instructor_name,
+              CASE
+                WHEN cs.certificate_expires_at IS NULL THEN 'expired'
+                WHEN cs.certificate_expires_at <= NOW() THEN 'expired'
+                WHEN cs.certificate_expires_at <= DATE_ADD(NOW(), INTERVAL 90 DAY) THEN 'expiring'
+                ELSE 'valid'
+              END as compliance_status
+       FROM course_students cs
+       JOIN students s ON cs.student_id = s.id
+       JOIN course_requests cr ON cs.course_request_id = cr.id
+       JOIN class_types ct ON cr.course_type_id = ct.id
+       LEFT JOIN organizations o ON s.organization_id = o.id
+       LEFT JOIN users u ON cr.instructor_id = u.id
+       ${where}
+       ORDER BY s.last_name, s.first_name, cr.scheduled_date DESC`;
+
+    const countSQL = `SELECT COUNT(*) as count
+       FROM course_students cs
+       JOIN students s ON cs.student_id = s.id
+       JOIN course_requests cr ON cs.course_request_id = cr.id
+       JOIN class_types ct ON cr.course_type_id = ct.id
+       LEFT JOIN organizations o ON s.organization_id = o.id
+       LEFT JOIN users u ON cr.instructor_id = u.id
+       ${where}`;
+
+    return { selectSQL, countSQL, params };
+  }
+
+  // Paginated WSIB training history
+  app.get('/wsib/training-history', { preHandler: adminRole }, async (request) => {
+    const q = request.query as Record<string, string>;
+    const pg = parsePagination(q);
+    const { selectSQL, countSQL, params } = buildWSIBQuery(q);
+
+    const result = await paginatedQuery(selectSQL, countSQL, params, pg);
+    return { success: true, ...result };
+  });
+
+  // CSV export of WSIB training history (no pagination)
+  app.get('/wsib/training-history/export/csv', { preHandler: adminRole }, async (request, reply) => {
+    const q = request.query as Record<string, string>;
+    const { selectSQL, params } = buildWSIBQuery(q);
+
+    const [rows] = await pool.query<any[]>(selectSQL, params);
+
+    const csv = toCSV(rows, [
+      { key: 'first_name', label: 'First Name' },
+      { key: 'last_name', label: 'Last Name' },
+      { key: 'email', label: 'Email' },
+      { key: 'organization_name', label: 'Organization' },
+      { key: 'course_type_name', label: 'Course Type' },
+      { key: 'course_date', label: 'Course Date' },
+      { key: 'location', label: 'Location' },
+      { key: 'attended', label: 'Attended' },
+      { key: 'certificate_number', label: 'Certificate #' },
+      { key: 'certificate_issued_at', label: 'Cert Issued' },
+      { key: 'certificate_expires_at', label: 'Cert Expires' },
+      { key: 'compliance_status', label: 'Compliance Status' },
+      { key: 'instructor_name', label: 'Instructor' },
+    ]);
+    reply.header('Content-Type', 'text/csv;charset=utf-8');
+    reply.header('Content-Disposition', `attachment; filename="wsib-training-history-${new Date().toISOString().split('T')[0]}.csv"`);
+    return csv;
+  });
+
+  // Dedicated WSIB CSV export endpoint (alias)
+  app.get('/wsib/export/csv', { preHandler: adminRole }, async (request, reply) => {
+    const q = request.query as Record<string, string>;
+    const { selectSQL, params } = buildWSIBQuery(q);
+
+    const [rows] = await pool.query<any[]>(selectSQL, params);
+
+    const csv = toCSV(rows, [
+      { key: 'first_name', label: 'First Name' },
+      { key: 'last_name', label: 'Last Name' },
+      { key: 'email', label: 'Email' },
+      { key: 'organization_name', label: 'Organization' },
+      { key: 'course_type_name', label: 'Course Type' },
+      { key: 'course_date', label: 'Course Date' },
+      { key: 'location', label: 'Location' },
+      { key: 'attended', label: 'Attended' },
+      { key: 'certificate_number', label: 'Certificate #' },
+      { key: 'certificate_issued_at', label: 'Cert Issued' },
+      { key: 'certificate_expires_at', label: 'Cert Expires' },
+      { key: 'compliance_status', label: 'Compliance Status' },
+      { key: 'instructor_name', label: 'Instructor' },
+    ]);
+    reply.header('Content-Type', 'text/csv;charset=utf-8');
+    reply.header('Content-Disposition', `attachment; filename="wsib-compliance-${new Date().toISOString().split('T')[0]}.csv"`);
+    return csv;
+  });
+
+  // WSIB compliance summary stats
+  app.get('/wsib/compliance-summary', { preHandler: adminRole }, async (request) => {
+    const q = request.query as Record<string, string>;
+    const orgCondition = q.org_id ? 'AND s.organization_id = ?' : '';
+    const orgParams = q.org_id ? [parseInt(q.org_id)] : [];
+
+    const [summaryRows] = await pool.query<any[]>(`
+      SELECT
+        COUNT(DISTINCT s.id) as total_trained,
+        COUNT(DISTINCT CASE WHEN cs.certificate_expires_at > NOW() THEN s.id END) as current_certs,
+        COUNT(DISTINCT CASE WHEN cs.certificate_expires_at IS NOT NULL AND cs.certificate_expires_at <= NOW() THEN s.id END) as expired_certs,
+        COUNT(DISTINCT CASE WHEN cs.certificate_expires_at > NOW() AND cs.certificate_expires_at <= DATE_ADD(NOW(), INTERVAL 30 DAY) THEN s.id END) as expiring_30d,
+        COUNT(DISTINCT CASE WHEN cs.certificate_expires_at > NOW() AND cs.certificate_expires_at <= DATE_ADD(NOW(), INTERVAL 60 DAY) THEN s.id END) as expiring_60d,
+        COUNT(DISTINCT CASE WHEN cs.certificate_expires_at > NOW() AND cs.certificate_expires_at <= DATE_ADD(NOW(), INTERVAL 90 DAY) THEN s.id END) as expiring_90d,
+        COUNT(DISTINCT CASE WHEN cr.scheduled_date >= DATE_SUB(NOW(), INTERVAL 12 MONTH) THEN s.id END) as trained_last_12mo
+      FROM course_students cs
+      JOIN students s ON cs.student_id = s.id
+      JOIN course_requests cr ON cs.course_request_id = cr.id
+      WHERE cr.deleted_at IS NULL ${orgCondition}
+    `, orgParams);
+
+    const summary = summaryRows[0];
+    const totalTrained = Number(summary.total_trained) || 0;
+    const currentCerts = Number(summary.current_certs) || 0;
+    const complianceRate = totalTrained > 0 ? Math.round((currentCerts / totalTrained) * 100) : 0;
+
+    const [orgRows] = await pool.query<any[]>(`
+      SELECT o.name as organization_name, COUNT(DISTINCT s.id) as student_count
+      FROM course_students cs
+      JOIN students s ON cs.student_id = s.id
+      JOIN course_requests cr ON cs.course_request_id = cr.id
+      LEFT JOIN organizations o ON s.organization_id = o.id
+      WHERE cr.deleted_at IS NULL ${orgCondition}
+      GROUP BY o.id, o.name
+      ORDER BY student_count DESC
+      LIMIT 10
+    `, orgParams);
+
+    return {
+      success: true,
+      data: {
+        ...summary,
+        compliance_rate: complianceRate,
+        top_organizations: orgRows,
+      },
+    };
   });
 }

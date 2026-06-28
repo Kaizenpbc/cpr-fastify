@@ -22,14 +22,14 @@ export class OrganizationService {
     return org;
   }
 
-  async getCourses(orgId: number, page: number, limit: number) {
+  async getCourses(orgId: number, page: number, limit: number, dateRange?: { from?: string; to?: string }) {
     const safeLimit = Math.min(limit, 100);
     const offset = (page - 1) * safeLimit;
-    return this.orgRepo.getOrgCourses(orgId, { archived: false, limit: safeLimit, offset });
+    return this.orgRepo.getOrgCourses(orgId, { archived: false, limit: safeLimit, offset, from: dateRange?.from, to: dateRange?.to });
   }
 
-  async getArchivedCourses(orgId: number) {
-    return this.orgRepo.getOrgCourses(orgId, { archived: true, limit: 500, offset: 0 });
+  async getArchivedCourses(orgId: number, dateRange?: { from?: string; to?: string }) {
+    return this.orgRepo.getOrgCourses(orgId, { archived: true, limit: 500, offset: 0, from: dateRange?.from, to: dateRange?.to });
   }
 
   async listOrganizations(options: { search?: string; page: number; limit: number }) {

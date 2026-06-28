@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Box, Typography, CircularProgress, Alert } from '@mui/material';
 import { sysAdminApi } from '../../services/api';
 import logger from '../../utils/logger';
@@ -6,6 +6,7 @@ import StatCard from '../gtacpr/StatCard';
 import StatusChip from '../gtacpr/StatusChip';
 import DataTable, { DataTableRow } from '../gtacpr/DataTable';
 import RoleChip from '../gtacpr/RoleChip';
+import DateRangeFilter from '../gtacpr/DateRangeFilter';
 
 const userColumns = [
   { key: 'user', label: 'USERNAME', width: '1.2fr' },
@@ -23,13 +24,16 @@ const SystemAdminDashboard = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
-  useEffect(() => { loadDashboardData(); }, []);
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async (from?: string, to?: string) => {
     setLoading(true);
     try {
-      const response = await sysAdminApi.getDashboard();
+      const params: { from?: string; to?: string } = {};
+      if (from) params.from = from;
+      if (to) params.to = to;
+      const response = await sysAdminApi.getDashboard(Object.keys(params).length > 0 ? params : undefined);
       setDashboardData(response.data);
       setError('');
     } catch (err: any) {
@@ -39,11 +43,19 @@ const SystemAdminDashboard = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
     } finally {
       setLoading(false);
     }
+  }, [onShowSnackbar]);
+
+  useEffect(() => { loadDashboardData(); }, [loadDashboardData]);
+
+  const handleDateChange = (from: string, to: string) => {
+    setDateFrom(from);
+    setDateTo(to);
+    loadDashboardData(from, to);
   };
 
   const formatDate = (dateString: any) => new Date(dateString).toLocaleDateString();
 
-  if (loading) {
+  if (loading && !dashboardData) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
         <CircularProgress size={48} />
@@ -51,7 +63,7 @@ const SystemAdminDashboard = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
     );
   }
 
-  if (error) {
+  if (error && !dashboardData) {
     return <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>;
   }
 
@@ -59,6 +71,8 @@ const SystemAdminDashboard = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <DateRangeFilter from={dateFrom} to={dateTo} onChange={handleDateChange} />
+
       {/* KPI cards */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: '16px' }}>
         <StatCard label="Total Users" value={summary?.totalUsers || 0} sub="All registered accounts" dotColor="#CC1F1F" />
@@ -101,7 +115,7 @@ const SystemAdminDashboard = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
               {recentActivity.courses.map((course: any, i: number) => (
                 <DataTableRow key={i} columns={courseColumns}>
                   <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{course.name}</Typography>
-                  <Typography sx={{ fontSize: 12, fontFamily: 'monospace', color: (theme) => theme.palette.text.secondary }}>{course.courseCode || '—'}</Typography>
+                  <Typography sx={{ fontSize: 12, fontFamily: 'monospace', color: (theme) => theme.palette.text.secondary }}>{course.courseCode || '\u2014'}</Typography>
                   <Typography sx={{ fontSize: 12.5, color: (theme) => theme.palette.text.secondary, textAlign: 'right' }}>{formatDate(course.createdAt)}</Typography>
                 </DataTableRow>
               ))}

@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Box, Typography, Grid } from '@mui/material';
 import { formatDisplayDate } from '../../../../utils/dateUtils';
 import StatCard from '../../../gtacpr/StatCard';
 import DataTable, { DataTableRow } from '../../../gtacpr/DataTable';
 import StatusChip from '../../../gtacpr/StatusChip';
+import DateRangeFilter from '../../../gtacpr/DateRangeFilter';
 
 interface OrganizationData {
   id: number;
@@ -85,11 +86,34 @@ const OrganizationAnalytics: React.FC<OrganizationAnalyticsProps> = ({
   invoices = [],
   billingSummary,
 }) => {
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+
+  const handleDateChange = (from: string, to: string) => {
+    setDateFrom(from);
+    setDateTo(to);
+  };
+
+  const filterByDate = (items: Course[]) => {
+    if (!dateFrom && !dateTo) return items;
+    return items.filter((c) => {
+      const d = c.scheduledDate || c.requestSubmittedDate;
+      if (!d) return true;
+      const dateStr = d.slice(0, 10);
+      if (dateFrom && dateStr < dateFrom) return false;
+      if (dateTo && dateStr > dateTo) return false;
+      return true;
+    });
+  };
+
+  const filteredCourses = useMemo(() => filterByDate(courses || []), [courses, dateFrom, dateTo]);
+  const filteredArchived = useMemo(() => filterByDate(archivedCourses || []), [archivedCourses, dateFrom, dateTo]);
+
   const totalBilled = Number(billingSummary?.total_amount || 0);
   const totalPaid = Number(billingSummary?.paid_amount || 0);
   const totalOutstanding = totalBilled - totalPaid;
 
-  const allCourses = [...(courses || []), ...(archivedCourses || [])];
+  const allCourses = [...filteredCourses, ...filteredArchived];
   const totalCourses = allCourses.length;
   const totalStudents = allCourses.reduce((sum, course) => sum + Number(course?.registeredStudents || 0), 0);
 
@@ -113,6 +137,8 @@ const OrganizationAnalytics: React.FC<OrganizationAnalyticsProps> = ({
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <DateRangeFilter from={dateFrom} to={dateTo} onChange={handleDateChange} />
+
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(6, 1fr)' }, gap: 2 }}>
         <StatCard label="Total Courses" value={totalCourses} />
         <StatCard label="Total Students" value={totalStudents} />

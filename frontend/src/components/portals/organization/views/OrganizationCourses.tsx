@@ -89,6 +89,20 @@ const OrganizationCourses: React.FC<OrganizationCoursesProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [courseTypeFilter, setCourseTypeFilter] = useState('');
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const handleExportCSV = async () => {
+    try {
+      setExportError(null);
+      const response = await api.get('/organization/courses/export/csv', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `courses-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch { setExportError('Failed to export courses'); }
+  };
 
   const filteredCourses = courses.filter(course => {
     const matchesSearch = searchTerm === '' ||
@@ -155,12 +169,15 @@ const OrganizationCourses: React.FC<OrganizationCoursesProps> = ({
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {exportError && <Alert severity="error" onClose={() => setExportError(null)}>{exportError}</Alert>}
+
       {/* Filters */}
       <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
             Filters ({filteredCourses.length} of {courses.length})
           </Typography>
+          <GhostButton onClick={handleExportCSV}>Export CSV</GhostButton>
         </Box>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2 }}>
           <TextField fullWidth label="Search courses..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} size="small" />

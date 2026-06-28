@@ -171,6 +171,22 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
   }>>([]);
   const [loadingAttendance, setLoadingAttendance] = useState(false);
 
+  // State for CSV export
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const handleExportCSV = async () => {
+    try {
+      setExportError(null);
+      const response = await api.get('/organization/invoices/export/csv', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoices-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch { setExportError('Failed to export invoices'); }
+  };
+
   // Ref to prevent multiple submissions
   const isSubmittingRef = useRef(false);
 
@@ -700,9 +716,13 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
 
   return (
     <Box>
-      <Typography sx={{ fontSize: 22, fontWeight: 700, color: (theme) => theme.palette.text.primary, mb: 3 }}>
-        Bills Payable
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography sx={{ fontSize: 22, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>
+          Bills Payable
+        </Typography>
+        <GhostButton onClick={handleExportCSV}>Export CSV</GhostButton>
+      </Box>
+      {exportError && <Alert severity="error" onClose={() => setExportError(null)} sx={{ mb: 2 }}>{exportError}</Alert>}
 
       {/* Billing Summary Stat Cards */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2, mb: 4 }}>

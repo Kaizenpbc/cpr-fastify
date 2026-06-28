@@ -839,8 +839,8 @@ export const getRevenueReport = async (year: number) => {
 // System Administration API functions
 export const sysAdminApi = {
   // Dashboard
-  getDashboard: async () => {
-    const response = await api.get('/sysadmin/dashboard');
+  getDashboard: async (params?: { from?: string; to?: string }) => {
+    const response = await api.get('/sysadmin/dashboard', { params });
     return response.data;
   },
 
@@ -990,6 +990,26 @@ export const sysAdminApi = {
   },
   getCertificationStats: async () => {
     const response = await api.get('/sysadmin/certifications/stats');
+    return response.data;
+  },
+
+  // Audit Logs
+  getAuditLogs: async (params?: { page?: number; limit?: number; action?: string; entity_type?: string; user_id?: string; search?: string; from?: string; to?: string }) => {
+    const response = await api.get('/sysadmin/audit-logs', { params });
+    return response.data;
+  },
+  getAuditLogStats: async () => {
+    const response = await api.get('/sysadmin/audit-logs/stats');
+    return response.data;
+  },
+
+  // WSIB Training History Reporting
+  getWSIBTrainingHistory: async (params?: { page?: number; limit?: number; org_id?: number; search?: string; from?: string; to?: string; course_type_id?: number; compliance_status?: string; course_type?: string }) => {
+    const response = await api.get('/sysadmin/wsib/training-history', { params });
+    return response.data;
+  },
+  getWSIBComplianceSummary: async (params?: { org_id?: number }) => {
+    const response = await api.get('/sysadmin/wsib/compliance-summary', { params });
     return response.data;
   },
 };
