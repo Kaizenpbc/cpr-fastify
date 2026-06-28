@@ -77,6 +77,7 @@ jobs:
       # Deploy via FTPS
       - name: Deploy backend via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        timeout-minutes: 10
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
@@ -85,9 +86,11 @@ jobs:
           local-dir: backend/dist/
           server-dir: cpr.kpbc.ca/backend/dist/
           dangerous-clean-slate: false
+          timeout: 120000
 
       - name: Deploy frontend via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        timeout-minutes: 10
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
@@ -96,6 +99,7 @@ jobs:
           local-dir: frontend/dist/
           server-dir: cpr.kpbc.ca/public/
           dangerous-clean-slate: false
+          timeout: 120000
 
       # Restart Passenger
       - name: Restart application
