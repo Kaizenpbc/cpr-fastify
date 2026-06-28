@@ -7,6 +7,8 @@ import { env } from '../config/env.js';
 import bcrypt from 'bcryptjs';
 import { StudentRepository } from '../repositories/StudentRepository.js';
 import { parsePagination, paginatedQuery } from '../utils/pagination.js';
+import { toCSV } from '../utils/csv.js';
+import { CertReminderService } from '../services/CertReminderService.js';
 
 const createUserSchema = z.object({
   username: z.string().min(3).max(50).regex(/^[a-zA-Z0-9_-]+$/),
@@ -611,5 +613,124 @@ export async function adminRoutes(app: FastifyInstance) {
       WHERE cs.certificate_expires_at IS NOT NULL AND cs.attended = true
     `);
     return { success: true, data: rows[0] };
+  });
+
+  // Manual trigger for cert reminders (sysadmin only)
+  app.post('/certifications/send-reminders', { preHandler: sysadminRole }, async () => {
+    const service = new CertReminderService();
+    const result = await service.sendReminders();
+    return { success: true, message: `Sent ${result.sent} reminders`, ...result };
+  });
+
+  // ===== CSV Exports =====
+
+  // CSV Export: Organizations
+  app.get('/organizations/export/csv', { preHandler: adminRole }, async (request, reply) => {
+    const { search = '' } = request.query as Record<string, string>;
+    let where = '';
+    const params: unknown[] = [];
+    if (search) {
+      where = 'WHERE name LIKE ? OR contact_email LIKE ? OR contact_person LIKE ?';
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+    }
+    const [rows] = await pool.query<any[]>(`SELECT * FROM organizations ${where} ORDER BY name`, params);
+    const csv = toCSV(rows, [
+      { key: 'name', label: 'Organization' },
+      { key: 'contact_person', label: 'Contact Person' },
+      { key: 'contact_email', label: 'Email' },
+      { key: 'contact_phone', label: 'Phone' },
+      { key: 'address', label: 'Address' },
+      { key: 'city', label: 'City' },
+      { key: 'province', label: 'Province' },
+      { key: 'created_at', label: 'Created' },
+    ]);
+    reply.header('Content-Type', 'text/csv;charset=utf-8');
+    reply.header('Content-Disposition', `attachment; filename="organizations-${new Date().toISOString().split('T')[0]}.csv"`);
+    return csv;
+  });
+
+  // CSV Export: Expiring Certifications
+  app.get('/certifications/expiring/export/csv', { preHandler: adminRole }, async (request, reply) => {
+    const { days = '90' } = request.query as Record<string, string>;
+    const withinDays = parseInt(days) || 90;
+    const [rows] = await pool.query<any[]>(
+      `SELECT s.id as student_id, s.email, s.first_name, s.last_name, s.phone,
+              o.name as organization_name,
+              ct.name as course_type_name, ct.certification_validity_months,
+              cs.certificate_issued_at, cs.certificate_expires_at,
+              cs.certificate_number,
+              DATEDIFF(cs.certificate_expires_at, NOW()) as days_until_expiry
+       FROM course_students cs
+       JOIN students s ON cs.student_id = s.id
+       JOIN course_requests cr ON cs.course_request_id = cr.id
+       JOIN class_types ct ON cr.course_type_id = ct.id
+       LEFT JOIN organizations o ON s.organization_id = o.id
+       WHERE cs.certificate_expires_at IS NOT NULL
+         AND cs.certificate_expires_at BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL ? DAY)
+         AND cs.attended = true
+       ORDER BY cs.certificate_expires_at ASC`,
+      [withinDays]
+    );
+    const csv = toCSV(rows, [
+      { key: 'first_name', label: 'First Name' },
+      { key: 'last_name', label: 'Last Name' },
+      { key: 'email', label: 'Email' },
+      { key: 'phone', label: 'Phone' },
+      { key: 'organization_name', label: 'Organization' },
+      { key: 'course_type_name', label: 'Course' },
+      { key: 'certificate_number', label: 'Certificate #' },
+      { key: 'certificate_expires_at', label: 'Expires' },
+      { key: 'days_until_expiry', label: 'Days Until Expiry' },
+    ]);
+    reply.header('Content-Type', 'text/csv;charset=utf-8');
+    reply.header('Content-Disposition', `attachment; filename="expiring-certifications-${new Date().toISOString().split('T')[0]}.csv"`);
+    return csv;
+  });
+
+  // CSV Export: Students
+  app.get('/students/export/csv', { preHandler: adminRole }, async (request, reply) => {
+    const { q, orgId } = request.query as { q?: string; orgId?: string };
+    let where = '';
+    const params: unknown[] = [];
+    const conditions: string[] = [];
+    if (q && q.trim().length >= 2) {
+      conditions.push('(s.first_name LIKE ? OR s.last_name LIKE ? OR s.email LIKE ?)');
+      const term = `%${q.trim()}%`;
+      params.push(term, term, term);
+    }
+    if (orgId) {
+      conditions.push('s.organization_id = ?');
+      params.push(parseInt(orgId));
+    }
+    if (conditions.length > 0) where = 'WHERE ' + conditions.join(' AND ');
+
+    const [rows] = await pool.query<any[]>(
+      `SELECT s.first_name, s.last_name, s.email, s.phone,
+              o.name as organization_name,
+              COUNT(DISTINCT cs.course_request_id) as course_count,
+              MAX(cr.completed_at) as last_course_date,
+              s.created_at
+       FROM students s
+       LEFT JOIN course_students cs ON cs.student_id = s.id
+       LEFT JOIN course_requests cr ON cs.course_request_id = cr.id
+       LEFT JOIN organizations o ON s.organization_id = o.id
+       ${where}
+       GROUP BY s.id
+       ORDER BY s.last_name, s.first_name`,
+      params
+    );
+    const csv = toCSV(rows, [
+      { key: 'first_name', label: 'First Name' },
+      { key: 'last_name', label: 'Last Name' },
+      { key: 'email', label: 'Email' },
+      { key: 'phone', label: 'Phone' },
+      { key: 'organization_name', label: 'Organization' },
+      { key: 'course_count', label: 'Courses' },
+      { key: 'last_course_date', label: 'Last Course' },
+      { key: 'created_at', label: 'Created' },
+    ]);
+    reply.header('Content-Type', 'text/csv;charset=utf-8');
+    reply.header('Content-Disposition', `attachment; filename="students-${new Date().toISOString().split('T')[0]}.csv"`);
+    return csv;
   });
 }

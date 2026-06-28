@@ -181,6 +181,18 @@ const migrations: Migration[] = [
       logger.info({ taxRate: hstRate }, 'system_config table created with tax_rate');
     },
   },
+  {
+    version: 12,
+    name: 'create_certification_reminders',
+    up: `CREATE TABLE IF NOT EXISTS certification_reminders (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      course_student_id INT NOT NULL,
+      student_email VARCHAR(255) NOT NULL,
+      reminder_type VARCHAR(10) NOT NULL,
+      sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_dedup (course_student_id, reminder_type)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+  },
 ];
 
 export async function runMigrations(): Promise<void> {

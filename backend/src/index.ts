@@ -4,6 +4,7 @@ import { logger } from './config/logger.js';
 import { connectDatabase, closeDatabaseConnections } from './config/database.js';
 import { runMigrations } from './config/migrations.js';
 import { initTaxConfig } from './utils/taxConfig.js';
+import { CertReminderService } from './services/CertReminderService.js';
 
 // Initialize Sentry (optional — gracefully skipped if package not installed)
 if (env.SENTRY_DSN) {
@@ -24,6 +25,25 @@ async function start() {
   await connectDatabase();
   await runMigrations();
   await initTaxConfig();
+
+  // Schedule daily cert reminder check (runs at startup + every 24h)
+  const certReminders = new CertReminderService();
+  // Run first check 60 seconds after startup
+  setTimeout(async () => {
+    try {
+      await certReminders.sendReminders();
+    } catch (err) {
+      logger.error({ err }, 'Cert reminder startup check failed');
+    }
+  }, 60_000);
+  // Then every 24 hours
+  setInterval(async () => {
+    try {
+      await certReminders.sendReminders();
+    } catch (err) {
+      logger.error({ err }, 'Cert reminder daily check failed');
+    }
+  }, 24 * 60 * 60 * 1000);
 
   const app = await buildApp();
   const address = await app.listen({ port: env.PORT, host: '0.0.0.0' });

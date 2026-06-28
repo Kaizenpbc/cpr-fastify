@@ -14,6 +14,7 @@ import { logger } from './config/logger.js';
 import { getPool } from './config/database.js';
 import { registerRoutes } from './routes/index.js';
 import { errorHandler } from './plugins/errorHandler.js';
+import { registerMetrics } from './plugins/metrics.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -90,6 +91,9 @@ export async function buildApp() {
 
   // Global error handler
   app.setErrorHandler(errorHandler);
+
+  // Performance metrics collection + /metrics endpoint
+  registerMetrics(app);
 
   // Routes (includes OpenAPI docs at /api/v1/docs)
   await app.register(registerRoutes, { prefix: '/api/v1' });

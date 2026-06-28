@@ -7,6 +7,7 @@ import { InvoiceNumberService } from '../services/InvoiceNumberService.js';
 import { getPool } from '../config/database.js';
 import { requireAuth, requireRole } from '../plugins/auth.js';
 import { parsePagination } from '../utils/pagination.js';
+import { toCSV } from '../utils/csv.js';
 
 // --- Schemas ---
 
@@ -117,6 +118,31 @@ export async function billingRoutes(app: FastifyInstance) {
     const pg = parsePagination(request.query as Record<string, string>);
     const result = await service.getRejected(pg);
     return { success: true, ...(Array.isArray(result) ? { data: result } : result) };
+  });
+
+  // CSV Export: Invoices (must be before /invoices/:id to avoid param matching)
+  app.get('/invoices/export/csv', { preHandler: acctRole }, async (_request, reply) => {
+    const result = await service.getAllInvoices();
+    const invoices = Array.isArray(result) ? result : (result as any).data;
+    const csv = toCSV(invoices as Record<string, unknown>[], [
+      { key: 'invoice_number', label: 'Invoice #' },
+      { key: 'organization_name', label: 'Organization' },
+      { key: 'course_type_name', label: 'Course' },
+      { key: 'invoice_date', label: 'Invoice Date' },
+      { key: 'due_date', label: 'Due Date' },
+      { key: 'students_billed', label: 'Students' },
+      { key: 'rate_per_student', label: 'Rate/Student' },
+      { key: 'base_cost', label: 'Subtotal' },
+      { key: 'tax_amount', label: 'Tax' },
+      { key: 'amount', label: 'Total' },
+      { key: 'amount_paid', label: 'Paid' },
+      { key: 'balance_due', label: 'Balance' },
+      { key: 'approval_status', label: 'Approval' },
+      { key: 'payment_status', label: 'Payment Status' },
+    ]);
+    reply.header('Content-Type', 'text/csv;charset=utf-8');
+    reply.header('Content-Disposition', `attachment; filename="invoices-${new Date().toISOString().split('T')[0]}.csv"`);
+    return csv;
   });
 
   app.get('/invoices/:id', { preHandler: acctRole }, async (request, reply) => {

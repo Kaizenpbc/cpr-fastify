@@ -204,7 +204,7 @@ const EMAIL_TEMPLATES = {
   }),
 };
 
-class EmailService {
+export class EmailService {
   private apiKey: string | null;
   private fromAddress: string;
   private static instance: EmailService;
@@ -451,6 +451,32 @@ class EmailService {
       <p>If you didn't request this code, please ignore this email.</p>
     `;
     await this.sendEmail(userEmail, 'CPR Training System - MFA Verification Code', html);
+  }
+
+  async sendCertExpiryReminder(
+    studentEmail: string,
+    firstName: string,
+    courseName: string,
+    certNumber: string,
+    expiresAt: string,
+    daysUntilExpiry: number,
+  ): Promise<boolean> {
+    const subject = `Your ${courseName} certification expires in ${daysUntilExpiry} days`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #CC1F1F; padding: 20px; text-align: center;">
+          <h1 style="color: #fff; margin: 0; font-size: 22px;">GTACPR Certification Reminder</h1>
+        </div>
+        <div style="padding: 30px; background: #f9f9f9;">
+          <p>Hi ${firstName},</p>
+          <p>Your <strong>${courseName}</strong> certification (${certNumber}) expires on <strong>${new Date(expiresAt).toLocaleDateString('en-CA')}</strong> — that's <strong>${daysUntilExpiry} days</strong> from now.</p>
+          <p>To maintain your certification, please schedule a renewal course before your expiry date.</p>
+          <p>Contact your organization or visit our website to find upcoming courses.</p>
+          <p style="margin-top: 30px; color: #666; font-size: 13px;">— GTACPR Training Management</p>
+        </div>
+      </div>
+    `;
+    return this.sendEmail(studentEmail, subject, html);
   }
 
   // --- Reminder logging (MySQL) ---

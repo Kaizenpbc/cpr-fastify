@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { sysAdminApi } from '../../services/api';
+import api from '../../services/api';
 import StatCard from '../gtacpr/StatCard';
 import StatusChip from '../gtacpr/StatusChip';
 import UserAvatar from '../gtacpr/UserAvatar';
 import DataTable, { DataTableRow } from '../gtacpr/DataTable';
 import SegmentedToggle from '../gtacpr/SegmentedToggle';
-import { PrimaryButton } from '../gtacpr/Buttons';
+import { GhostButton } from '../gtacpr/Buttons';
 import { useClientPagination } from '../../hooks/useClientPagination';
 
 interface CertificationTrackingProps {
@@ -73,6 +74,23 @@ const CertificationTracking = ({ onShowSnackbar }: CertificationTrackingProps) =
     }
   };
 
+  const handleExportCSV = async () => {
+    try {
+      const response = await api.get('/sysadmin/certifications/expiring/export/csv', {
+        params: { days },
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `expiring-certifications-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      onShowSnackbar('Failed to export certifications', 'error');
+    }
+  };
+
   useEffect(() => { loadStats(); }, []);
   useEffect(() => { loadCerts(); }, [view, days]);
 
@@ -98,28 +116,31 @@ const CertificationTracking = ({ onShowSnackbar }: CertificationTrackingProps) =
           ]}
           onChange={setView}
         />
-        {view === 'expiring' && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, fontWeight: 500 }}>Window:</Typography>
-            {windowOptions.map(opt => (
-              <Box
-                key={opt.value}
-                onClick={() => setDays(opt.value)}
-                sx={{
-                  px: 1.5, py: 0.5,
-                  borderRadius: '20px',
-                  fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                  border: '1px solid',
-                  borderColor: days === opt.value ? 'rgba(204,31,31,.3)' : (theme: any) => theme.palette.divider,
-                  bgcolor: days === opt.value ? '#FFF0F0' : (theme: any) => theme.palette.background.paper,
-                  color: days === opt.value ? '#CC1F1F' : (theme: any) => theme.palette.text.secondary,
-                }}
-              >
-                {opt.label}
-              </Box>
-            ))}
-          </Box>
-        )}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {view === 'expiring' && (
+            <>
+              <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, fontWeight: 500 }}>Window:</Typography>
+              {windowOptions.map(opt => (
+                <Box
+                  key={opt.value}
+                  onClick={() => setDays(opt.value)}
+                  sx={{
+                    px: 1.5, py: 0.5,
+                    borderRadius: '20px',
+                    fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                    border: '1px solid',
+                    borderColor: days === opt.value ? 'rgba(204,31,31,.3)' : (theme: any) => theme.palette.divider,
+                    bgcolor: days === opt.value ? '#FFF0F0' : (theme: any) => theme.palette.background.paper,
+                    color: days === opt.value ? '#CC1F1F' : (theme: any) => theme.palette.text.secondary,
+                  }}
+                >
+                  {opt.label}
+                </Box>
+              ))}
+            </>
+          )}
+          <GhostButton onClick={handleExportCSV}>Export CSV</GhostButton>
+        </Box>
       </Box>
 
       {/* Table */}

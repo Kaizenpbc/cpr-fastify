@@ -14,6 +14,7 @@ import {
   Alert,
 } from '@mui/material';
 import { sysAdminApi } from '../../services/api';
+import api from '../../services/api';
 import LocationsDialog from './LocationsDialog';
 import OrganizationWizard from './OrganizationWizard';
 import SearchBar from '../gtacpr/SearchBar';
@@ -133,6 +134,23 @@ const OrganizationManagement = () => {
     }
   };
 
+  const handleExportCSV = async () => {
+    try {
+      const response = await api.get('/sysadmin/organizations/export/csv', {
+        params: searchTerm ? { search: searchTerm } : undefined,
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `organizations-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      setError('Failed to export organizations');
+    }
+  };
+
   const formatPhone = (phone: any) => {
     if (!phone) return '—';
     const cleaned = phone.replace(/\D/g, '');
@@ -165,6 +183,7 @@ const OrganizationManagement = () => {
         <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, flex: 1 }}>
           {totalCount} organization{totalCount !== 1 ? 's' : ''}
         </Typography>
+        <GhostButton onClick={handleExportCSV}>Export CSV</GhostButton>
         <PrimaryButton onClick={() => handleOpenDialog()}>+ New Organization</PrimaryButton>
       </Box>
 
