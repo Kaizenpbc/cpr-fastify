@@ -457,7 +457,7 @@ const AccountingDashboard: React.FC = () => {
           </Box>
 
           {/* Stat Cards */}
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2, mb: 4 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2, mb: 4 }}>
             <MetricCard
               title="Total Billed"
               value={formatCurrency(dashboardData.totalBilled)}

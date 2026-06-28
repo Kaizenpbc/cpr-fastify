@@ -194,7 +194,7 @@ const InvoiceStatusView: React.FC = () => {
       {error && <Alert severity="error" onClose={() => setError(null)}>{error}</Alert>}
 
       {/* Status Summary */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '16px' }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(6, 1fr)' }, gap: '16px' }}>
         <StatCard label="Submitted" value={statusSummary.submitted} sub="Awaiting review" dotColor="#ED6C02" />
         <StatCard label="Pending Review" value={statusSummary.pendingReview} sub="Under review" dotColor="#4B5563" />
         <StatCard label="Approved" value={statusSummary.approved} sub="Ready for payment" dotColor="#16A34A" />

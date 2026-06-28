@@ -98,7 +98,7 @@ const CertificationTracking = ({ onShowSnackbar }: CertificationTrackingProps) =
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Stat cards */}
       {stats && (
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: '16px' }}>
           <StatCard label="Active Certifications" value={stats.active_certs ?? 0} sub="Currently valid" dotColor="#16A34A" />
           <StatCard label="Expiring · 30 days" value={stats.expiring_30d ?? 0} sub="Renewal reminders due" dotColor="#CC1F1F" />
           <StatCard label="Expiring · 90 days" value={stats.expiring_90d ?? 0} sub="Within the quarter" dotColor="#ED6C02" />

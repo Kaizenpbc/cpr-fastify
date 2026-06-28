@@ -188,7 +188,7 @@ const VendorManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Stat cards */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: '16px' }}>
         <StatCard label="Total Vendors" value={vendors.length} sub="All records" dotColor="#4B5563" />
         <StatCard label="Active Vendors" value={activeVendors.length} sub="Currently active" dotColor="#16A34A" />
         <StatCard label="Certified" value={certified.length} sub="Valid certification" dotColor="#CC1F1F" />

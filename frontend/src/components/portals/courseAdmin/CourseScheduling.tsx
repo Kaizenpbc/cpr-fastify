@@ -119,7 +119,7 @@ const CourseScheduling = () => {
           </Typography>
           {hasActiveFilters && <GhostButton onClick={clearFilters}>Clear Filters</GhostButton>}
         </Box>
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2 }}>
           <FormControl fullWidth size="small">
             <InputLabel>Instructor</InputLabel>
             <Select value={instructorFilter} onChange={(e) => setInstructorFilter(e.target.value)} label="Instructor">

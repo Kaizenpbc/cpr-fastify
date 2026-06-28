@@ -185,7 +185,7 @@ const NotificationsPanel: React.FC = () => {
 
       {/* Stats */}
       {stats && (
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: '16px' }}>
           <StatCard label="Total Notifications" value={stats.total} sub="All time" dotColor="#4B5563" />
           <StatCard label="Unread" value={stats.unread} sub="Need attention" dotColor="#CC1F1F" />
           <StatCard label="Pending Timesheets" value={systemNotifications?.pendingTimesheets || 0} sub="Awaiting review" dotColor="#ED6C02" />
@@ -204,7 +204,7 @@ const NotificationsPanel: React.FC = () => {
       {systemNotifications && (
         <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
           <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>System Overview</Typography>
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, mb: 2 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2, mb: 2 }}>
             {[
               ['Pending Timesheets', systemNotifications.pendingTimesheets],
               ['Pending Profile Changes', systemNotifications.pendingProfileChanges],

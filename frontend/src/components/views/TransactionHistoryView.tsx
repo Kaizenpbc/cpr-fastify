@@ -87,7 +87,7 @@ const TransactionHistoryView = () => {
           <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Filters</Typography>
           <GhostButton onClick={handleClearFilters}>Clear Filters</GhostButton>
         </Box>
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2 }}>
           <TextField fullWidth label="Search Invoice/Course/Org" size="small" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           <FormControl fullWidth size="small">
             <InputLabel>Organization</InputLabel>
@@ -119,7 +119,7 @@ const TransactionHistoryView = () => {
           <InvoiceHistoryTable invoices={filteredInvoices} onRefresh={fetchAllInvoices} />
 
           {filteredInvoices.length > 0 && (
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2 }}>
               <StatCard label="Total Invoices" value={filteredInvoices.length} />
               <StatCard label="Total Amount" value={`$${filteredInvoices.reduce((sum, inv) => sum + parseFloat(inv.amount || 0), 0).toFixed(2)}`} />
               <StatCard label="Total Paid" value={`$${filteredInvoices.reduce((sum, inv) => sum + parseFloat(inv.paidToDate || 0), 0).toFixed(2)}`} dotColor="#16A34A" />

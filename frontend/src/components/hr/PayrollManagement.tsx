@@ -222,7 +222,7 @@ const PayrollManagement: React.FC = () => {
 
       {/* Stats */}
       {stats && stats.totalPayrollThisMonth !== undefined && (
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: '16px' }}>
           <StatCard label="Total Payroll" value={`$${Number(stats.totalPayrollThisMonth || 0).toFixed(2)}`} sub="This month" dotColor="#CC1F1F" />
           <StatCard label="Pending Payments" value={stats.pendingPayments} sub="Awaiting processing" dotColor="#ED6C02" />
           <StatCard label="Instructors Pending" value={stats.instructorsWithPending} sub="With pending payments" dotColor="#4B5563" />
@@ -253,7 +253,7 @@ const PayrollManagement: React.FC = () => {
         {activeTab === 0 && (
           <Box sx={{ p: 3 }}>
             {/* Filters */}
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, mb: 2 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2, mb: 2 }}>
               <FormControl fullWidth size="small">
                 <InputLabel>Status</InputLabel>
                 <Select value={filters.status || ''} onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value, page: 1 }))} label="Status">
@@ -311,7 +311,7 @@ const PayrollManagement: React.FC = () => {
                 </Box>
               ))}
             </Box>
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: '16px' }}>
               <StatCard label="Base Amount" value={`$${Number(calculation.calculation.baseAmount || 0).toFixed(2)}`} sub="Hours x Rate" dotColor="#4B5563" />
               <StatCard label="Course Bonus" value={`$${Number(calculation.calculation.courseBonus || 0).toFixed(2)}`} sub="Courses x Bonus" dotColor="#ED6C02" />
               <StatCard label="Total Amount" value={`$${Number(calculation.calculation.totalAmount || 0).toFixed(2)}`} sub="Total payable" dotColor="#CC1F1F" />

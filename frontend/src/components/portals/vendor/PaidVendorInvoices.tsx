@@ -181,7 +181,7 @@ const PaidVendorInvoices: React.FC = () => {
       </Box>
 
       {/* Summary Cards */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: '16px' }}>
         <StatCard label="Paid Invoices" value={invoices.length} sub="Total count" dotColor="#16A34A" />
         <StatCard label="Total Amount" value={formatCurrency(summaryData.totalAmount)} sub="Invoice totals" dotColor="#16A34A" />
         <StatCard label="Payments Processed" value={formatCurrency(summaryData.totalPaid)} sub="Amount received" dotColor="#4B5563" />

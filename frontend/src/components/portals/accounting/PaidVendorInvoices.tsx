@@ -157,7 +157,7 @@ const PaidVendorInvoices: React.FC = () => {
       </Box>
 
       {/* Summary Cards */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2 }}>
         <StatCard label="Total Paid Invoices" value={invoices.length} dotColor="#16A34A" />
         <StatCard label="Total Amount Paid" value={formatCurrency(invoices.reduce((sum, inv) => {
           const total = typeof inv.total === 'number' ? inv.total : parseFloat(inv.total) || 0;
@@ -233,7 +233,7 @@ const PaidVendorInvoices: React.FC = () => {
               {/* Payment Summary */}
               <Box>
                 <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Payment Summary</Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2 }}>
                   <StatCard label="Total Invoice Amount" value={formatCurrency(selectedInvoice.total)} dotColor="#2563EB" />
                   <StatCard label="Amount Paid" value={formatCurrency(selectedInvoice.totalPaid || selectedInvoice.total)} dotColor="#16A34A" />
                   <StatCard label="Balance Due" value="$0.00" dotColor="#16A34A" />

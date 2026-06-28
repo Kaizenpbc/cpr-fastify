@@ -250,7 +250,7 @@ const PayRateManagement: React.FC = () => {
             <Box sx={{ mb: 2 }}>
               <PrimaryButton onClick={() => openTierDialog()}>+ Add New Tier</PrimaryButton>
             </Box>
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: '16px' }}>
               {tiers.map((tier) => (
                 <Card key={tier.id} sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', p: 3 }}>
                   <Typography sx={{ fontSize: 16, fontWeight: 700, color: (theme) => theme.palette.text.primary, mb: 0.5 }}>{tier.name}</Typography>

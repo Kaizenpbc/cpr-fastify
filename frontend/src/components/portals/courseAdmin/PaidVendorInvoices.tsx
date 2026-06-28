@@ -225,7 +225,7 @@ const PaidVendorInvoices: React.FC = () => {
         <Typography sx={{ ...sectionHeader, mb: 1.5 }}>
           Summary
         </Typography>
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2 }}>
           <StatCard
             label="Total Paid Invoices"
             value={invoices.length}
@@ -362,7 +362,7 @@ const PaidVendorInvoices: React.FC = () => {
                 <Typography sx={{ ...sectionHeader, mb: 2 }}>
                   Payment Summary
                 </Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, mb: 2 }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2, mb: 2 }}>
                   <StatCard
                     label="Total Invoice Amount"
                     value={formatCurrency(selectedInvoice.total)}

@@ -86,7 +86,7 @@ const InvoiceStatsDashboard: React.FC<InvoiceStatsDashboardProps> = ({
         <Typography sx={{ fontSize: 11, color: (theme) => theme.palette.text.secondary }}>Last updated: {stats.lastUpdated}</Typography>
       </Box>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2 }}>
         <Tooltip title="Invoices waiting for approval">
           <div><StatCard label="Pending Approvals" value={stats.pendingApprovals} dotColor="#ED6C02" /></div>
         </Tooltip>

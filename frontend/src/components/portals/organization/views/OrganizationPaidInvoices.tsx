@@ -111,7 +111,7 @@ const OrganizationPaidInvoices: React.FC<OrganizationPaidInvoicesProps> = ({
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2 }}>
         <StatCard label="Total Paid Invoices" value={paidInvoicesSummary?.total_paid_invoices || 0} dotColor="#16A34A" />
         <StatCard label="Total Amount Paid" value={`$${Number(paidInvoicesSummary?.total_paid_amount || 0).toLocaleString()}`} dotColor="#16A34A" />
         <StatCard label="Average Invoice" value={`$${Number(paidInvoicesSummary?.average_paid_amount || 0).toFixed(2)}`} />
@@ -123,7 +123,7 @@ const OrganizationPaidInvoices: React.FC<OrganizationPaidInvoicesProps> = ({
         <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
           Filters ({safeInvoices.length} paid invoices)
         </Typography>
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2 }}>
           <TextField fullWidth label="Search paid invoices..." size="small" />
           <FormControl fullWidth size="small">
             <InputLabel>Course Type</InputLabel>
@@ -214,7 +214,7 @@ const OrganizationPaidInvoices: React.FC<OrganizationPaidInvoicesProps> = ({
                 <Grid item xs={12}>
                   <Box sx={{ borderTop: (theme) => `1px solid ${theme.palette.divider}`, pt: 2 }}>
                     <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Payment Details</Typography>
-                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2 }}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2 }}>
                       {[
                         ['Base Cost', selectedInvoice.rate_per_student ? `$${(selectedInvoice.rate_per_student * selectedInvoice.students_billed).toFixed(2)}` : 'N/A'],
                         ['Tax (HST)', selectedInvoice.rate_per_student ? `$${(selectedInvoice.rate_per_student * selectedInvoice.students_billed * 0.13).toFixed(2)}` : 'N/A'],

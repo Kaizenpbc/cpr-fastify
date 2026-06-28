@@ -185,7 +185,7 @@ const CourseManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: '16px' }}>
           {courses.map(course => {
             const dMin = course.durationMinutes || course.duration_minutes || 0;
             const validityMonths = course.certification_validity_months || course.validityPeriodMonths;

@@ -705,7 +705,7 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
       </Typography>
 
       {/* Billing Summary Stat Cards */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2, mb: 4 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2, mb: 4 }}>
         <StatCard
           label="Total Invoices"
           value={billingSummary?.total_invoices || 0}

@@ -113,7 +113,7 @@ const OrganizationAnalytics: React.FC<OrganizationAnalyticsProps> = ({
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 2 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(6, 1fr)' }, gap: 2 }}>
         <StatCard label="Total Courses" value={totalCourses} />
         <StatCard label="Total Students" value={totalStudents} />
         <StatCard label="Total Billed" value={`$${totalBilled.toFixed(2)}`} />

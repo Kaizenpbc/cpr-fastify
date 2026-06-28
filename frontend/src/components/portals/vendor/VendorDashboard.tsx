@@ -36,7 +36,7 @@ const VendorDashboard: React.FC = () => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* KPI cards */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: '16px' }}>
         <StatCard label="Pending Invoices" value={stats?.pendingInvoices || 0} sub="Awaiting review" dotColor="#ED6C02" />
         <StatCard label="Total Invoices" value={stats?.totalInvoices || 0} sub="All submissions" dotColor="#CC1F1F" />
         <StatCard label="Total Paid" value={`$${stats?.totalPaid?.toFixed(2) || '0.00'}`} sub="Revenue received" dotColor="#16A34A" />

@@ -395,7 +395,7 @@ const PaymentRequestsDashboard: React.FC = () => {
 
       {/* Statistics Cards */}
       {stats && (
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2 }}>
           <StatCard
             label="Pending Requests"
             value={stats.pending.count}

@@ -113,7 +113,7 @@ const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Stats */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 2 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(6, 1fr)' }, gap: 2 }}>
         <StatCard label="Total Courses" value={allCourses.length} />
         <StatCard label="Total Students" value={totalStudents} />
         <StatCard label="Pending Invoices" value={Number(billingSummary?.pending_invoices || 0)} dotColor="#ED6C02" />

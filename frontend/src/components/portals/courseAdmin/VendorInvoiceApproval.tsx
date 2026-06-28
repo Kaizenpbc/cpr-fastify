@@ -319,7 +319,7 @@ const VendorInvoiceApproval: React.FC = () => {
         </Alert>
       )}
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 2, mb: 3 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(5, 1fr)' }, gap: 2, mb: 3 }}>
         <StatCard label="Pending Submission" value={stats.pending_submission} dotColor="#9CA3AF" />
         <StatCard label="Submitted to Admin" value={stats.submitted_to_admin} dotColor="#F59E0B" />
         <StatCard label="Submitted to Accounting" value={stats.submitted_to_accounting} dotColor="#3B82F6" />

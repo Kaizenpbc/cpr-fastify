@@ -71,7 +71,7 @@ const OrganizationPaymentSummary: React.FC<OrganizationPaymentSummaryProps> = ({
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2 }}>
         <StatCard label="Total Payments" value={summary.total_payments} sub="All time payments" />
         <StatCard label="Total Amount" value={`$${Number(summary.total_amount_paid || 0).toFixed(2)}`} sub="Total amount paid" dotColor="#16A34A" />
         <StatCard label="Verified" value={summary.verified_payments} sub="Payments verified" dotColor="#16A34A" />

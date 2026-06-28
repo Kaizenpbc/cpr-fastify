@@ -124,7 +124,7 @@ const HRDashboard: React.FC<HRDashboardProps> = ({ onViewChange }) => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Stats */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: '16px' }}>
         <StatCard label="Pending Approvals" value={stats?.pendingApprovals || 0} sub="Awaiting review" dotColor="#ED6C02" />
         <StatCard label="Active Instructors" value={stats?.activeInstructors || 0} sub="Currently active" dotColor="#CC1F1F" />
         <StatCard label="Organizations" value={stats?.organizations || 0} sub="Registered" dotColor="#4B5563" />

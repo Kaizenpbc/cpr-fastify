@@ -350,7 +350,7 @@ const InvoiceHistory: React.FC = () => {
       {error && <Alert severity="error" onClose={() => setError(null)}>{error}</Alert>}
 
       {/* Summary Statistics */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '16px' }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(6, 1fr)' }, gap: '16px' }}>
         <StatCard label="Pending" value={countByStatus(['pending_submission'])} sub={formatCurrency(sumByStatus(['pending_submission']))} dotColor="#9CA3AF" />
         <StatCard label="To Admin" value={countByStatus(['submitted_to_admin'])} sub={formatCurrency(sumByStatus(['submitted_to_admin']))} dotColor="#ED6C02" />
         <StatCard label="To Accounting" value={countByStatus(['submitted_to_accounting'])} sub={formatCurrency(sumByStatus(['submitted_to_accounting']))} dotColor="#4B5563" />

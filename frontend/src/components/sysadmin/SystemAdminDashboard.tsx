@@ -60,7 +60,7 @@ const SystemAdminDashboard = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* KPI cards */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: '16px' }}>
         <StatCard label="Total Users" value={summary?.totalUsers || 0} sub="All registered accounts" dotColor="#CC1F1F" />
         <StatCard label="Organizations" value={summary?.totalOrganizations || 0} sub="Active organizations" dotColor="#16A34A" />
         <StatCard label="Course Types" value={summary?.totalCourses || 0} sub="In course catalog" dotColor="#ED6C02" />
@@ -119,7 +119,7 @@ const SystemAdminDashboard = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
         <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
           System Status
         </Typography>
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Platform</Typography>
             <StatusChip kind="active" label="Operational" />

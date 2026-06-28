@@ -223,7 +223,7 @@ const ReturnedPaymentRequests: React.FC = () => {
       </Box>
 
       {/* Stats */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: '16px' }}>
         <StatCard label="Returned Requests" value={requests.length} sub="Awaiting HR review" dotColor="#ED6C02" />
       </Box>
 

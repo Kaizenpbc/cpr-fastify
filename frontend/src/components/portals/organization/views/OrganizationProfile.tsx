@@ -21,7 +21,7 @@ interface OrganizationProfileProps {
 const OrganizationProfile: React.FC<OrganizationProfileProps> = ({ organizationData }) => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2 }}>
         <StatCard label="Total Courses" value={organizationData?.total_courses || 0} />
         <StatCard label="Total Students" value={organizationData?.total_students || 0} />
         <StatCard label="Active Instructors" value={organizationData?.active_instructors || 0} dotColor="#16A34A" />

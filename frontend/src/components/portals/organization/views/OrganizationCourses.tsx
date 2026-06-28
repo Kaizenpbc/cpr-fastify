@@ -162,7 +162,7 @@ const OrganizationCourses: React.FC<OrganizationCoursesProps> = ({
             Filters ({filteredCourses.length} of {courses.length})
           </Typography>
         </Box>
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2 }}>
           <TextField fullWidth label="Search courses..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} size="small" />
           <FormControl fullWidth size="small">
             <InputLabel>Status</InputLabel>
