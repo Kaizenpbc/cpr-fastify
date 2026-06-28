@@ -203,21 +203,29 @@ const AccountsReceivableView: React.FC = () => {
 };
 
 // Pending Approvals View Component
+const PAGE_SIZE = 25;
+
 const PendingApprovalsView: React.FC = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showInvoiceDetailDialog, setShowInvoiceDetailDialog] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null);
   const { showSuccess, showError } = useSnackbar();
-  const { paged: pagedPending, page: pendingPage, hasNextPage: pendingHasNext, onPrevPage: onPendingPrev, onNextPage: onPendingNext } = useClientPagination(invoices, 25);
 
-  const fetchPendingApprovals = useCallback(async () => {
+  const hasNextPage = page * PAGE_SIZE < totalCount;
+  const onPrevPage = () => { const p = Math.max(1, page - 1); setPage(p); fetchPendingApprovals(p); };
+  const onNextPage = () => { const p = page + 1; setPage(p); fetchPendingApprovals(p); };
+
+  const fetchPendingApprovals = useCallback(async (p = 1) => {
     setIsLoading(true);
     setError('');
     try {
-      const data = await getPendingApprovals();
-      setInvoices(data || []);
+      const result = await getPendingApprovals({ page: p, limit: PAGE_SIZE });
+      setInvoices(result.data || []);
+      setTotalCount(result.pagination?.total ?? (result.data || []).length);
     } catch (err: unknown) {
       const errObj = err as { message?: string };
       setError(errObj.message || 'Failed to load pending approvals.');
@@ -317,8 +325,8 @@ const PendingApprovalsView: React.FC = () => {
           <Typography sx={{ fontSize: 14, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>No invoices pending approval</Typography>
         </Box>
       ) : (
-        <DataTable columns={pendingColumns} shownCount={pagedPending.length} totalCount={invoices.length} page={pendingPage} onPrevPage={onPendingPrev} onNextPage={onPendingNext} hasNextPage={pendingHasNext}>
-          {pagedPending.map((invoice) => (
+        <DataTable columns={pendingColumns} shownCount={invoices.length} totalCount={totalCount} page={page - 1} onPrevPage={onPrevPage} onNextPage={onNextPage} hasNextPage={hasNextPage}>
+          {invoices.map((invoice) => (
             <DataTableRow key={invoice.id} columns={pendingColumns}>
               <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{(invoice as Record<string, unknown>).invoice_number as string || '-'}</Typography>
               <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{(invoice as Record<string, unknown>).organization_name as string || '-'}</Typography>
@@ -353,19 +361,25 @@ const PendingApprovalsView: React.FC = () => {
 // Rejected Invoices View Component
 const RejectedInvoicesView: React.FC = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showInvoiceDetailDialog, setShowInvoiceDetailDialog] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null);
   const { showSuccess, showError } = useSnackbar();
-  const { paged: pagedRejected, page: rejectedPage, hasNextPage: rejectedHasNext, onPrevPage: onRejectedPrev, onNextPage: onRejectedNext } = useClientPagination(invoices, 25);
 
-  const fetchRejectedInvoices = useCallback(async () => {
+  const hasNextPage = page * PAGE_SIZE < totalCount;
+  const onPrevPage = () => { const p = Math.max(1, page - 1); setPage(p); fetchRejectedInvoices(p); };
+  const onNextPage = () => { const p = page + 1; setPage(p); fetchRejectedInvoices(p); };
+
+  const fetchRejectedInvoices = useCallback(async (p = 1) => {
     setIsLoading(true);
     setError('');
     try {
-      const data = await getRejectedInvoices();
-      setInvoices(data || []);
+      const result = await getRejectedInvoices({ page: p, limit: PAGE_SIZE });
+      setInvoices(result.data || []);
+      setTotalCount(result.pagination?.total ?? (result.data || []).length);
     } catch (err: unknown) {
       const errObj = err as { message?: string };
       setError(errObj.message || 'Failed to load rejected invoices.');
@@ -453,8 +467,8 @@ const RejectedInvoicesView: React.FC = () => {
           <Typography sx={{ fontSize: 14, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>No rejected invoices</Typography>
         </Box>
       ) : (
-        <DataTable columns={rejectedColumns} shownCount={pagedRejected.length} totalCount={invoices.length} page={rejectedPage} onPrevPage={onRejectedPrev} onNextPage={onRejectedNext} hasNextPage={rejectedHasNext}>
-          {pagedRejected.map((invoice) => (
+        <DataTable columns={rejectedColumns} shownCount={invoices.length} totalCount={totalCount} page={page - 1} onPrevPage={onPrevPage} onNextPage={onNextPage} hasNextPage={hasNextPage}>
+          {invoices.map((invoice) => (
             <DataTableRow key={invoice.id} columns={rejectedColumns}>
               <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{(invoice as Record<string, unknown>).invoiceNumber as string || '-'}</Typography>
               <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{(invoice as Record<string, unknown>).organizationName as string || '-'}</Typography>

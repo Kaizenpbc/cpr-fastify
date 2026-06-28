@@ -13,7 +13,6 @@ import {
   CircularProgress,
   Alert,
 } from '@mui/material';
-import { useClientPagination } from '../../hooks/useClientPagination';
 import { sysAdminApi } from '../../services/api';
 import LocationsDialog from './LocationsDialog';
 import OrganizationWizard from './OrganizationWizard';
@@ -41,6 +40,8 @@ function getInitials(name?: string): string {
 
 const OrganizationManagement = () => {
   const [organizations, setOrganizations] = useState<any[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -56,21 +57,27 @@ const OrganizationManagement = () => {
     contactEmail: '', contactPhone: '', organizationComments: '',
   });
 
+  const PAGE_SIZE = 25;
   const positions = ['Owner', 'Manager', 'Director', 'Administrator', 'Other'];
 
-  useEffect(() => { loadOrganizations(); }, []);
-
-  const loadOrganizations = async () => {
+  const loadOrganizations = async (p = page, search = searchTerm) => {
     try {
       setLoading(true);
-      const response = await sysAdminApi.getOrganizations();
+      const response = await sysAdminApi.getOrganizations({ page: p, limit: PAGE_SIZE, search: search || undefined });
       setOrganizations(response.data || []);
+      setTotalCount(response.pagination?.total ?? (response.data || []).length);
     } catch (err: any) {
       setError('Failed to load organizations');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => { setPage(1); loadOrganizations(1, searchTerm); }, [searchTerm]);
+
+  const hasNextPage = page * PAGE_SIZE < totalCount;
+  const onPrevPage = () => { const p = Math.max(1, page - 1); setPage(p); loadOrganizations(p); };
+  const onNextPage = () => { const p = page + 1; setPage(p); loadOrganizations(p); };
 
   const handleOpenDialog = (org: any = null) => {
     if (org) {
@@ -133,17 +140,7 @@ const OrganizationManagement = () => {
     return phone;
   };
 
-  const filtered = organizations.filter(org => {
-    if (!searchTerm) return true;
-    const q = searchTerm.toLowerCase();
-    return (org.organizationName || '').toLowerCase().includes(q)
-      || (org.contactPerson || '').toLowerCase().includes(q)
-      || (org.contactEmail || '').toLowerCase().includes(q);
-  });
-
-  const { paged: pagedOrgs, page: orgPage, hasNextPage: orgHasNext, onPrevPage: onOrgPrev, onNextPage: onOrgNext } = useClientPagination(filtered, 25);
-
-  if (loading) {
+  if (loading && organizations.length === 0) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
         <CircularProgress size={48} />
@@ -166,14 +163,14 @@ const OrganizationManagement = () => {
           />
         </Box>
         <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, flex: 1 }}>
-          {filtered.length} organization{filtered.length !== 1 ? 's' : ''}
+          {totalCount} organization{totalCount !== 1 ? 's' : ''}
         </Typography>
         <PrimaryButton onClick={() => handleOpenDialog()}>+ New Organization</PrimaryButton>
       </Box>
 
       {/* Table */}
-      <DataTable columns={columns} shownCount={pagedOrgs.length} totalCount={filtered.length} page={orgPage} onPrevPage={onOrgPrev} onNextPage={onOrgNext} hasNextPage={orgHasNext}>
-        {pagedOrgs.map(org => (
+      <DataTable columns={columns} shownCount={organizations.length} totalCount={totalCount} page={page - 1} onPrevPage={onPrevPage} onNextPage={onNextPage} hasNextPage={hasNextPage} loading={loading}>
+        {organizations.map(org => (
           <DataTableRow key={org.id} columns={columns}>
             {/* ORGANIZATION */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>

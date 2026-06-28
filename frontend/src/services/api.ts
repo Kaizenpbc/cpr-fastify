@@ -918,7 +918,7 @@ export const sysAdminApi = {
   },
 
   // Organization Management
-  getOrganizations: async (params?: { page?: number; limit?: number }) => {
+  getOrganizations: async (params?: { page?: number; limit?: number; search?: string }) => {
     const response = await api.get('/sysadmin/organizations', { params });
     return response.data;
   },

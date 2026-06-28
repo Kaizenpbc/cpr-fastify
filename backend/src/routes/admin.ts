@@ -228,11 +228,20 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // ===== Organization management =====
   app.get('/organizations', { preHandler: adminRole }, async (request) => {
+    const { search = '' } = request.query as Record<string, string>;
     const pg = parsePagination(request.query as Record<string, string>);
+
+    let where = '';
+    const params: unknown[] = [];
+    if (search) {
+      where = 'WHERE name LIKE ? OR contact_email LIKE ? OR contact_person LIKE ?';
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+    }
+
     const result = await paginatedQuery(
-      'SELECT * FROM organizations ORDER BY name',
-      'SELECT COUNT(*) as count FROM organizations',
-      [],
+      `SELECT * FROM organizations ${where} ORDER BY name`,
+      `SELECT COUNT(*) as count FROM organizations ${where}`,
+      params,
       pg,
     );
     return { success: true, ...result };
