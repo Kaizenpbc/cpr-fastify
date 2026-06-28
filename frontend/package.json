@@ -38,6 +38,7 @@
     "papaparse": "^5.5.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-dropzone": "^15.0.0",
     "react-intersection-observer": "^9.16.0",
     "react-phone-number-input": "^3.4.12",
     "react-router-dom": "^6.30.1",

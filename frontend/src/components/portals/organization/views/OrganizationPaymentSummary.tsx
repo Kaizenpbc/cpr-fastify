@@ -1,29 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Paper,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  Chip,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  Divider,
-  CircularProgress,
-  Alert,
-} from '@mui/material';
-import {
-  Payment as PaymentIcon,
-  TrendingUp as TrendingUpIcon,
-  Schedule as ScheduleIcon,
-  CheckCircle as CheckCircleIcon,
-  Pending as PendingIcon,
-} from '@mui/icons-material';
+import { Box, Typography, CircularProgress, Alert } from '@mui/material';
 import { formatDisplayDate } from '../../../../utils/dateUtils';
 import { api } from '../../../../services/api';
+import StatCard from '../../../gtacpr/StatCard';
+import StatusChip from '../../../gtacpr/StatusChip';
 
 interface PaymentSummary {
   total_payments: number;
@@ -49,9 +29,21 @@ interface OrganizationPaymentSummaryProps {
   organizationId: number;
 }
 
-const OrganizationPaymentSummary: React.FC<OrganizationPaymentSummaryProps> = ({
-  organizationId,
-}) => {
+const getStatusKind = (status: string): 'success' | 'warning' | 'danger' | 'neutral' => {
+  switch (status?.toLowerCase()) {
+    case 'verified': return 'success';
+    case 'pending_verification': return 'warning';
+    case 'rejected': return 'danger';
+    default: return 'neutral';
+  }
+};
+
+const formatPaymentMethod = (method: string) => {
+  if (!method) return '-';
+  return method.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+};
+
+const OrganizationPaymentSummary: React.FC<OrganizationPaymentSummaryProps> = ({ organizationId }) => {
   const [summary, setSummary] = useState<PaymentSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,187 +62,56 @@ const OrganizationPaymentSummary: React.FC<OrganizationPaymentSummaryProps> = ({
         setLoading(false);
       }
     };
-
     loadPaymentSummary();
   }, [organizationId]);
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'verified':
-        return 'success';
-      case 'pending_verification':
-        return 'warning';
-      case 'rejected':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
-  const formatPaymentMethod = (method: string) => {
-    if (!method) return '-';
-    return method.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-  };
-
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" p={3}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert severity="error" sx={{ mb: 2 }}>
-        {error}
-      </Alert>
-    );
-  }
-
-  if (!summary) {
-    return (
-      <Alert severity="info" sx={{ mb: 2 }}>
-        No payment data available
-      </Alert>
-    );
-  }
+  if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress size={24} /></Box>;
+  if (error) return <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>;
+  if (!summary) return <Alert severity="info" sx={{ mb: 2 }}>No payment data available</Alert>;
 
   return (
-    <Box>
-      {/* Summary Cards */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center" mb={1}>
-                <PaymentIcon color="primary" sx={{ mr: 1 }} />
-                <Typography variant="h6" color="primary">
-                  Total Payments
-                </Typography>
-              </Box>
-              <Typography variant="h4" fontWeight="bold">
-                {summary.total_payments}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                All time payments
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2 }}>
+        <StatCard label="Total Payments" value={summary.total_payments} sub="All time payments" />
+        <StatCard label="Total Amount" value={`$${Number(summary.total_amount_paid || 0).toFixed(2)}`} sub="Total amount paid" dotColor="#16A34A" />
+        <StatCard label="Verified" value={summary.verified_payments} sub="Payments verified" dotColor="#16A34A" />
+        <StatCard label="Pending" value={summary.pending_payments} sub="Awaiting verification" dotColor="#ED6C02" />
+      </Box>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center" mb={1}>
-                <TrendingUpIcon color="success" sx={{ mr: 1 }} />
-                <Typography variant="h6" color="success.main">
-                  Total Amount
-                </Typography>
-              </Box>
-                               <Typography variant="h4" fontWeight="bold" color="success.main">
-                   ${Number(summary.total_amount_paid || 0).toFixed(2)}
-                 </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Total amount paid
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center" mb={1}>
-                <CheckCircleIcon color="success" sx={{ mr: 1 }} />
-                <Typography variant="h6" color="success.main">
-                  Verified
-                </Typography>
-              </Box>
-              <Typography variant="h4" fontWeight="bold" color="success.main">
-                {summary.verified_payments}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Payments verified
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center" mb={1}>
-                <PendingIcon color="warning" sx={{ mr: 1 }} />
-                <Typography variant="h6" color="warning.main">
-                  Pending
-                </Typography>
-              </Box>
-              <Typography variant="h4" fontWeight="bold" color="warning.main">
-                {summary.pending_payments}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Awaiting verification
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Recent Payments */}
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>
+      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
           Recent Payments
         </Typography>
         {(!summary.recent_payments || summary.recent_payments.length === 0) ? (
-          <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-            No recent payments found
-          </Typography>
+          <Typography sx={{ fontSize: 13, color: '#9CA3AF', fontStyle: 'italic' }}>No recent payments found</Typography>
         ) : (
-          <List>
-            {(Array.isArray(summary.recent_payments) ? summary.recent_payments : []).map((payment, index) => (
-              <React.Fragment key={payment.id}>
-                <ListItem>
-                  <ListItemText
-                    primary={
-                      <Box display="flex" alignItems="center" gap={1}>
-                                                 <Typography variant="body1" fontWeight="medium">
-                           ${Number(payment.amount_paid || 0).toFixed(2)}
-                         </Typography>
-                        <Chip
-                          label={payment.status.replace('_', ' ')}
-                          color={getStatusColor(payment.status)}
-                          size="small"
-                        />
-                      </Box>
-                    }
-                    secondary={
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">
-                          Invoice: {payment.invoice_number}
-                          {payment.course_type_name && ` • ${payment.course_type_name}`}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {formatPaymentMethod(payment.payment_method)} • {formatDisplayDate(payment.payment_date)}
-                          {payment.reference_number && ` • Ref: ${payment.reference_number}`}
-                        </Typography>
-                      </Box>
-                    }
-                  />
-                  <ListItemSecondaryAction>
-                    <Typography variant="body2" color="text.secondary">
-                      {formatDisplayDate(payment.payment_date)}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {(Array.isArray(summary.recent_payments) ? summary.recent_payments : []).map((payment) => (
+              <Box key={payment.id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, bgcolor: '#F9FAFB', borderRadius: '8px', border: '1px solid #F3F4F6' }}>
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827', fontFamily: 'monospace' }}>
+                      ${Number(payment.amount_paid || 0).toFixed(2)}
                     </Typography>
-                  </ListItemSecondaryAction>
-                </ListItem>
-                                 {index < (Array.isArray(summary.recent_payments) ? summary.recent_payments : []).length - 1 && <Divider />}
-              </React.Fragment>
+                    <StatusChip kind={getStatusKind(payment.status)} label={payment.status.replace('_', ' ')} />
+                  </Box>
+                  <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>
+                    Invoice: {payment.invoice_number}
+                    {payment.course_type_name && ` • ${payment.course_type_name}`}
+                  </Typography>
+                  <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>
+                    {formatPaymentMethod(payment.payment_method)} • {formatDisplayDate(payment.payment_date)}
+                    {payment.reference_number && ` • Ref: ${payment.reference_number}`}
+                  </Typography>
+                </Box>
+                <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{formatDisplayDate(payment.payment_date)}</Typography>
+              </Box>
             ))}
-          </List>
+          </Box>
         )}
-      </Paper>
+      </Box>
     </Box>
   );
 };
 
-export default OrganizationPaymentSummary; 
+export default OrganizationPaymentSummary;

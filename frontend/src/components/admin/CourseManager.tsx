@@ -1,28 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Button,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-  IconButton,
-  Alert,
-  CircularProgress,
-} from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-} from '@mui/icons-material';
+import { Box, Typography, CircularProgress, Alert } from '@mui/material';
 import { api } from '../../services/api';
 import logger from '../../utils/logger';
 import CourseDialog from './CourseDialog';
 import { formatDisplayDate } from '../../utils/dateUtils';
+import DataTable, { DataTableRow } from '../gtacpr/DataTable';
+import { PrimaryButton } from '../gtacpr/Buttons';
 
 interface Course {
   id: number;
@@ -37,6 +20,16 @@ interface Course {
 interface CourseManagerProps {
   showSnackbar: (message: string, severity: 'success' | 'error') => void;
 }
+
+const columns = [
+  { key: 'name', label: 'COURSE NAME', width: '1.6fr' },
+  { key: 'code', label: 'CODE', width: '0.8fr' },
+  { key: 'duration', label: 'DURATION', width: '0.8fr' },
+  { key: 'max', label: 'MAX STUDENTS', width: '0.8fr' },
+  { key: 'created', label: 'CREATED', width: '1fr' },
+  { key: 'updated', label: 'UPDATED', width: '1fr' },
+  { key: 'actions', label: '', width: '0.6fr', align: 'right' as const },
+];
 
 const CourseManager: React.FC<CourseManagerProps> = ({ showSnackbar }) => {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -59,41 +52,25 @@ const CourseManager: React.FC<CourseManagerProps> = ({ showSnackbar }) => {
     }
   };
 
-  useEffect(() => {
-    fetchCourses();
-  }, []);
+  useEffect(() => { fetchCourses(); }, []);
 
-  const handleAddOpen = () => {
-    setEditingCourse(null);
-    setDialogOpen(true);
-  };
-
-  const handleEditOpen = (course: Course) => {
-    setEditingCourse(course);
-    setDialogOpen(true);
-  };
+  const handleAddOpen = () => { setEditingCourse(null); setDialogOpen(true); };
+  const handleEditOpen = (course: Course) => { setEditingCourse(course); setDialogOpen(true); };
 
   const handleDelete = async (id: number, name: string) => {
-    if (
-      window.confirm(
-        `Are you sure you want to delete Course: ${name} (ID: ${id})? This cannot be undone.`
-      )
-    ) {
+    if (window.confirm(`Delete course "${name}"? This cannot be undone.`)) {
       try {
         setError(null);
         const response = await api.delete(`/courses/${id}`);
         if (response.data.success) {
-          showSnackbar(`Course ${id} deleted successfully.`, 'success');
+          showSnackbar(`Course deleted successfully.`, 'success');
           fetchCourses();
         } else {
           throw new Error(response.data.message || 'Failed to delete course');
         }
       } catch (err: any) {
         logger.error(`Error deleting course ${id}:`, err);
-        showSnackbar(
-          err instanceof Error ? err.message : 'Failed to delete course.',
-          'error'
-        );
+        showSnackbar(err instanceof Error ? err.message : 'Failed to delete course.', 'error');
       }
     }
   };
@@ -110,117 +87,59 @@ const CourseManager: React.FC<CourseManagerProps> = ({ showSnackbar }) => {
       fetchCourses();
     } catch (err: any) {
       logger.error('Error saving course:', err);
-      showSnackbar(
-        err instanceof Error ? err.message : 'Failed to save course',
-        'error'
-      );
+      showSnackbar(err instanceof Error ? err.message : 'Failed to save course', 'error');
       throw err;
     }
   };
 
+  const formatDuration = (mins: number) => {
+    if (!mins) return '—';
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return m ? `${h}h ${m}m` : `${h}h`;
+  };
+
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-        <CircularProgress />
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+        <CircularProgress size={48} />
       </Box>
     );
   }
 
   return (
-    <Box>
-      {error && (
-        <Alert severity='error' sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {error && <Alert severity="error" onClose={() => setError(null)}>{error}</Alert>}
 
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 2,
-        }}
-      >
-        <Typography variant='h6'>Manage Courses</Typography>
-        <Button
-          variant='contained'
-          startIcon={<AddIcon />}
-          onClick={handleAddOpen}
-        >
-          Add Course
-        </Button>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <PrimaryButton onClick={handleAddOpen}>+ Add Course</PrimaryButton>
       </Box>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Course Name</TableCell>
-              <TableCell>Code</TableCell>
-              <TableCell>Duration (min)</TableCell>
-              <TableCell>Max Students</TableCell>
-              <TableCell>Created</TableCell>
-              <TableCell>Updated</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {courses.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} align='center'>
-                  No courses found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              courses.map(course => (
-                <TableRow key={course.id}>
-                  <TableCell>{course.id}</TableCell>
-                  <TableCell>{course.name}</TableCell>
-                  <TableCell>{course.coursecode}</TableCell>
-                  <TableCell>{course.duration}</TableCell>
-                  <TableCell>{course.maxstudents}</TableCell>
-                  <TableCell>
-                    {formatDisplayDate(course.createdAt)}
-                  </TableCell>
-                  <TableCell>
-                    {formatDisplayDate(course.updatedAt)}
-                  </TableCell>
-                  <TableCell>
-                    <IconButton
-                      onClick={() => handleEditOpen(course)}
-                      color='primary'
-                      size='small'
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      onClick={() =>
-                        handleDelete(course.id, course.name)
-                      }
-                      color='error'
-                      size='small'
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      {courses.length === 0 ? (
+        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ color: '#9CA3AF', fontSize: 14 }}>No courses found.</Typography>
+        </Box>
+      ) : (
+        <DataTable columns={columns} shownCount={courses.length} totalCount={courses.length}>
+          {courses.map(course => (
+            <DataTableRow key={course.id} columns={columns}>
+              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{course.name}</Typography>
+              <Typography sx={{ fontSize: 12.5, fontFamily: 'monospace', color: '#4B5563' }}>{course.coursecode}</Typography>
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatDuration(course.duration)}</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{course.maxstudents}</Typography>
+              <Typography sx={{ fontSize: 12.5, color: '#9CA3AF' }}>{formatDisplayDate(course.createdAt)}</Typography>
+              <Typography sx={{ fontSize: 12.5, color: '#9CA3AF' }}>{formatDisplayDate(course.updatedAt)}</Typography>
+              <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                <Box onClick={() => handleEditOpen(course)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Edit</Box>
+                <Typography sx={{ fontSize: 12, color: '#E5E7EB' }}>|</Typography>
+                <Box onClick={() => handleDelete(course.id, course.name)} sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' } }}>Delete</Box>
+              </Box>
+            </DataTableRow>
+          ))}
+        </DataTable>
+      )}
 
-      <CourseDialog
-        open={dialogOpen}
-        onClose={() => {
-          setDialogOpen(false);
-          setEditingCourse(null);
-        }}
-        onSave={handleSave as any}
-        course={editingCourse || undefined}
-      />
+      <CourseDialog open={dialogOpen} onClose={() => { setDialogOpen(false); setEditingCourse(null); }} onSave={handleSave as any} course={editingCourse || undefined} />
     </Box>
   );
 };

@@ -2,15 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Chip,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -18,27 +9,14 @@ import {
   Grid,
   Alert,
   CircularProgress,
-  Tooltip,
-  Divider,
-  Card,
-  CardContent,
-  Button
 } from '@mui/material';
-import {
-  Visibility as ViewIcon,
-  Receipt as InvoiceIcon,
-  Business as VendorIcon,
-  Person as PersonIcon,
-  Email as EmailIcon,
-  AccountBalance as BankIcon,
-  CheckCircle as PaidIcon,
-  AttachMoney as MoneyIcon,
-  CalendarToday as DateIcon,
-  Payment as PaymentIcon
-} from '@mui/icons-material';
 import { adminApi } from '../../../services/api';
 import { useSnackbar } from '../../../contexts/SnackbarContext';
 import { useVendorInvoiceUpdates } from '../../../hooks/useVendorInvoiceUpdates';
+import StatCard from '../../gtacpr/StatCard';
+import StatusChip from '../../gtacpr/StatusChip';
+import DataTable, { DataTableRow } from '../../gtacpr/DataTable';
+import { GhostButton } from '../../gtacpr/Buttons';
 
 interface PaidVendorInvoice {
   id: number;
@@ -73,6 +51,40 @@ interface PaymentHistory {
   processedByName: string;
 }
 
+const sectionHeader = {
+  fontSize: 13,
+  fontWeight: 700,
+  color: '#9CA3AF',
+  textTransform: 'uppercase' as const,
+  letterSpacing: '0.07em',
+};
+
+const dialogTitleStyle = {
+  fontSize: 18,
+  fontWeight: 700,
+  color: '#111827',
+};
+
+const mainTableColumns = [
+  { key: 'invoice', label: 'Invoice #', width: '1.2fr' },
+  { key: 'vendor', label: 'Vendor', width: '1.5fr' },
+  { key: 'description', label: 'Description', width: '1.5fr' },
+  { key: 'total', label: 'Total Amount', width: '1fr', align: 'right' as const },
+  { key: 'paid', label: 'Paid Amount', width: '1fr', align: 'right' as const },
+  { key: 'paidDate', label: 'Paid Date', width: '1fr' },
+  { key: 'status', label: 'Status', width: '0.8fr' },
+  { key: 'actions', label: 'Actions', width: '0.7fr', align: 'center' as const },
+];
+
+const paymentTableColumns = [
+  { key: 'date', label: 'Date', width: '1fr' },
+  { key: 'amount', label: 'Amount', width: '1fr', align: 'right' as const },
+  { key: 'method', label: 'Method', width: '1fr' },
+  { key: 'reference', label: 'Reference', width: '1fr' },
+  { key: 'processedBy', label: 'Processed By', width: '1fr' },
+  { key: 'status', label: 'Status', width: '0.8fr' },
+];
+
 const PaidVendorInvoices: React.FC = () => {
   const [invoices, setInvoices] = useState<PaidVendorInvoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -104,14 +116,14 @@ const PaidVendorInvoices: React.FC = () => {
   // Real-time updates
   const { isConnected } = useVendorInvoiceUpdates({
     onStatusUpdate: (update) => {
-      console.log('🔄 Real-time status update received in admin paid invoices:', update);
+      console.log('Real-time status update received in admin paid invoices:', update);
       // Refresh if an invoice becomes paid
       if (update.newStatus === 'paid') {
         fetchPaidInvoices();
       }
     },
     onNotesUpdate: (update) => {
-      console.log('📝 Real-time notes update received in admin paid invoices:', update);
+      console.log('Real-time notes update received in admin paid invoices:', update);
     },
     onRefresh: fetchPaidInvoices
   });
@@ -122,7 +134,7 @@ const PaidVendorInvoices: React.FC = () => {
 
   const handleView = async (invoice: PaidVendorInvoice) => {
     setSelectedInvoice(invoice);
-    
+
     // Fetch payment history for this invoice
     try {
       const response = await adminApi.getAccountingVendorInvoiceDetails(invoice.id);
@@ -135,7 +147,7 @@ const PaidVendorInvoices: React.FC = () => {
       console.error('Error fetching payment history:', error);
       setPaymentHistory([]);
     }
-    
+
     setViewDialog(true);
   };
 
@@ -162,12 +174,12 @@ const PaidVendorInvoices: React.FC = () => {
     });
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusKind = (status: string): 'success' | 'neutral' => {
     switch (status) {
       case 'paid':
         return 'success';
       default:
-        return 'default';
+        return 'neutral';
     }
   };
 
@@ -199,395 +211,281 @@ const PaidVendorInvoices: React.FC = () => {
   return (
     <Box>
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4" gutterBottom>
-          <PaidIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+        <Typography sx={{ fontSize: 24, fontWeight: 800, color: '#111827' }}>
           Paid Vendor Invoices
         </Typography>
-        <Chip
-          label={isConnected ? '🟢 Live Updates' : '🔴 Offline'}
-          color={isConnected ? 'success' : 'error'}
-          size="small"
-          variant="outlined"
+        <StatusChip
+          kind={isConnected ? 'success' : 'danger'}
+          label={isConnected ? 'Live Updates' : 'Offline'}
         />
       </Box>
 
       {/* Summary Cards */}
-      <Paper sx={{ mb: 3, p: 2 }}>
-        <Typography variant="h6" gutterBottom>
+      <Box sx={{ mb: 3 }}>
+        <Typography sx={{ ...sectionHeader, mb: 1.5 }}>
           Summary
         </Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={3}>
-            <Box textAlign="center">
-              <Typography variant="h4" color="success.main">
-                {invoices.length}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Total Paid Invoices
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Box textAlign="center">
-              <Typography variant="h4" color="success.main">
-                {formatCurrency(invoices.reduce((sum, inv) => {
-                  const total = typeof inv.total === 'number' ? inv.total : parseFloat(inv.total) || 0;
-                  return sum + total;
-                }, 0))}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Total Amount Paid
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Box textAlign="center">
-              <Typography variant="h4" color="info.main">
-                {formatCurrency(invoices.reduce((sum, inv) => {
-                  const totalPaid = Number(inv.totalPaid) || 0;
-                  return sum + (isNaN(totalPaid) ? 0 : totalPaid);
-                }, 0))}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Total Payments Processed
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Box textAlign="center">
-              <Typography variant="h4" color="primary.main">
-                {invoices.length > 0 ? 
-                  formatDate(invoices[0].paidAt || invoices[0].createdAt) : 
-                  'N/A'
-                }
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Most Recent Payment
-              </Typography>
-            </Box>
-          </Grid>
-        </Grid>
-      </Paper>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2 }}>
+          <StatCard
+            label="Total Paid Invoices"
+            value={invoices.length}
+            dotColor="#15803D"
+          />
+          <StatCard
+            label="Total Amount Paid"
+            value={formatCurrency(invoices.reduce((sum, inv) => {
+              const total = typeof inv.total === 'number' ? inv.total : parseFloat(inv.total) || 0;
+              return sum + total;
+            }, 0))}
+            dotColor="#15803D"
+          />
+          <StatCard
+            label="Total Payments Processed"
+            value={formatCurrency(invoices.reduce((sum, inv) => {
+              const totalPaid = Number(inv.totalPaid) || 0;
+              return sum + (isNaN(totalPaid) ? 0 : totalPaid);
+            }, 0))}
+          />
+          <StatCard
+            label="Most Recent Payment"
+            value={invoices.length > 0 ?
+              formatDate(invoices[0].paidAt || invoices[0].createdAt) :
+              'N/A'
+            }
+          />
+        </Box>
+      </Box>
 
       {/* Paid Invoices Table */}
-      <TableContainer component={Paper} sx={{ overflowX: 'auto', maxHeight: '70vh' }}>
-        <Table stickyHeader>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ position: 'sticky', left: 0, backgroundColor: 'background.paper', zIndex: 1 }}>
-                Invoice #
-              </TableCell>
-              <TableCell>Vendor</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>Total Amount</TableCell>
-              <TableCell>Paid Amount</TableCell>
-              <TableCell>Paid Date</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell sx={{ position: 'sticky', right: 0, backgroundColor: 'background.paper', zIndex: 1 }}>
-                Actions
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {invoices.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center">
-                  <Box py={4}>
-                    <PaidIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-                    <Typography variant="h6" color="text.secondary">
-                      No Paid Invoices Found
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Paid vendor invoices will appear here once they are fully processed.
-                    </Typography>
-                  </Box>
-                </TableCell>
-              </TableRow>
-            ) : (
-              invoices.map((invoice) => (
-                <TableRow key={invoice.id} hover>
-                  <TableCell sx={{ position: 'sticky', left: 0, backgroundColor: 'background.paper', zIndex: 1 }}>
-                    <Typography variant="body2" fontWeight="bold">
-                      {invoice.invoiceNumber}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Box>
-                      <Typography variant="body2" fontWeight="medium">
-                        {invoice.vendorName}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {invoice.vendorEmail}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
-                      {invoice.description}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" fontWeight="bold">
-                      {formatCurrency(invoice.total)}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" color="success.main" fontWeight="bold">
-                      {formatCurrency(invoice.totalPaid || invoice.total)}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">
-                      {formatDate(invoice.paidAt || invoice.sentToAccountingAt)}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={getStatusLabel(invoice.status)}
-                      color={getStatusColor(invoice.status)}
-                      size="small"
-                      icon={<PaidIcon />}
-                    />
-                  </TableCell>
-                  <TableCell sx={{ position: 'sticky', right: 0, backgroundColor: 'background.paper', zIndex: 1 }}>
-                    <Tooltip title="View Details">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleView(invoice)}
-                        color="primary"
-                      >
-                        <ViewIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <DataTable
+        columns={mainTableColumns}
+        shownCount={invoices.length}
+        totalCount={invoices.length}
+      >
+        {invoices.length === 0 ? (
+          <Box sx={{ py: 6, textAlign: 'center' }}>
+            <Typography sx={{ fontSize: 16, fontWeight: 600, color: '#6B7280', mb: 0.5 }}>
+              No Paid Invoices Found
+            </Typography>
+            <Typography sx={{ fontSize: 13, color: '#9CA3AF' }}>
+              Paid vendor invoices will appear here once they are fully processed.
+            </Typography>
+          </Box>
+        ) : (
+          invoices.map((invoice) => (
+            <DataTableRow key={invoice.id} columns={mainTableColumns} onClick={() => handleView(invoice)}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>
+                {invoice.invoiceNumber}
+              </Typography>
+              <Box>
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>
+                  {invoice.vendorName}
+                </Typography>
+                <Typography sx={{ fontSize: 11.5, color: '#9CA3AF' }}>
+                  {invoice.vendorEmail}
+                </Typography>
+              </Box>
+              <Typography sx={{ fontSize: 13, color: '#4B5563', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {invoice.description}
+              </Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#111827', textAlign: 'right' }}>
+                {formatCurrency(invoice.total)}
+              </Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#15803D', textAlign: 'right' }}>
+                {formatCurrency(invoice.totalPaid || invoice.total)}
+              </Typography>
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                {formatDate(invoice.paidAt || invoice.sentToAccountingAt)}
+              </Typography>
+              <Box>
+                <StatusChip
+                  kind={getStatusKind(invoice.status)}
+                  label={getStatusLabel(invoice.status)}
+                />
+              </Box>
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography
+                  component="span"
+                  onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleView(invoice); }}
+                  sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                >
+                  View
+                </Typography>
+              </Box>
+            </DataTableRow>
+          ))
+        )}
+      </DataTable>
 
       {/* Invoice Detail Dialog */}
-      <Dialog 
-        open={viewDialog} 
+      <Dialog
+        open={viewDialog}
         onClose={handleCloseDialog}
         maxWidth="md"
         fullWidth
       >
         <DialogTitle>
           <Box display="flex" alignItems="center" justifyContent="space-between">
-            <Box display="flex" alignItems="center">
-              <InvoiceIcon sx={{ mr: 1 }} />
-              <Typography variant="h6">
-                Paid Invoice Details - {selectedInvoice?.invoiceNumber}
-              </Typography>
-            </Box>
-            <Chip
-              label="FULLY PAID"
-              color="success"
-              icon={<PaidIcon />}
-              size="small"
-            />
+            <Typography sx={dialogTitleStyle}>
+              Paid Invoice Details - {selectedInvoice?.invoiceNumber}
+            </Typography>
+            <StatusChip kind="success" label="FULLY PAID" />
           </Box>
         </DialogTitle>
         <DialogContent dividers>
           {selectedInvoice && (
             <Box>
               {/* Vendor Information */}
-              <Paper sx={{ p: 3, mb: 3, backgroundColor: '#f8f9fa' }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 'bold' }}>
-                  <VendorIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 3, mb: 3 }}>
+                <Typography sx={{ ...sectionHeader, mb: 2 }}>
                   Vendor Information
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
-                    <Box display="flex" alignItems="center" mb={1}>
-                      <PersonIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                      <Typography variant="body2">
-                        <strong>Vendor:</strong> {selectedInvoice.vendorName}
-                      </Typography>
-                    </Box>
-                    <Box display="flex" alignItems="center" mb={1}>
-                      <EmailIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                      <Typography variant="body2">
-                        <strong>Email:</strong> {selectedInvoice.vendorEmail}
-                      </Typography>
-                    </Box>
+                    <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
+                      <strong>Vendor:</strong> {selectedInvoice.vendorName}
+                    </Typography>
+                    <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
+                      <strong>Email:</strong> {selectedInvoice.vendorEmail}
+                    </Typography>
                   </Grid>
                   <Grid item xs={12} md={6}>
-                    <Box display="flex" alignItems="center" mb={1}>
-                      <PaymentIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                      <Typography variant="body2">
-                        <strong>Payment Method:</strong> {selectedInvoice.vendorPaymentMethod?.replace('_', ' ').toUpperCase() || 'CHECK'}
-                      </Typography>
-                    </Box>
+                    <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
+                      <strong>Payment Method:</strong> {selectedInvoice.vendorPaymentMethod?.replace('_', ' ').toUpperCase() || 'CHECK'}
+                    </Typography>
                   </Grid>
                 </Grid>
-              </Paper>
+              </Box>
 
               {/* Payment Summary */}
-              <Paper sx={{ p: 3, mb: 3, backgroundColor: '#e8f5e8' }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'success.main', fontWeight: 'bold' }}>
-                  <MoneyIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 3, mb: 3 }}>
+                <Typography sx={{ ...sectionHeader, mb: 2 }}>
                   Payment Summary
                 </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={4}>
-                    <Box textAlign="center">
-                      <Typography variant="h5" color="primary.main" fontWeight="bold">
-                        {formatCurrency(selectedInvoice.total)}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Total Invoice Amount
-                      </Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} md={4}>
-                    <Box textAlign="center">
-                      <Typography variant="h5" color="success.main" fontWeight="bold">
-                        {formatCurrency(selectedInvoice.totalPaid || selectedInvoice.total)}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Amount Paid
-                      </Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} md={4}>
-                    <Box textAlign="center">
-                      <Typography variant="h5" color="success.main" fontWeight="bold">
-                        $0.00
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Balance Due
-                      </Typography>
-                    </Box>
-                  </Grid>
-                </Grid>
-                <Box mt={2} textAlign="center">
-                  <Chip
-                    label="✅ Payment Complete: This invoice has been fully paid"
-                    color="success"
-                    icon={<PaidIcon />}
-                    size="medium"
-                    sx={{ fontSize: '1rem' }}
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, mb: 2 }}>
+                  <StatCard
+                    label="Total Invoice Amount"
+                    value={formatCurrency(selectedInvoice.total)}
+                  />
+                  <StatCard
+                    label="Amount Paid"
+                    value={formatCurrency(selectedInvoice.totalPaid || selectedInvoice.total)}
+                    dotColor="#15803D"
+                  />
+                  <StatCard
+                    label="Balance Due"
+                    value="$0.00"
+                    dotColor="#15803D"
                   />
                 </Box>
-              </Paper>
+                <Box sx={{ textAlign: 'center', mt: 1 }}>
+                  <StatusChip kind="success" label="Payment Complete: This invoice has been fully paid" />
+                </Box>
+              </Box>
 
               {/* Invoice Details */}
-              <Paper sx={{ p: 3, mb: 3, backgroundColor: '#f8f9fa' }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 'bold' }}>
-                  <InvoiceIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 3, mb: 3 }}>
+                <Typography sx={{ ...sectionHeader, mb: 2 }}>
                   Invoice Details
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
-                    <Typography variant="body2" mb={1}>
+                    <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
                       <strong>Description:</strong> {selectedInvoice.description}
                     </Typography>
-                    <Typography variant="body2" mb={1}>
+                    <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
                       <strong>Invoice Date:</strong> {formatDate(selectedInvoice.invoiceDate)}
                     </Typography>
                   </Grid>
                   <Grid item xs={12} md={6}>
-                    <Typography variant="body2" mb={1}>
+                    <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
                       <strong>Due Date:</strong> {formatDate(selectedInvoice.dueDate)}
                     </Typography>
-                    <Typography variant="body2" mb={1}>
+                    <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
                       <strong>Created:</strong> {formatDate(selectedInvoice.createdAt)}
                     </Typography>
                   </Grid>
                 </Grid>
-              </Paper>
+              </Box>
 
-              {/* Approval Information */}
-              <Paper sx={{ p: 3, mb: 3, backgroundColor: '#f8f9fa' }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 'bold' }}>
-                  <PaidIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+              {/* Payment Information */}
+              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 3, mb: 3 }}>
+                <Typography sx={{ ...sectionHeader, mb: 2 }}>
                   Payment Information
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
-                    <Typography variant="body2" mb={1}>
+                    <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
                       <strong>Approved By:</strong> {selectedInvoice.approvedByName || 'Admin User'}
                     </Typography>
-                    <Typography variant="body2" mb={1}>
+                    <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
                       <strong>Paid Date:</strong> {formatDate(selectedInvoice.paidAt || selectedInvoice.sentToAccountingAt)}
                     </Typography>
                   </Grid>
                   <Grid item xs={12} md={6}>
-                    <Typography variant="body2" mb={1}>
+                    <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
                       <strong>Admin Notes:</strong> {selectedInvoice.adminNotes || 'No notes provided'}
                     </Typography>
                   </Grid>
                 </Grid>
-              </Paper>
+              </Box>
 
               {/* Payment History */}
-              <Paper sx={{ p: 3, backgroundColor: '#f8f9fa' }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 'bold' }}>
-                  💰 Payment History
+              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 3 }}>
+                <Typography sx={{ ...sectionHeader, mb: 2 }}>
+                  Payment History
                 </Typography>
-                
+
                 {paymentHistory.length === 0 ? (
                   <Alert severity="info">
-                    <Typography variant="body2">
+                    <Typography sx={{ fontSize: 13 }}>
                       Payment history details are not available for this invoice.
                     </Typography>
                   </Alert>
                 ) : (
-                  <TableContainer component={Paper} sx={{ mt: 2 }}>
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Date</TableCell>
-                          <TableCell>Amount</TableCell>
-                          <TableCell>Method</TableCell>
-                          <TableCell>Reference</TableCell>
-                          <TableCell>Processed By</TableCell>
-                          <TableCell>Status</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {paymentHistory.map((payment) => (
-                          <TableRow key={payment.id}>
-                            <TableCell>{formatDate(payment.paymentDate)}</TableCell>
-                            <TableCell>{formatCurrency(payment.amount)}</TableCell>
-                            <TableCell>
-                              <Chip 
-                                label={payment.paymentMethod.replace('_', ' ').toUpperCase()} 
-                                size="small" 
-                                color="primary" 
-                                variant="outlined"
-                              />
-                            </TableCell>
-                            <TableCell>{payment.referenceNumber || '-'}</TableCell>
-                            <TableCell>{payment.processedByName || 'Unknown'}</TableCell>
-                            <TableCell>
-                              <Chip 
-                                label={payment.status.toUpperCase()} 
-                                size="small" 
-                                color={payment.status === 'processed' ? 'success' : 'warning'} 
-                              />
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
+                  <DataTable columns={paymentTableColumns}>
+                    {paymentHistory.map((payment) => (
+                      <DataTableRow key={payment.id} columns={paymentTableColumns}>
+                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                          {formatDate(payment.paymentDate)}
+                        </Typography>
+                        <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'right' }}>
+                          {formatCurrency(payment.amount)}
+                        </Typography>
+                        <Box>
+                          <StatusChip
+                            kind="neutral"
+                            label={payment.paymentMethod.replace('_', ' ').toUpperCase()}
+                          />
+                        </Box>
+                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                          {payment.referenceNumber || '-'}
+                        </Typography>
+                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                          {payment.processedByName || 'Unknown'}
+                        </Typography>
+                        <Box>
+                          <StatusChip
+                            kind={payment.status === 'processed' ? 'success' : 'warning'}
+                            label={payment.status.toUpperCase()}
+                          />
+                        </Box>
+                      </DataTableRow>
+                    ))}
+                  </DataTable>
                 )}
-              </Paper>
+              </Box>
             </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog} color="primary">
+          <GhostButton onClick={handleCloseDialog}>
             Close
-          </Button>
+          </GhostButton>
         </DialogActions>
       </Dialog>
     </Box>
   );
 };
 
-export default PaidVendorInvoices; 
+export default PaidVendorInvoices;

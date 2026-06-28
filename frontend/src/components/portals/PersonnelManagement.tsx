@@ -2,21 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
-  Grid,
-  Card,
-  CardContent,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Chip,
-  IconButton,
-  Button,
-  TextField,
-  InputAdornment,
   Pagination,
   Dialog,
   DialogTitle,
@@ -26,48 +11,36 @@ import {
   Tab,
   Alert,
   CircularProgress,
-  Tooltip,
-  Avatar,
-  Divider,
+  Grid,
 } from '@mui/material';
-import {
-  Search as SearchIcon,
-  Visibility as ViewIcon,
-  Edit as EditIcon,
-  Refresh as RefreshIcon,
-  Person as PersonIcon,
-  Business as BusinessIcon,
-  Assignment as AssignmentIcon,
-  CheckCircle as CheckCircleIcon,
-  Cancel as CancelIcon,
-} from '@mui/icons-material';
 import { hrDashboardService, InstructorProfile, OrganizationProfile } from '../../services/hrDashboardService';
+import DataTable, { DataTableRow } from '../gtacpr/DataTable';
+import StatusChip from '../gtacpr/StatusChip';
+import SearchBar from '../gtacpr/SearchBar';
+import UserAvatar from '../gtacpr/UserAvatar';
+import { GhostButton } from '../gtacpr/Buttons';
 
 interface PersonnelManagementProps {
   onViewChange?: (view: string) => void;
 }
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
+const instructorColumns = [
+  { key: 'instructor', label: 'INSTRUCTOR', width: '1.3fr' },
+  { key: 'contact', label: 'CONTACT', width: '1.2fr' },
+  { key: 'courses', label: 'COURSES', width: '0.8fr' },
+  { key: 'lastCourse', label: 'LAST COURSE', width: '0.8fr' },
+  { key: 'status', label: 'STATUS', width: '0.6fr' },
+  { key: 'actions', label: '', width: '0.6fr', align: 'right' as const },
+];
 
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`personnel-tabpanel-${index}`}
-      aria-labelledby={`personnel-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
-  );
-}
+const orgColumns = [
+  { key: 'org', label: 'ORGANIZATION', width: '1.3fr' },
+  { key: 'contact', label: 'CONTACT', width: '1.2fr' },
+  { key: 'courses', label: 'COURSES', width: '0.8fr' },
+  { key: 'users', label: 'USERS', width: '0.5fr', align: 'right' as const },
+  { key: 'lastActivity', label: 'LAST ACTIVITY', width: '0.8fr' },
+  { key: 'actions', label: '', width: '0.6fr', align: 'right' as const },
+];
 
 const PersonnelManagement: React.FC<PersonnelManagementProps> = ({ onViewChange }) => {
   const [tabValue, setTabValue] = useState(0);
@@ -75,51 +48,22 @@ const PersonnelManagement: React.FC<PersonnelManagementProps> = ({ onViewChange 
   const [organizations, setOrganizations] = useState<OrganizationProfile[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Pagination states
-  const [instructorPagination, setInstructorPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    pages: 0
-  });
-  const [organizationPagination, setOrganizationPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    pages: 0
-  });
-  
-  // Search states
+  const [instructorPagination, setInstructorPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
+  const [organizationPagination, setOrganizationPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
   const [instructorSearch, setInstructorSearch] = useState('');
   const [organizationSearch, setOrganizationSearch] = useState('');
-  
-  // Selected user for details
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [userDetailsDialog, setUserDetailsDialog] = useState(false);
 
-  useEffect(() => {
-    loadInstructors();
-    loadOrganizations();
-  }, []);
-
-  useEffect(() => {
-    loadInstructors();
-  }, [instructorPagination.page, instructorSearch]);
-
-  useEffect(() => {
-    loadOrganizations();
-  }, [organizationPagination.page, organizationSearch]);
+  useEffect(() => { loadInstructors(); loadOrganizations(); }, []);
+  useEffect(() => { loadInstructors(); }, [instructorPagination.page, instructorSearch]);
+  useEffect(() => { loadOrganizations(); }, [organizationPagination.page, organizationSearch]);
 
   const loadInstructors = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await hrDashboardService.getInstructors(
-        instructorPagination.page,
-        instructorPagination.limit,
-        instructorSearch
-      );
+      const data = await hrDashboardService.getInstructors(instructorPagination.page, instructorPagination.limit, instructorSearch);
       setInstructors(data.instructors);
       setInstructorPagination(data.pagination);
     } catch (err: any) {
@@ -133,11 +77,7 @@ const PersonnelManagement: React.FC<PersonnelManagementProps> = ({ onViewChange 
     try {
       setLoading(true);
       setError(null);
-      const data = await hrDashboardService.getOrganizations(
-        organizationPagination.page,
-        organizationPagination.limit,
-        organizationSearch
-      );
+      const data = await hrDashboardService.getOrganizations(organizationPagination.page, organizationPagination.limit, organizationSearch);
       setOrganizations(data.organizations);
       setOrganizationPagination(data.pagination);
     } catch (err: any) {
@@ -145,28 +85,6 @@ const PersonnelManagement: React.FC<PersonnelManagementProps> = ({ onViewChange 
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
-  };
-
-  const handleInstructorPageChange = (event: React.ChangeEvent<unknown>, page: number) => {
-    setInstructorPagination(prev => ({ ...prev, page }));
-  };
-
-  const handleOrganizationPageChange = (event: React.ChangeEvent<unknown>, page: number) => {
-    setOrganizationPagination(prev => ({ ...prev, page }));
-  };
-
-  const handleSearchInstructors = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setInstructorSearch(event.target.value);
-    setInstructorPagination(prev => ({ ...prev, page: 1 }));
-  };
-
-  const handleSearchOrganizations = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setOrganizationSearch(event.target.value);
-    setOrganizationPagination(prev => ({ ...prev, page: 1 }));
   };
 
   const handleViewUserDetails = async (userId: number) => {
@@ -179,382 +97,173 @@ const PersonnelManagement: React.FC<PersonnelManagementProps> = ({ onViewChange 
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'success';
-      case 'inactive':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
-  };
+  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString();
 
   return (
-    <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" gutterBottom>
-          Personnel Management
-        </Typography>
-        <Button
-          onClick={() => {
-            loadInstructors();
-            loadOrganizations();
-          }}
-          startIcon={<RefreshIcon />}
-          variant="outlined"
-        >
-          Refresh
-        </Button>
-      </Box>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {error && <Alert severity="error" sx={{ mb: 0 }} onClose={() => setError(null)}>{error}</Alert>}
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
+      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff' }}>
+        <Box sx={{ borderBottom: 1, borderColor: '#E5E7EB', px: 3, pt: 1 }}>
+          <Tabs
+            value={tabValue}
+            onChange={(_, v) => setTabValue(v)}
+            sx={{
+              '& .MuiTab-root': { textTransform: 'none', fontSize: 13, fontWeight: 600, color: '#9CA3AF', minHeight: 42 },
+              '& .Mui-selected': { color: '#CC1F1F !important' },
+              '& .MuiTabs-indicator': { backgroundColor: '#CC1F1F' },
+            }}
+          >
+            <Tab label="Instructors" />
+            <Tab label="Organizations" />
+          </Tabs>
+        </Box>
 
-      <Paper sx={{ width: '100%' }}>
-        <Tabs value={tabValue} onChange={handleTabChange} aria-label="personnel management tabs">
-          <Tab 
-            icon={<PersonIcon />} 
-            label="Instructors" 
-            iconPosition="start"
-          />
-          <Tab 
-            icon={<BusinessIcon />} 
-            label="Organizations" 
-            iconPosition="start"
-          />
-        </Tabs>
-
-        <TabPanel value={tabValue} index={0}>
-          {/* Instructors Tab */}
-          <Box>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="h6">
+        {/* Instructors Tab */}
+        {tabValue === 0 && (
+          <Box sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
                 Instructor Profiles ({instructorPagination.total})
               </Typography>
-              <TextField
-                size="small"
-                placeholder="Search instructors..."
+              <SearchBar
                 value={instructorSearch}
-                onChange={handleSearchInstructors}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ width: 300 }}
+                onChange={v => { setInstructorSearch(v); setInstructorPagination(p => ({ ...p, page: 1 })); }}
+                placeholder="Search instructors..."
               />
             </Box>
 
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Instructor</TableCell>
-                    <TableCell>Contact</TableCell>
-                    <TableCell>Courses</TableCell>
-                    <TableCell>Last Course</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={6} align="center">
-                        <CircularProgress />
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    instructors.map((instructor) => (
-                      <TableRow key={instructor.id}>
-                        <TableCell>
-                          <Box display="flex" alignItems="center">
-                            <Avatar sx={{ mr: 2, bgcolor: 'primary.main' }}>
-                              {instructor.username.charAt(0).toUpperCase()}
-                            </Avatar>
-                            <Box>
-                              <Typography variant="body2" fontWeight="bold">
-                                {instructor.username}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                ID: {instructor.id}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Box>
-                            <Typography variant="body2">
-                              {instructor.email}
-                            </Typography>
-                            {instructor.phone && (
-                              <Typography variant="caption" color="text.secondary">
-                                {instructor.phone}
-                              </Typography>
-                            )}
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Box>
-                            <Typography variant="body2">
-                              Total: {instructor.totalCourses}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              Completed: {instructor.completedCourses}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          {instructor.lastCourseDate ? (
-                            formatDate(instructor.lastCourseDate)
-                          ) : (
-                            <Typography variant="caption" color="text.secondary">
-                              No courses
-                            </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={instructor.activeCourses > 0 ? 'Active' : 'Inactive'}
-                            size="small"
-                            color={instructor.activeCourses > 0 ? 'success' : 'default'}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Box display="flex" gap={1}>
-                            <Tooltip title="View Details">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleViewUserDetails(instructor.id)}
-                              >
-                                <ViewIcon />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Edit Profile">
-                              <IconButton size="small">
-                                <EditIcon />
-                              </IconButton>
-                            </Tooltip>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            {loading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress size={24} /></Box>
+            ) : (
+              <DataTable columns={instructorColumns} shownCount={instructors.length} totalCount={instructorPagination.total}>
+                {instructors.map((instructor) => (
+                  <DataTableRow key={instructor.id} columns={instructorColumns}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <UserAvatar initials={instructor.username.charAt(0).toUpperCase()} size={32} />
+                      <Box>
+                        <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{instructor.username}</Typography>
+                        <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>ID: {instructor.id}</Typography>
+                      </Box>
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{instructor.email}</Typography>
+                      {instructor.phone && <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{instructor.phone}</Typography>}
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontSize: 13, color: '#111827' }}>Total: {instructor.totalCourses}</Typography>
+                      <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>Completed: {instructor.completedCourses}</Typography>
+                    </Box>
+                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                      {instructor.lastCourseDate ? formatDate(instructor.lastCourseDate) : '—'}
+                    </Typography>
+                    <StatusChip kind={instructor.activeCourses > 0 ? 'active' : 'inactive'} label={instructor.activeCourses > 0 ? 'Active' : 'Inactive'} />
+                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                      <Box onClick={() => handleViewUserDetails(instructor.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>View</Box>
+                    </Box>
+                  </DataTableRow>
+                ))}
+              </DataTable>
+            )}
 
             {instructorPagination.pages > 1 && (
-              <Box display="flex" justifyContent="center" mt={2}>
-                <Pagination
-                  count={instructorPagination.pages}
-                  page={instructorPagination.page}
-                  onChange={handleInstructorPageChange}
-                  color="primary"
-                />
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <Pagination count={instructorPagination.pages} page={instructorPagination.page} onChange={(_, p) => setInstructorPagination(prev => ({ ...prev, page: p }))} />
               </Box>
             )}
           </Box>
-        </TabPanel>
+        )}
 
-        <TabPanel value={tabValue} index={1}>
-          {/* Organizations Tab */}
-          <Box>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="h6">
+        {/* Organizations Tab */}
+        {tabValue === 1 && (
+          <Box sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
                 Organization Profiles ({organizationPagination.total})
               </Typography>
-              <TextField
-                size="small"
-                placeholder="Search organizations..."
+              <SearchBar
                 value={organizationSearch}
-                onChange={handleSearchOrganizations}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ width: 300 }}
+                onChange={v => { setOrganizationSearch(v); setOrganizationPagination(p => ({ ...p, page: 1 })); }}
+                placeholder="Search organizations..."
               />
             </Box>
 
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Organization</TableCell>
-                    <TableCell>Contact</TableCell>
-                    <TableCell>Courses</TableCell>
-                    <TableCell>Users</TableCell>
-                    <TableCell>Last Activity</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={6} align="center">
-                        <CircularProgress />
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    organizations.map((organization) => (
-                      <TableRow key={organization.id}>
-                        <TableCell>
-                          <Box display="flex" alignItems="center">
-                            <Avatar sx={{ mr: 2, bgcolor: 'secondary.main' }}>
-                              {organization.name.charAt(0).toUpperCase()}
-                            </Avatar>
-                            <Box>
-                              <Typography variant="body2" fontWeight="bold">
-                                {organization.name}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                ID: {organization.id}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Box>
-                            <Typography variant="body2">
-                              {organization.contactEmail}
-                            </Typography>
-                            {organization.contactPhone && (
-                              <Typography variant="caption" color="text.secondary">
-                                {organization.contactPhone}
-                              </Typography>
-                            )}
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Box>
-                            <Typography variant="body2">
-                              Total: {organization.totalCourses}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              Completed: {organization.completedCourses}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2">
-                            {organization.totalUsers}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          {organization.lastCourseDate ? (
-                            formatDate(organization.lastCourseDate)
-                          ) : (
-                            <Typography variant="caption" color="text.secondary">
-                              No activity
-                            </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Box display="flex" gap={1}>
-                            <Tooltip title="View Details">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleViewUserDetails(organization.id)}
-                              >
-                                <ViewIcon />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Edit Profile">
-                              <IconButton size="small">
-                                <EditIcon />
-                              </IconButton>
-                            </Tooltip>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            {loading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress size={24} /></Box>
+            ) : (
+              <DataTable columns={orgColumns} shownCount={organizations.length} totalCount={organizationPagination.total}>
+                {organizations.map((org) => (
+                  <DataTableRow key={org.id} columns={orgColumns}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <UserAvatar initials={org.name.charAt(0).toUpperCase()} size={32} />
+                      <Box>
+                        <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{org.name}</Typography>
+                        <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>ID: {org.id}</Typography>
+                      </Box>
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{org.contactEmail}</Typography>
+                      {org.contactPhone && <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{org.contactPhone}</Typography>}
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontSize: 13, color: '#111827' }}>Total: {org.totalCourses}</Typography>
+                      <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>Completed: {org.completedCourses}</Typography>
+                    </Box>
+                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'right' }}>{org.totalUsers}</Typography>
+                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                      {org.lastCourseDate ? formatDate(org.lastCourseDate) : '—'}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                      <Box onClick={() => handleViewUserDetails(org.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>View</Box>
+                    </Box>
+                  </DataTableRow>
+                ))}
+              </DataTable>
+            )}
 
             {organizationPagination.pages > 1 && (
-              <Box display="flex" justifyContent="center" mt={2}>
-                <Pagination
-                  count={organizationPagination.pages}
-                  page={organizationPagination.page}
-                  onChange={handleOrganizationPageChange}
-                  color="primary"
-                />
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <Pagination count={organizationPagination.pages} page={organizationPagination.page} onChange={(_, p) => setOrganizationPagination(prev => ({ ...prev, page: p }))} />
               </Box>
             )}
           </Box>
-        </TabPanel>
-      </Paper>
+        )}
+      </Box>
 
       {/* User Details Dialog */}
       <Dialog open={userDetailsDialog} onClose={() => setUserDetailsDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle>
-          User Profile Details
-        </DialogTitle>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>User Profile Details</DialogTitle>
         <DialogContent>
           {selectedUser && (
-            <Box>
+            <Box sx={{ pt: 1 }}>
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
-                  <Typography variant="h6" gutterBottom>
-                    Basic Information
-                  </Typography>
-                  <Box>
-                    <Typography variant="body2">
-                      <strong>Username:</strong> {selectedUser.user.username}
-                    </Typography>
-                    <Typography variant="body2">
-                      <strong>Email:</strong> {selectedUser.user.email}
-                    </Typography>
-                    <Typography variant="body2">
-                      <strong>Role:</strong> {selectedUser.user.role}
-                    </Typography>
-                    {selectedUser.user.phone && (
-                      <Typography variant="body2">
-                        <strong>Phone:</strong> {selectedUser.user.phone}
-                      </Typography>
-                    )}
-                    <Typography variant="body2">
-                      <strong>Created:</strong> {formatDate(selectedUser.user.createdAt)}
-                    </Typography>
-                  </Box>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Basic Information</Typography>
+                  {[
+                    ['Username', selectedUser.user.username],
+                    ['Email', selectedUser.user.email],
+                    ['Role', selectedUser.user.role],
+                    ...(selectedUser.user.phone ? [['Phone', selectedUser.user.phone]] : []),
+                    ['Created', formatDate(selectedUser.user.createdAt)],
+                  ].map(([label, value]) => (
+                    <Box key={String(label)} sx={{ display: 'flex', borderBottom: '1px solid #F3F4F6', py: 0.75 }}>
+                      <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#9CA3AF', width: 100 }}>{label}</Typography>
+                      <Typography sx={{ fontSize: 13, color: '#111827' }}>{value}</Typography>
+                    </Box>
+                  ))}
                 </Grid>
-                
                 <Grid item xs={12} md={6}>
-                  <Typography variant="h6" gutterBottom>
-                    Profile Changes History
-                  </Typography>
-                  <Box maxHeight={200} overflow="auto">
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Profile Changes History</Typography>
+                  <Box sx={{ maxHeight: 200, overflow: 'auto' }}>
                     {selectedUser.profileChanges.length > 0 ? (
                       selectedUser.profileChanges.map((change: { id: number; fieldName: string; newValue: string; status: string; createdAt: string }) => (
-                        <Box key={change.id} sx={{ mb: 1, p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
-                          <Typography variant="body2">
-                            <strong>{change.fieldName}:</strong> {change.newValue}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            Status: {change.status} - {formatDate(change.createdAt)}
-                          </Typography>
+                        <Box key={change.id} sx={{ p: 1.5, bgcolor: '#F9FAFB', borderRadius: '8px', mb: 1 }}>
+                          <Typography sx={{ fontSize: 13, color: '#111827' }}><strong>{change.fieldName}:</strong> {change.newValue}</Typography>
+                          <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>Status: {change.status} — {formatDate(change.createdAt)}</Typography>
                         </Box>
                       ))
                     ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        No profile changes found
-                      </Typography>
+                      <Typography sx={{ fontSize: 13, color: '#9CA3AF' }}>No profile changes found</Typography>
                     )}
                   </Box>
                 </Grid>
@@ -562,14 +271,12 @@ const PersonnelManagement: React.FC<PersonnelManagementProps> = ({ onViewChange 
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setUserDetailsDialog(false)}>
-            Close
-          </Button>
+        <DialogActions sx={{ p: 2 }}>
+          <GhostButton onClick={() => setUserDetailsDialog(false)}>Close</GhostButton>
         </DialogActions>
       </Dialog>
     </Box>
   );
 };
 
-export default PersonnelManagement; 
+export default PersonnelManagement;

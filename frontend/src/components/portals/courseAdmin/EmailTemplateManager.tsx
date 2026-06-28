@@ -3,16 +3,6 @@ import DOMPurify from 'dompurify';
 import {
   Box,
   Typography,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
-  IconButton,
-  Button,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -22,36 +12,23 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Chip,
   Grid,
   Alert,
   CircularProgress,
-  ToggleButton,
-  ToggleButtonGroup,
   Tabs,
   Tab,
-  Card,
-  CardContent,
-  CardActions,
   FormControlLabel,
   Switch,
   Autocomplete,
 } from '@mui/material';
-import {
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Add as AddIcon,
-  Preview as PreviewIcon,
-  Send as SendIcon,
-  FileCopy as CloneIcon,
-  Code as CodeIcon,
-  TextFields as TextFieldsIcon,
-  Create as CreateIcon,
-  Save as SaveIcon,
-} from '@mui/icons-material';
 const Editor = React.lazy(() => import('@monaco-editor/react'));
 import { emailTemplateApi } from '../../../services/api';
 import { useToast } from '../../../contexts/ToastContext';
+import StatCard from '../../gtacpr/StatCard';
+import StatusChip from '../../gtacpr/StatusChip';
+import DataTable, { DataTableRow } from '../../gtacpr/DataTable';
+import SearchBar from '../../gtacpr/SearchBar';
+import { PrimaryButton, GhostButton } from '../../gtacpr/Buttons';
 
 interface EmailTemplate {
   id?: number;
@@ -59,7 +36,7 @@ interface EmailTemplate {
   key: string;
   subject: string;
   htmlContent: string;
-  body?: string; // Backend uses body
+  body?: string;
   textContent?: string;
   description?: string;
   category:
@@ -89,7 +66,6 @@ interface EmailTemplate {
   usageCount?: number;
   createdAt?: string;
   updatedAt?: string;
-  // Allow additional properties for API compatibility
   [key: string]: unknown;
 }
 
@@ -117,14 +93,44 @@ const categoryOptions: Record<string, string[]> = {
   Other: [],
 };
 
+const sectionHeaderSx = {
+  fontSize: 13,
+  fontWeight: 700,
+  color: '#9CA3AF',
+  textTransform: 'uppercase' as const,
+  letterSpacing: '0.07em',
+};
+
+const dialogTitleSx = {
+  fontSize: 18,
+  fontWeight: 700,
+  color: '#111827',
+};
+
+const tableColumns = [
+  { key: 'name', label: 'Name', width: '2fr' },
+  { key: 'category', label: 'Category', width: '1.5fr' },
+  { key: 'subject', label: 'Subject', width: '2fr' },
+  { key: 'updated', label: 'Last Updated', width: '1.5fr' },
+  { key: 'status', label: 'Status', width: '1.5fr' },
+  { key: 'actions', label: 'Actions', width: '2fr' },
+];
+
+const actionLinkSx = {
+  fontSize: 12,
+  fontWeight: 600,
+  color: '#CC1F1F',
+  cursor: 'pointer',
+  '&:hover': { textDecoration: 'underline' },
+};
+
 const EmailTemplateManager: React.FC = () => {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [testDialogOpen, setTestDialogOpen] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] =
-    useState<EmailTemplate | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
   const [editorMode, setEditorMode] = useState<EditorMode>('rich');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -132,16 +138,11 @@ const EmailTemplateManager: React.FC = () => {
   const [sortBy, setSortBy] = useState<string>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [eventTriggers, setEventTriggers] = useState<EventTrigger[]>([]);
-  const [commonVariables, setCommonVariables] = useState<TemplateVariable[]>(
-    []
-  );
+  const [commonVariables, setCommonVariables] = useState<TemplateVariable[]>([]);
   const [testEmail, setTestEmail] = useState('');
-  const [previewVariables, setPreviewVariables] = useState<
-    Record<string, string>
-  >({});
+  const [previewVariables, setPreviewVariables] = useState<Record<string, string>>({});
   const { showToast } = useToast();
 
-  // Form state for editing
   const [formData, setFormData] = useState<EmailTemplate>({
     name: '',
     key: '',
@@ -176,7 +177,6 @@ const EmailTemplateManager: React.FC = () => {
     });
   }, []);
 
-  // Refetch templates when filters change
   useEffect(() => {
     fetchTemplates(categoryFilter, searchTerm).catch(error => {
       console.error('[EmailTemplateManager] Error refetching templates:', error);
@@ -195,16 +195,12 @@ const EmailTemplateManager: React.FC = () => {
     setLoading(true);
     try {
       const effectiveCategoryFilter =
-        currentCategoryFilter !== undefined
-          ? currentCategoryFilter
-          : categoryFilter;
+        currentCategoryFilter !== undefined ? currentCategoryFilter : categoryFilter;
       const effectiveSearchTerm =
         currentSearchTerm !== undefined ? currentSearchTerm : searchTerm;
 
       try {
-        const params: Record<string, string> = {
-          active: 'true',
-        };
+        const params: Record<string, string> = { active: 'true' };
         if (effectiveCategoryFilter !== 'all') {
           params.category = effectiveCategoryFilter;
         }
@@ -273,10 +269,9 @@ const EmailTemplateManager: React.FC = () => {
 
   const handleEditTemplate = (template: EmailTemplate) => {
     setSelectedTemplate(template);
-    // Map the template data, ensuring htmlContent is properly set
     setFormData({
       ...template,
-      htmlContent: template.htmlContent || template.body || '', // Handle both formats
+      htmlContent: template.htmlContent || template.body || '',
       eventTriggers: template.eventTriggers || [],
       availableVariables: template.availableVariables || [],
     });
@@ -285,23 +280,20 @@ const EmailTemplateManager: React.FC = () => {
 
   const handleSaveTemplate = async () => {
     try {
-      // Generate a key from the name if not provided
       const templateKey =
         formData.key || formData.name.toUpperCase().replace(/\s+/g, '_');
 
-      // Map frontend data to backend format - ensure all required fields are included
       const requestData = {
         name: formData.name,
         key: templateKey,
-        category: formData.category, // Send as string, not array
+        category: formData.category,
         subCategory: formData.subCategory || '',
         subject: formData.subject,
-        body: formData.htmlContent, // Backend expects 'body' not 'htmlContent'
+        body: formData.htmlContent,
         isActive: formData.isActive !== undefined ? formData.isActive : true,
       };
 
       if (selectedTemplate?.id) {
-        // Update existing template
         await emailTemplateApi.update(selectedTemplate.id, formData);
         showToast({
           type: 'success',
@@ -309,7 +301,6 @@ const EmailTemplateManager: React.FC = () => {
           priority: 'normal',
         });
       } else {
-        // Create new template
         await emailTemplateApi.create(formData);
         showToast({
           type: 'success',
@@ -318,13 +309,14 @@ const EmailTemplateManager: React.FC = () => {
         });
       }
       setEditDialogOpen(false);
-      fetchTemplates(categoryFilter, searchTerm); // Refetch templates
+      fetchTemplates(categoryFilter, searchTerm);
     } catch (error: any) {
       console.error('Error saving template:', error);
       showToast({
         type: 'error',
         message:
-          (error as { response?: { data?: { error?: { message?: string } } } }).response?.data?.error?.message || 'Failed to save template',
+          (error as { response?: { data?: { error?: { message?: string } } } }).response?.data?.error?.message ||
+          'Failed to save template',
         priority: 'normal',
       });
     }
@@ -334,7 +326,7 @@ const EmailTemplateManager: React.FC = () => {
     if (window.confirm('Are you sure you want to delete this template?')) {
       try {
         await emailTemplateApi.delete(templateId);
-        fetchTemplates(categoryFilter, searchTerm); // Refetch templates
+        fetchTemplates(categoryFilter, searchTerm);
         showToast({
           type: 'success',
           message: 'Template deleted successfully!',
@@ -345,7 +337,8 @@ const EmailTemplateManager: React.FC = () => {
         showToast({
           type: 'error',
           message:
-            (error as { response?: { data?: { error?: { message?: string } } } }).response?.data?.error?.message || 'Failed to delete template',
+            (error as { response?: { data?: { error?: { message?: string } } } }).response?.data?.error?.message ||
+            'Failed to delete template',
           priority: 'normal',
         });
       }
@@ -355,7 +348,7 @@ const EmailTemplateManager: React.FC = () => {
   const handleCloneTemplate = async (templateId: number, newName: string) => {
     try {
       await emailTemplateApi.clone(templateId, newName);
-      fetchTemplates(categoryFilter, searchTerm); // Refetch templates
+      fetchTemplates(categoryFilter, searchTerm);
       showToast({
         type: 'success',
         message: `Template cloned successfully as "${newName}"!`,
@@ -366,7 +359,8 @@ const EmailTemplateManager: React.FC = () => {
       showToast({
         type: 'error',
         message:
-          (error as { response?: { data?: { error?: { message?: string } } } }).response?.data?.error?.message || 'Failed to clone template',
+          (error as { response?: { data?: { error?: { message?: string } } } }).response?.data?.error?.message ||
+          'Failed to clone template',
         priority: 'normal',
       });
     }
@@ -397,7 +391,8 @@ const EmailTemplateManager: React.FC = () => {
       showToast({
         type: 'error',
         message:
-          (error as { response?: { data?: { error?: { message?: string } } } }).response?.data?.error?.message || 'Failed to send test email',
+          (error as { response?: { data?: { error?: { message?: string } } } }).response?.data?.error?.message ||
+          'Failed to send test email',
         priority: 'normal',
       });
     }
@@ -405,18 +400,16 @@ const EmailTemplateManager: React.FC = () => {
 
   const handleColumnSort = (column: string) => {
     if (sortBy === column) {
-      // If clicking the same column, toggle sort order
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
-      // If clicking a different column, set new sort column and default to asc
       setSortBy(column);
       setSortOrder('asc');
     }
   };
 
   const getSortIcon = (column: string) => {
-    if (sortBy !== column) return '↕️'; // No sort indicator
-    return sortOrder === 'asc' ? '↑' : '↓';
+    if (sortBy !== column) return '';
+    return sortOrder === 'asc' ? ' ↑' : ' ↓';
   };
 
   const convertToHtml = (text: string): string => {
@@ -438,131 +431,112 @@ const EmailTemplateManager: React.FC = () => {
   };
 
   const renderTemplateCard = (template: EmailTemplate) => (
-    <Card key={template.id} sx={{ height: '100%' }}>
-      <CardContent>
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            mb: 2,
-          }}
-        >
-          <Box>
-            <Typography variant='h6' gutterBottom>
-              {template.name}
-            </Typography>
-            <Typography variant='body2' color='text.secondary' gutterBottom>
-              {template.description}
-            </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Chip
-              label={template.category}
-              size='small'
-              color='primary'
-              variant='outlined'
-            />
-            {template.subCategory && (
-              <Chip
-                label={template.subCategory}
-                size='small'
-                color='secondary'
-                variant='outlined'
+    <Box
+      key={template.id}
+      sx={{
+        border: '1px solid #E5E7EB',
+        borderRadius: '8px',
+        p: 2.5,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          mb: 2,
+        }}
+      >
+        <Box>
+          <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#111827', mb: 0.5 }}>
+            {template.name}
+          </Typography>
+          <Typography sx={{ fontSize: 13, color: '#6B7280', mb: 1 }}>
+            {template.description}
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+          <StatusChip kind="brand" label={template.category} />
+          {template.subCategory && (
+            <StatusChip kind="neutral" label={template.subCategory} />
+          )}
+          {template.isSystem && <StatusChip kind="warning" label="System" />}
+          <StatusChip
+            kind={template.isActive ? 'success' : 'inactive'}
+            label={template.isActive ? 'Active' : 'Inactive'}
+          />
+        </Box>
+      </Box>
+
+      {template.eventTriggers.length > 0 && (
+        <Box sx={{ mb: 2 }}>
+          <Typography sx={{ ...sectionHeaderSx, fontSize: 11, mb: 0.5 }}>
+            Event Triggers:
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
+            {template.eventTriggers.map(trigger => (
+              <StatusChip
+                key={trigger}
+                kind="neutral"
+                label={
+                  eventTriggers.find(et => et.value === trigger)?.label || trigger
+                }
               />
-            )}
-            {template.isSystem && (
-              <Chip label='System' size='small' color='warning' />
-            )}
-            <Chip
-              label={template.isActive ? 'Active' : 'Inactive'}
-              size='small'
-              color={template.isActive ? 'success' : 'default'}
-            />
+            ))}
           </Box>
         </Box>
+      )}
 
-        {template.eventTriggers.length > 0 && (
-          <Box sx={{ mb: 2 }}>
-            <Typography variant='caption' color='text.secondary'>
-              Event Triggers:
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
-              {template.eventTriggers.map(trigger => (
-                <Chip
-                  key={trigger}
-                  label={
-                    eventTriggers.find(et => et.value === trigger)?.label ||
-                    trigger
-                  }
-                  size='small'
-                  variant='outlined'
-                />
-              ))}
-            </Box>
+      <Typography sx={{ fontSize: 13, color: '#6B7280' }}>
+        Subject: {template.subject}
+      </Typography>
+      {template.updatedAt && (
+        <Typography sx={{ fontSize: 12, color: '#9CA3AF', mt: 1 }}>
+          Updated: {new Date(template.updatedAt).toLocaleDateString()}
+        </Typography>
+      )}
+
+      <Box sx={{ mt: 'auto', pt: 2, display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+        <Box
+          onClick={() => handleEditTemplate(template)}
+          sx={actionLinkSx}
+        >
+          {template.isSystem ? 'Edit System' : 'Edit'}
+        </Box>
+        {!template.isSystem && (
+          <Box
+            onClick={() => handleDeleteTemplate(template.id!)}
+            sx={actionLinkSx}
+          >
+            Delete
           </Box>
         )}
-
-        <Typography variant='body2' color='text.secondary'>
-          Subject: {template.subject}
-        </Typography>
-        {template.updatedAt && (
-          <Typography
-            variant='caption'
-            color='text.secondary'
-            display='block'
-            sx={{ mt: 1 }}
-          >
-            Updated: {new Date(template.updatedAt).toLocaleDateString()}
-          </Typography>
-        )}
-      </CardContent>
-      <CardActions>
-        <IconButton
-          size='small'
-          onClick={() => handleEditTemplate(template)}
-          title={template.isSystem ? 'Edit System Template' : 'Edit Template'}
-        >
-          <EditIcon />
-        </IconButton>
-        <IconButton
-          size='small'
-          onClick={() => handleDeleteTemplate(template.id!)}
-          title={
-            template.isSystem
-              ? 'Cannot Delete System Template'
-              : 'Delete Template'
-          }
-          disabled={template.isSystem}
-        >
-          <DeleteIcon />
-        </IconButton>
-        <IconButton
-          size='small'
+        <Box
           onClick={() => handleCloneTemplate(template.id!, `${template.name} (Copy)`)}
-          title='Clone Template'
+          sx={actionLinkSx}
         >
-          <CloneIcon />
-        </IconButton>
-        <IconButton
-          size='small'
+          Clone
+        </Box>
+        <Box
           onClick={() => handlePreviewTemplate(template)}
-          title='Preview Template'
+          sx={actionLinkSx}
         >
-          <PreviewIcon />
-        </IconButton>
-        <IconButton
-          size='small'
+          Preview
+        </Box>
+        <Box
           onClick={() => {
             setSelectedTemplate(template);
             setTestDialogOpen(true);
           }}
-          title='Send Test Email'
+          sx={actionLinkSx}
         >
-          <SendIcon />
-        </IconButton>
-      </CardActions>
-    </Card>
+          Send Test
+        </Box>
+      </Box>
+    </Box>
   );
 
   const filteredTemplates = templates.filter(template => {
@@ -579,10 +553,8 @@ const EmailTemplateManager: React.FC = () => {
     return true;
   });
 
-  // Sort the filtered templates
   const sortedTemplates = [...filteredTemplates].sort((a, b) => {
     let comparison = 0;
-    
     const valA = a[sortBy as keyof EmailTemplate];
     const valB = b[sortBy as keyof EmailTemplate];
 
@@ -593,12 +565,23 @@ const EmailTemplateManager: React.FC = () => {
     } else if (valA instanceof Date && valB instanceof Date) {
       comparison = valA.getTime() - valB.getTime();
     }
-    
+
     return sortOrder === 'asc' ? comparison : -comparison;
   });
 
+  const editorModes: { value: EditorMode; label: string }[] = [
+    { value: 'rich', label: 'Rich Text' },
+    { value: 'html', label: 'HTML' },
+    { value: 'simple', label: 'Simple' },
+  ];
+
+  const viewModes: { value: ViewMode; label: string }[] = [
+    { value: 'grid', label: 'Grid' },
+    { value: 'table', label: 'Table' },
+  ];
+
   return (
-    <Paper elevation={3} sx={{ p: 3, mt: 3 }}>
+    <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '8px', p: 3, mt: 3 }}>
       <Box
         sx={{
           display: 'flex',
@@ -607,33 +590,28 @@ const EmailTemplateManager: React.FC = () => {
           mb: 3,
         }}
       >
-        <Typography variant='h5'>Email Template Manager</Typography>
-        <Button
-          variant='contained'
-          startIcon={<AddIcon />}
-          onClick={handleCreateTemplate}
-        >
-          Create Template
-        </Button>
+        <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
+          Email Template Manager
+        </Typography>
+        <PrimaryButton onClick={handleCreateTemplate}>+ Create Template</PrimaryButton>
       </Box>
 
-      <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
-        <TextField
-          label='Search templates...'
-          variant='outlined'
-          size='small'
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          sx={{ flexGrow: 1 }}
-        />
-        <FormControl variant='outlined' size='small' sx={{ minWidth: 200 }}>
+      <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Box sx={{ flexGrow: 1 }}>
+          <SearchBar
+            value={searchTerm}
+            onChange={v => setSearchTerm(v)}
+            placeholder="Search templates..."
+          />
+        </Box>
+        <FormControl variant="outlined" size="small" sx={{ minWidth: 200 }}>
           <InputLabel>Category</InputLabel>
           <Select
             value={categoryFilter}
             onChange={e => setCategoryFilter(e.target.value as string)}
-            label='Category'
+            label="Category"
           >
-            <MenuItem value='all'>All Categories</MenuItem>
+            <MenuItem value="all">All Categories</MenuItem>
             {Object.keys(categoryOptions).map(cat => (
               <MenuItem key={cat} value={cat}>
                 {cat}
@@ -641,24 +619,31 @@ const EmailTemplateManager: React.FC = () => {
             ))}
           </Select>
         </FormControl>
-        <ToggleButtonGroup
-          value={viewMode}
-          exclusive
-          onChange={(_, newMode) => newMode && setViewMode(newMode)}
-          aria-label='view mode'
-          size='small'
-        >
-          <ToggleButton value='grid' aria-label='grid view'>
-            Grid
-          </ToggleButton>
-          <ToggleButton value='table' aria-label='table view'>
-            Table
-          </ToggleButton>
-        </ToggleButtonGroup>
+        <Box sx={{ display: 'flex', border: '1px solid #E5E7EB', borderRadius: '8px', overflow: 'hidden' }}>
+          {viewModes.map(mode => (
+            <Box
+              key={mode.value}
+              onClick={() => setViewMode(mode.value)}
+              sx={{
+                px: 2,
+                py: 0.5,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                borderRadius: '6px',
+                bgcolor: viewMode === mode.value ? '#CC1F1F' : 'transparent',
+                color: viewMode === mode.value ? '#fff' : '#4B5563',
+                transition: 'background-color 0.15s, color 0.15s',
+              }}
+            >
+              {mode.label}
+            </Box>
+          ))}
+        </Box>
       </Box>
 
-      <Box sx={{ p: 2, bgcolor: 'grey.100', borderRadius: 1, mb: 2 }}>
-        <Typography variant='body2' color='text.secondary'>
+      <Box sx={{ p: 2, bgcolor: '#F9FAFB', borderRadius: 1, mb: 2, border: '1px solid #E5E7EB' }}>
+        <Typography sx={{ fontSize: 13, color: '#6B7280' }}>
           Showing {sortedTemplates.length} of {templates.length} templates
         </Typography>
       </Box>
@@ -678,97 +663,72 @@ const EmailTemplateManager: React.FC = () => {
               ))}
             </Grid>
           ) : (
-            <TableContainer>
-              <Table stickyHeader>
-                <TableHead>
-                  <TableRow>
-                    <TableCell sortDirection={sortBy === 'name' ? sortOrder : false}>
-                      <TableSortLabel
-                        active={sortBy === 'name'}
-                        direction={sortBy === 'name' ? sortOrder : 'asc'}
-                        onClick={() => handleColumnSort('name')}
-                      >
-                        Name
-                      </TableSortLabel>
-                    </TableCell>
-                    <TableCell>Category</TableCell>
-                    <TableCell>Subject</TableCell>
-                    <TableCell>Last Updated</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {sortedTemplates.map(template => (
-                    <TableRow key={template.id}>
-                      <TableCell>{template.name}</TableCell>
-                      <TableCell>
-                        {template.category}
-                        {template.subCategory && ` (${template.subCategory})`}
-                      </TableCell>
-                      <TableCell>{template.subject}</TableCell>
-                      <TableCell>
-                        {template.updatedAt
-                          ? new Date(template.updatedAt).toLocaleDateString()
-                          : 'N/A'}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={template.isActive ? 'Active' : 'Inactive'}
-                          size='small'
-                          color={template.isActive ? 'success' : 'default'}
-                        />
-                         {template.isSystem && <Chip label='System' size='small' sx={{ml: 1}}/>}
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', gap: 0.5 }}>
-                          <IconButton
-                            size='small'
-                            onClick={() => handleEditTemplate(template)}
-                            title='Edit'
-                          >
-                            <EditIcon />
-                          </IconButton>
-                          <IconButton
-                            size='small'
-                            onClick={() => handleDeleteTemplate(template.id!)}
-                            disabled={template.isSystem}
-                            title='Delete'
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                          <IconButton
-                            size='small'
-                            onClick={() => handleCloneTemplate(template.id!, `${template.name} (Copy)`)}
-                            title='Clone'
-                          >
-                            <CloneIcon />
-                          </IconButton>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <DataTable
+              columns={tableColumns}
+              shownCount={sortedTemplates.length}
+              totalCount={templates.length}
+            >
+              {sortedTemplates.map(template => (
+                <DataTableRow key={template.id} columns={tableColumns}>
+                  <Box
+                    onClick={() => handleColumnSort('name')}
+                    sx={{ fontSize: 13, fontWeight: 600, color: '#111827', cursor: 'pointer' }}
+                  >
+                    {template.name}{getSortIcon('name')}
+                  </Box>
+                  <Typography sx={{ fontSize: 13, color: '#374151' }}>
+                    {template.category}
+                    {template.subCategory && ` (${template.subCategory})`}
+                  </Typography>
+                  <Typography sx={{ fontSize: 13, color: '#374151' }}>
+                    {template.subject}
+                  </Typography>
+                  <Typography sx={{ fontSize: 13, color: '#6B7280' }}>
+                    {template.updatedAt
+                      ? new Date(template.updatedAt).toLocaleDateString()
+                      : 'N/A'}
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                    <StatusChip
+                      kind={template.isActive ? 'success' : 'inactive'}
+                      label={template.isActive ? 'Active' : 'Inactive'}
+                    />
+                    {template.isSystem && <StatusChip kind="warning" label="System" />}
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                    <Box onClick={() => handleEditTemplate(template)} sx={actionLinkSx}>
+                      Edit
+                    </Box>
+                    {!template.isSystem && (
+                      <Box onClick={() => handleDeleteTemplate(template.id!)} sx={actionLinkSx}>
+                        Delete
+                      </Box>
+                    )}
+                    <Box
+                      onClick={() => handleCloneTemplate(template.id!, `${template.name} (Copy)`)}
+                      sx={actionLinkSx}
+                    >
+                      Clone
+                    </Box>
+                  </Box>
+                </DataTableRow>
+              ))}
+            </DataTable>
           )}
         </>
       )}
 
-      {/* Edit/Create Dialog */}
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth='md' fullWidth>
-        <DialogTitle>
+      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={dialogTitleSx}>
           {selectedTemplate ? 'Edit Email Template' : 'Create Email Template'}
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12} md={6}>
               <TextField
-                label='Template Name'
+                label="Template Name"
                 value={formData.name}
-                onChange={e =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
+                onChange={e => setFormData({ ...formData, name: e.target.value })}
                 fullWidth
                 required
               />
@@ -782,17 +742,17 @@ const EmailTemplateManager: React.FC = () => {
                     setFormData({
                       ...formData,
                       category: e.target.value as EmailTemplate['category'],
-                      subCategory: '', // Reset subcategory when category changes
+                      subCategory: '',
                     })
                   }
-                  label='Category'
+                  label="Category"
                 >
-                  <MenuItem value='Instructor'>Instructor</MenuItem>
-                  <MenuItem value='Organization'>Organization</MenuItem>
-                  <MenuItem value='Course Admin'>Course Admin</MenuItem>
-                  <MenuItem value='Accountant'>Accountant</MenuItem>
-                  <MenuItem value='Sys Admin'>Sys Admin</MenuItem>
-                  <MenuItem value='Other'>Other</MenuItem>
+                  <MenuItem value="Instructor">Instructor</MenuItem>
+                  <MenuItem value="Organization">Organization</MenuItem>
+                  <MenuItem value="Course Admin">Course Admin</MenuItem>
+                  <MenuItem value="Accountant">Accountant</MenuItem>
+                  <MenuItem value="Sys Admin">Sys Admin</MenuItem>
+                  <MenuItem value="Other">Other</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -801,10 +761,8 @@ const EmailTemplateManager: React.FC = () => {
                 <InputLabel>Sub-Category</InputLabel>
                 <Select
                   value={formData.subCategory}
-                  onChange={e =>
-                    setFormData({ ...formData, subCategory: e.target.value })
-                  }
-                  label='Sub-Category'
+                  onChange={e => setFormData({ ...formData, subCategory: e.target.value })}
+                  label="Sub-Category"
                   disabled={
                     !categoryOptions[formData.category] ||
                     categoryOptions[formData.category].length === 0
@@ -820,11 +778,9 @@ const EmailTemplateManager: React.FC = () => {
             </Grid>
             <Grid item xs={12}>
               <TextField
-                label='Description'
+                label="Description"
                 value={formData.description}
-                onChange={e =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
+                onChange={e => setFormData({ ...formData, description: e.target.value })}
                 fullWidth
                 multiline
                 rows={2}
@@ -832,11 +788,9 @@ const EmailTemplateManager: React.FC = () => {
             </Grid>
             <Grid item xs={12}>
               <TextField
-                label='Subject Line'
+                label="Subject Line"
                 value={formData.subject}
-                onChange={e =>
-                  setFormData({ ...formData, subject: e.target.value })
-                }
+                onChange={e => setFormData({ ...formData, subject: e.target.value })}
                 fullWidth
                 required
               />
@@ -856,7 +810,7 @@ const EmailTemplateManager: React.FC = () => {
                   });
                 }}
                 renderInput={params => (
-                  <TextField {...params} label='Event Triggers' />
+                  <TextField {...params} label="Event Triggers" />
                 )}
               />
             </Grid>
@@ -864,18 +818,13 @@ const EmailTemplateManager: React.FC = () => {
               <Autocomplete
                 multiple
                 options={commonVariables}
-                getOptionLabel={option =>
-                  `${option.name} - ${option.description}`
-                }
+                getOptionLabel={option => `${option.name} - ${option.description}`}
                 value={formData.availableVariables}
                 onChange={(_, newValue) => {
-                  setFormData({
-                    ...formData,
-                    availableVariables: newValue,
-                  });
+                  setFormData({ ...formData, availableVariables: newValue });
                 }}
                 renderInput={params => (
-                  <TextField {...params} label='Available Variables' />
+                  <TextField {...params} label="Available Variables" />
                 )}
               />
             </Grid>
@@ -888,31 +837,37 @@ const EmailTemplateManager: React.FC = () => {
                   alignItems: 'center',
                 }}
               >
-                <Typography variant='subtitle2'>Email Content</Typography>
-                <ToggleButtonGroup
-                  value={editorMode}
-                  exclusive
-                  onChange={(_, newMode) => newMode && setEditorMode(newMode)}
-                  size='small'
-                >
-                  <ToggleButton value='rich'>Rich Text</ToggleButton>
-                  <ToggleButton value='html'>HTML</ToggleButton>
-                  <ToggleButton value='simple'>Simple</ToggleButton>
-                </ToggleButtonGroup>
+                <Typography sx={{ ...sectionHeaderSx, fontSize: 13 }}>
+                  Email Content
+                </Typography>
+                <Box sx={{ display: 'flex', border: '1px solid #E5E7EB', borderRadius: '8px', overflow: 'hidden' }}>
+                  {editorModes.map(mode => (
+                    <Box
+                      key={mode.value}
+                      onClick={() => setEditorMode(mode.value)}
+                      sx={{
+                        px: 2,
+                        py: 0.5,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        borderRadius: '6px',
+                        bgcolor: editorMode === mode.value ? '#CC1F1F' : 'transparent',
+                        color: editorMode === mode.value ? '#fff' : '#4B5563',
+                        transition: 'background-color 0.15s, color 0.15s',
+                      }}
+                    >
+                      {mode.label}
+                    </Box>
+                  ))}
+                </Box>
               </Box>
               {editorMode === 'html' ? (
-                <Box
-                  sx={{
-                    border: 1,
-                    borderColor: 'divider',
-                    borderRadius: 1,
-                    height: 400,
-                  }}
-                >
+                <Box sx={{ border: '1px solid #E5E7EB', borderRadius: 1, height: 400 }}>
                   <React.Suspense fallback={<Box sx={{ p: 2 }}>Loading editor...</Box>}>
                     <Editor
-                      height='400px'
-                      defaultLanguage='html'
+                      height="400px"
+                      defaultLanguage="html"
                       value={formData.htmlContent}
                       onChange={value =>
                         setFormData({ ...formData, htmlContent: value || '' })
@@ -939,7 +894,7 @@ const EmailTemplateManager: React.FC = () => {
                   fullWidth
                   multiline
                   rows={15}
-                  placeholder='Write your email in simple text format...'
+                  placeholder="Write your email in simple text format..."
                 />
               ) : (
                 <TextField
@@ -950,7 +905,7 @@ const EmailTemplateManager: React.FC = () => {
                   fullWidth
                   multiline
                   rows={15}
-                  placeholder='Enter HTML content...'
+                  placeholder="Enter HTML content..."
                 />
               )}
             </Grid>
@@ -964,27 +919,26 @@ const EmailTemplateManager: React.FC = () => {
                     }
                   />
                 }
-                label='Active'
+                label="Active"
               />
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-          <Button
-            onClick={handleSaveTemplate}
-            variant='contained'
-            startIcon={<SaveIcon />}
-          >
-            Save
-          </Button>
+          <GhostButton onClick={() => setEditDialogOpen(false)}>Cancel</GhostButton>
+          <PrimaryButton onClick={handleSaveTemplate}>Save</PrimaryButton>
         </DialogActions>
       </Dialog>
-      {/* Preview Dialog */}
-      <Dialog open={previewDialogOpen} onClose={() => setPreviewDialogOpen(false)} maxWidth='lg' fullWidth>
-        <DialogTitle>
+
+      <Dialog
+        open={previewDialogOpen}
+        onClose={() => setPreviewDialogOpen(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle sx={dialogTitleSx}>
           Template Preview
-          <Typography variant='caption' display='block' color='text.secondary'>
+          <Typography sx={{ fontSize: 12, color: '#9CA3AF', mt: 0.5 }}>
             Using sample data for preview
           </Typography>
         </DialogTitle>
@@ -992,14 +946,12 @@ const EmailTemplateManager: React.FC = () => {
           {selectedTemplate && (
             <>
               <Box sx={{ mb: 3 }}>
-                <Typography variant='subtitle2' gutterBottom>
-                  Variables:
-                </Typography>
+                <Typography sx={{ ...sectionHeaderSx, mb: 1 }}>Variables:</Typography>
                 <Grid container spacing={1}>
                   {selectedTemplate.availableVariables.map(variable => (
                     <Grid item xs={12} sm={6} key={variable.name}>
                       <TextField
-                        size='small'
+                        size="small"
                         label={variable.name}
                         value={previewVariables[variable.name] || ''}
                         onChange={e =>
@@ -1015,22 +967,15 @@ const EmailTemplateManager: React.FC = () => {
                   ))}
                 </Grid>
               </Box>
-              <Box
-                sx={{
-                  border: 1,
-                  borderColor: 'divider',
-                  p: 2,
-                  borderRadius: 1,
-                }}
-              >
-                <Typography variant='subtitle2'>Subject:</Typography>
-                <Typography sx={{ mb: 2 }}>
+              <Box sx={{ border: '1px solid #E5E7EB', p: 2, borderRadius: 1 }}>
+                <Typography sx={{ ...sectionHeaderSx, mb: 0.5 }}>Subject:</Typography>
+                <Typography sx={{ mb: 2, fontSize: 14, color: '#111827' }}>
                   {selectedTemplate.subject.replace(
                     /\{\{(\w+)\}\}/g,
                     (_, key) => previewVariables[key] || `{{${key}}}`
                   )}
                 </Typography>
-                <Typography variant='subtitle2'>Body:</Typography>
+                <Typography sx={{ ...sectionHeaderSx, mb: 0.5 }}>Body:</Typography>
                 <Box
                   dangerouslySetInnerHTML={{
                     __html: DOMPurify.sanitize(
@@ -1050,46 +995,39 @@ const EmailTemplateManager: React.FC = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPreviewDialogOpen(false)}>Close</Button>
-          <Button
+          <GhostButton onClick={() => setPreviewDialogOpen(false)}>Close</GhostButton>
+          <PrimaryButton
             onClick={() => {
               setTestDialogOpen(true);
               setPreviewDialogOpen(false);
             }}
-            variant='contained'
-            startIcon={<SendIcon />}
           >
             Send Test
-          </Button>
+          </PrimaryButton>
         </DialogActions>
       </Dialog>
-      {/* Test Email Dialog */}
+
       <Dialog open={testDialogOpen} onClose={() => setTestDialogOpen(false)}>
-        <DialogTitle>Send Test Email</DialogTitle>
+        <DialogTitle sx={dialogTitleSx}>Send Test Email</DialogTitle>
         <DialogContent>
           <TextField
-            label='Recipient Email'
-            type='email'
+            label="Recipient Email"
+            type="email"
             value={testEmail}
             onChange={e => setTestEmail(e.target.value)}
             fullWidth
             sx={{ mt: 2 }}
-            helperText='Enter the email address to send the test to'
+            helperText="Enter the email address to send the test to"
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setTestDialogOpen(false)}>Cancel</Button>
-          <Button
-            onClick={handleTestEmail}
-            variant='contained'
-            startIcon={<SendIcon />}
-            disabled={!testEmail}
-          >
+          <GhostButton onClick={() => setTestDialogOpen(false)}>Cancel</GhostButton>
+          <PrimaryButton onClick={handleTestEmail} disabled={!testEmail}>
             Send Test
-          </Button>
+          </PrimaryButton>
         </DialogActions>
       </Dialog>
-    </Paper>
+    </Box>
   );
 };
 

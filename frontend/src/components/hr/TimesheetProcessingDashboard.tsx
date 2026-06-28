@@ -1,25 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Card,
-  CardContent,
   Typography,
-  Grid,
-  Chip,
-  IconButton,
-  Button,
-  TextField,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
+  TextField,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -27,29 +14,15 @@ import {
   Alert,
   CircularProgress,
   Pagination,
-  Tooltip,
-  Badge
+  Grid,
 } from '@mui/material';
-import {
-  Visibility as VisibilityIcon,
-  CheckCircle as ApproveIcon,
-  Cancel as RejectIcon,
-  FilterList as FilterIcon,
-  Refresh as RefreshIcon,
-  TrendingUp as TrendingUpIcon,
-  Schedule as ScheduleIcon,
-  People as PeopleIcon,
-  Assignment as AssignmentIcon,
-  NotificationsActive as ReminderIcon,
-  Warning as WarningIcon
-} from '@mui/icons-material';
 import { timesheetService, Timesheet, TimesheetStats, TimesheetFilters } from '../../services/timesheetService';
 import TimesheetNotes from '../shared/TimesheetNotes';
 import { format } from 'date-fns';
-
-interface TimesheetProcessingDashboardProps {
-  // Add any props if needed
-}
+import StatCard from '../gtacpr/StatCard';
+import StatusChip from '../gtacpr/StatusChip';
+import DataTable, { DataTableRow } from '../gtacpr/DataTable';
+import { PrimaryButton, GhostButton } from '../gtacpr/Buttons';
 
 interface CourseDetail {
   date: string;
@@ -62,9 +35,42 @@ interface CourseDetail {
   status?: string;
 }
 
-type ChipColor = 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning';
+const getStatusKind = (status: string) => {
+  switch (status) {
+    case 'pending': return 'warning' as const;
+    case 'approved': return 'success' as const;
+    case 'rejected': return 'danger' as const;
+    default: return 'neutral' as const;
+  }
+};
 
-const TimesheetProcessingDashboard: React.FC<TimesheetProcessingDashboardProps> = () => {
+const timesheetColumns = [
+  { key: 'instructor', label: 'INSTRUCTOR', width: '1.3fr' },
+  { key: 'period', label: 'WEEK PERIOD', width: '1.2fr' },
+  { key: 'hours', label: 'HOURS', width: '0.5fr', align: 'right' as const },
+  { key: 'courses', label: 'COURSES', width: '0.5fr', align: 'right' as const },
+  { key: 'status', label: 'STATUS', width: '0.7fr' },
+  { key: 'submitted', label: 'SUBMITTED', width: '0.8fr' },
+  { key: 'actions', label: '', width: '0.4fr', align: 'right' as const },
+];
+
+const courseDetailColumns = [
+  { key: 'date', label: 'DATE', width: '1fr' },
+  { key: 'time', label: 'TIME', width: '0.8fr' },
+  { key: 'org', label: 'ORGANIZATION', width: '1fr' },
+  { key: 'location', label: 'LOCATION', width: '0.8fr' },
+  { key: 'type', label: 'COURSE TYPE', width: '0.8fr' },
+  { key: 'students', label: 'STUDENTS', width: '0.5fr', align: 'right' as const },
+  { key: 'status', label: 'STATUS', width: '0.6fr' },
+];
+
+const reminderColumns = [
+  { key: 'instructor', label: 'INSTRUCTOR', width: '1fr' },
+  { key: 'email', label: 'EMAIL', width: '1.2fr' },
+  { key: 'courses', label: 'COMPLETED COURSES', width: '0.8fr', align: 'center' as const },
+];
+
+const TimesheetProcessingDashboard: React.FC = () => {
   const [stats, setStats] = useState<TimesheetStats | null>(null);
   const [timesheets, setTimesheets] = useState<Timesheet[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,153 +83,84 @@ const TimesheetProcessingDashboard: React.FC<TimesheetProcessingDashboardProps> 
   const [approvalLoading, setApprovalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
-  // Pagination and filtering
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    pages: 0
-  });
-  const [filters, setFilters] = useState<TimesheetFilters>({
-    status: '',
-    instructorId: '',
-    month: ''
-  });
-
-  // Reminder state
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
+  const [filters, setFilters] = useState<TimesheetFilters>({ status: '', instructorId: '', month: '' });
   const [reminderDialogOpen, setReminderDialogOpen] = useState(false);
   const [pendingReminders, setPendingReminders] = useState<{
     weekStartDate: string;
-    instructorsWithoutTimesheet: Array<{
-      id: number;
-      username: string;
-      email: string;
-      completed_courses: number;
-    }>;
+    instructorsWithoutTimesheet: Array<{ id: number; username: string; email: string; completed_courses: number }>;
   } | null>(null);
   const [reminderLoading, setReminderLoading] = useState(false);
   const [sendingReminders, setSendingReminders] = useState(false);
 
-  // Load statistics
   const loadStats = async () => {
     try {
       setStatsLoading(true);
       const statsData = await timesheetService.getStats();
       setStats(statsData);
     } catch (err: any) {
-      console.error('Error loading stats:', err);
       setError('Failed to load timesheet statistics');
     } finally {
       setStatsLoading(false);
     }
   };
 
-  // Load timesheets
   const loadTimesheets = async () => {
     try {
       setLoading(true);
-      const response = await timesheetService.getTimesheets({
-        ...filters,
-        page: pagination.page,
-        limit: pagination.limit
-      });
+      const response = await timesheetService.getTimesheets({ ...filters, page: pagination.page, limit: pagination.limit });
       setTimesheets(response.timesheets);
-      setPagination(prev => ({
-        ...prev,
-        total: response.pagination.total,
-        pages: response.pagination.pages
-      }));
+      setPagination(prev => ({ ...prev, total: response.pagination.total, pages: response.pagination.pages }));
     } catch (err: any) {
-      console.error('Error loading timesheets:', err);
       setError('Failed to load timesheets');
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle approval/rejection
   const handleApproval = async () => {
     if (!selectedTimesheet) return;
-
     try {
       setApprovalLoading(true);
-      await timesheetService.approveTimesheet(selectedTimesheet.id, {
-        action: approvalAction,
-        comment: approvalComment
-      });
-
+      await timesheetService.approveTimesheet(selectedTimesheet.id, { action: approvalAction, comment: approvalComment });
       setSuccess(`Timesheet ${approvalAction}d successfully`);
       setApprovalDialogOpen(false);
       setSelectedTimesheet(null);
       setApprovalComment('');
-      
-      // Refresh data
       await Promise.all([loadStats(), loadTimesheets()]);
     } catch (err: any) {
-      console.error('Error processing timesheet:', err);
       setError(`Failed to ${approvalAction} timesheet`);
     } finally {
       setApprovalLoading(false);
     }
   };
 
-  // Handle filter changes
   const handleFilterChange = (field: keyof TimesheetFilters, value: string) => {
     setFilters(prev => ({ ...prev, [field]: value }));
-    setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page
+    setPagination(prev => ({ ...prev, page: 1 }));
   };
 
-  // Handle page change
-  const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
-    setPagination(prev => ({ ...prev, page }));
-  };
-
-  // Open detail dialog
-  const openDetailDialog = (timesheet: Timesheet) => {
-    setSelectedTimesheet(timesheet);
-    setDetailDialogOpen(true);
-  };
-
-  // Open approval dialog
-  const openApprovalDialog = (timesheet: Timesheet, action: 'approve' | 'reject') => {
-    setSelectedTimesheet(timesheet);
-    setApprovalAction(action);
-    setApprovalComment('');
-    setApprovalDialogOpen(true);
-  };
-
-  // Refresh all data
   const handleRefresh = async () => {
     setError(null);
     setSuccess(null);
     await Promise.all([loadStats(), loadTimesheets()]);
   };
 
-  // Load pending reminders
-  const loadPendingReminders = async () => {
+  const openReminderDialog = async () => {
+    setReminderDialogOpen(true);
     try {
       setReminderLoading(true);
       const data = await timesheetService.getPendingReminders();
       setPendingReminders(data);
     } catch (err: any) {
-      console.error('Error loading pending reminders:', err);
       setError('Failed to load instructors pending timesheet submission');
     } finally {
       setReminderLoading(false);
     }
   };
 
-  // Open reminder dialog
-  const openReminderDialog = async () => {
-    setReminderDialogOpen(true);
-    await loadPendingReminders();
-  };
-
-  // Send reminders to all pending instructors
   const handleSendReminders = async () => {
     if (!pendingReminders?.instructorsWithoutTimesheet.length) return;
-
     try {
       setSendingReminders(true);
       const instructorIds = pendingReminders.instructorsWithoutTimesheet.map(i => i.id);
@@ -231,581 +168,216 @@ const TimesheetProcessingDashboard: React.FC<TimesheetProcessingDashboardProps> 
       setSuccess(`Reminders sent to ${result.sentCount} instructor(s)`);
       setReminderDialogOpen(false);
     } catch (err: any) {
-      console.error('Error sending reminders:', err);
       setError('Failed to send reminders');
     } finally {
       setSendingReminders(false);
     }
   };
 
-  // Load data on component mount
+  useEffect(() => { loadStats(); }, []);
+  useEffect(() => { loadTimesheets(); }, [filters, pagination.page, pagination.limit]);
   useEffect(() => {
-    loadStats();
-  }, []);
-
-  useEffect(() => {
-    loadTimesheets();
-  }, [filters, pagination.page, pagination.limit]);
-
-  // Clear success message after 5 seconds
-  useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => setSuccess(null), 5000);
-      return () => clearTimeout(timer);
-    }
+    if (success) { const t = setTimeout(() => setSuccess(null), 5000); return () => clearTimeout(t); }
     return () => {};
   }, [success]);
 
-  const getStatusColor = (status: string): ChipColor => {
-    switch (status) {
-      case 'pending': return 'warning';
-      case 'approved': return 'success';
-      case 'rejected': return 'error';
-      default: return 'default';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'pending': return <ScheduleIcon />;
-      case 'approved': return <ApproveIcon />;
-      case 'rejected': return <RejectIcon />;
-      default: return <AssignmentIcon />;
-    }
-  };
-
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Timesheet Processing
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="contained"
-            color="warning"
-            startIcon={<ReminderIcon />}
-            onClick={openReminderDialog}
-          >
-            Send Reminders
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={handleRefresh}
-            disabled={loading || statsLoading}
-          >
-            Refresh
-          </Button>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Header Actions */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+        <PrimaryButton onClick={openReminderDialog}>Send Reminders</PrimaryButton>
+        <GhostButton onClick={handleRefresh} disabled={loading || statsLoading}>Refresh</GhostButton>
+      </Box>
+
+      {error && <Alert severity="error" onClose={() => setError(null)}>{error}</Alert>}
+      {success && <Alert severity="success" onClose={() => setSuccess(null)}>{success}</Alert>}
+
+      {/* Stats */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+        <StatCard label="Pending Timesheets" value={statsLoading ? '...' : stats?.pendingTimesheets || 0} sub="Awaiting review" dotColor="#ED6C02" />
+        <StatCard label="Approved This Month" value={statsLoading ? '...' : stats?.approvedThisMonth || 0} sub="Processed" dotColor="#16A34A" />
+        <StatCard label="Total Hours" value={statsLoading ? '...' : stats?.totalHoursThisMonth || 0} sub="This month" dotColor="#4B5563" />
+        <StatCard label="Instructors Pending" value={statsLoading ? '...' : stats?.instructorsWithPending || 0} sub="With submissions" dotColor="#CC1F1F" />
+      </Box>
+
+      {/* Filters */}
+      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Filters</Typography>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
+          <FormControl fullWidth>
+            <InputLabel>Status</InputLabel>
+            <Select value={filters.status} label="Status" onChange={(e) => handleFilterChange('status', e.target.value)}>
+              <MenuItem value="">All Statuses</MenuItem>
+              <MenuItem value="pending">Pending</MenuItem>
+              <MenuItem value="approved">Approved</MenuItem>
+              <MenuItem value="rejected">Rejected</MenuItem>
+            </Select>
+          </FormControl>
+          <TextField fullWidth label="Instructor ID" value={filters.instructorId} onChange={(e) => handleFilterChange('instructorId', e.target.value)} placeholder="Filter by ID" />
+          <TextField fullWidth label="Month" type="number" value={filters.month} onChange={(e) => handleFilterChange('month', e.target.value)} placeholder="1-12" inputProps={{ min: 1, max: 12 }} />
         </Box>
       </Box>
 
-      {/* Error and Success Messages */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
-          {success}
-        </Alert>
-      )}
-
-      {/* Statistics Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography color="textSecondary" gutterBottom>
-                    Pending Timesheets
-                  </Typography>
-                  <Typography variant="h4">
-                    {statsLoading ? <CircularProgress size={24} /> : stats?.pendingTimesheets || 0}
-                  </Typography>
-                </Box>
-                <Badge badgeContent={stats?.pendingTimesheets || 0} color="warning">
-                  <ScheduleIcon color="warning" sx={{ fontSize: 40 }} />
-                </Badge>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography color="textSecondary" gutterBottom>
-                    Approved This Month
-                  </Typography>
-                  <Typography variant="h4">
-                    {statsLoading ? <CircularProgress size={24} /> : stats?.approvedThisMonth || 0}
-                  </Typography>
-                </Box>
-                <TrendingUpIcon color="success" sx={{ fontSize: 40 }} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography color="textSecondary" gutterBottom>
-                    Total Hours This Month
-                  </Typography>
-                  <Typography variant="h4">
-                    {statsLoading ? <CircularProgress size={24} /> : stats?.totalHoursThisMonth || 0}
-                  </Typography>
-                </Box>
-                <AssignmentIcon color="primary" sx={{ fontSize: 40 }} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography color="textSecondary" gutterBottom>
-                    Instructors with Pending
-                  </Typography>
-                  <Typography variant="h4">
-                    {statsLoading ? <CircularProgress size={24} /> : stats?.instructorsWithPending || 0}
-                  </Typography>
-                </Box>
-                <PeopleIcon color="info" sx={{ fontSize: 40 }} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Filters */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-            <FilterIcon sx={{ mr: 1 }} />
-            Filters
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={4}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={filters.status}
-                  label="Status"
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
-                >
-                  <MenuItem value="">All Statuses</MenuItem>
-                  <MenuItem value="pending">Pending</MenuItem>
-                  <MenuItem value="approved">Approved</MenuItem>
-                  <MenuItem value="rejected">Rejected</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                fullWidth
-                label="Instructor ID"
-                value={filters.instructorId}
-                onChange={(e) => handleFilterChange('instructorId', e.target.value)}
-                placeholder="Filter by instructor ID"
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                fullWidth
-                label="Month"
-                type="number"
-                value={filters.month}
-                onChange={(e) => handleFilterChange('month', e.target.value)}
-                placeholder="1-12"
-                inputProps={{ min: 1, max: 12 }}
-              />
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
-
       {/* Timesheets Table */}
-      <Card>
-        <CardContent>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            Timesheets ({pagination.total} total)
-          </Typography>
-          
-          {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <>
-              <TableContainer component={Paper} variant="outlined">
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Instructor</TableCell>
-                      <TableCell>Week Period</TableCell>
-                      <TableCell>Hours</TableCell>
-                      <TableCell>Courses</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Submitted</TableCell>
-                      <TableCell>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {timesheets.map((timesheet) => (
-                      <TableRow key={timesheet.id}>
-                        <TableCell>
-                          <Box>
-                            <Typography variant="body2" fontWeight="bold">
-                              {timesheet.instructorName}
-                            </Typography>
-                            <Typography variant="caption" color="textSecondary">
-                              {timesheet.instructorEmail}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2">
-                            {format(new Date(timesheet.weekStartDate), 'MMM dd, yyyy')} - {format(new Date(new Date(timesheet.weekStartDate).getTime() + 6 * 24 * 60 * 60 * 1000), 'MMM dd, yyyy')}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>{timesheet.totalHours}</TableCell>
-                        <TableCell>{timesheet.coursesTaught}</TableCell>
-                        <TableCell>
-                          <Chip
-                            icon={getStatusIcon(timesheet.status)}
-                            label={timesheet.status}
-                            color={getStatusColor(timesheet.status)}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(timesheet.createdAt), 'MMM dd, yyyy')}
-                        </TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', gap: 1 }}>
-                            <Tooltip title="View Details">
-                              <IconButton
-                                size="small"
-                                onClick={() => openDetailDialog(timesheet)}
-                              >
-                                <VisibilityIcon />
-                              </IconButton>
-                            </Tooltip>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
+          Timesheets ({pagination.total} total)
+        </Typography>
 
-              {/* Pagination */}
-              {pagination.pages > 1 && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                  <Pagination
-                    count={pagination.pages}
-                    page={pagination.page}
-                    onChange={handlePageChange}
-                    color="primary"
-                  />
-                </Box>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress size={24} /></Box>
+        ) : (
+          <>
+            <DataTable columns={timesheetColumns} shownCount={timesheets.length} totalCount={pagination.total}>
+              {timesheets.map((ts) => (
+                <DataTableRow key={ts.id} columns={timesheetColumns}>
+                  <Box>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{ts.instructorName}</Typography>
+                    <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{ts.instructorEmail}</Typography>
+                  </Box>
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                    {format(new Date(ts.weekStartDate), 'MMM dd, yyyy')} — {format(new Date(new Date(ts.weekStartDate).getTime() + 6 * 24 * 60 * 60 * 1000), 'MMM dd, yyyy')}
+                  </Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'right' }}>{ts.totalHours}</Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'right' }}>{ts.coursesTaught}</Typography>
+                  <StatusChip kind={getStatusKind(ts.status)} label={ts.status} />
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{format(new Date(ts.createdAt), 'MMM dd, yyyy')}</Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <Box onClick={() => { setSelectedTimesheet(ts); setDetailDialogOpen(true); }} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>View</Box>
+                  </Box>
+                </DataTableRow>
+              ))}
+            </DataTable>
+
+            {pagination.pages > 1 && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <Pagination count={pagination.pages} page={pagination.page} onChange={(_, p) => setPagination(prev => ({ ...prev, page: p }))} />
+              </Box>
+            )}
+          </>
+        )}
+      </Box>
 
       {/* Timesheet Detail Dialog */}
-      <Dialog
-        open={detailDialogOpen}
-        onClose={() => setDetailDialogOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
+      <Dialog open={detailDialogOpen} onClose={() => setDetailDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827', display: 'flex', alignItems: 'center', gap: 2 }}>
           Timesheet Details
-          {selectedTimesheet && (
-            <Chip
-              icon={getStatusIcon(selectedTimesheet.status)}
-              label={selectedTimesheet.status}
-              color={getStatusColor(selectedTimesheet.status)}
-              sx={{ ml: 2 }}
-            />
-          )}
+          {selectedTimesheet && <StatusChip kind={getStatusKind(selectedTimesheet.status)} label={selectedTimesheet.status} />}
         </DialogTitle>
         <DialogContent>
           {selectedTimesheet && (
-            <Box sx={{ mt: 2 }}>
-              <Grid container spacing={3}>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="textSecondary">
-                    Instructor
-                  </Typography>
-                  <Typography variant="body1">
-                    {selectedTimesheet.instructorName} ({selectedTimesheet.instructorEmail})
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="textSecondary">
-                    Week Period
-                  </Typography>
-                  <Typography variant="body1">
-                    {format(new Date(selectedTimesheet.weekStartDate), 'EEEE, MMMM dd, yyyy')} - {format(new Date(new Date(selectedTimesheet.weekStartDate).getTime() + 6 * 24 * 60 * 60 * 1000), 'EEEE, MMMM dd, yyyy')}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="textSecondary">
-                    Total Hours
-                  </Typography>
-                  <Typography variant="body1">{selectedTimesheet.totalHours}</Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="textSecondary">
-                    Courses Taught
-                  </Typography>
-                  <Typography variant="body1">{selectedTimesheet.coursesTaught}</Typography>
-                </Grid>
-                {selectedTimesheet.courseDetails && selectedTimesheet.courseDetails.length > 0 && (
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle2" color="textSecondary" sx={{ mb: 2 }}>
-                      Course Details
-                    </Typography>
-                    <TableContainer component={Paper} variant="outlined">
-                      <Table size="small">
-                        <TableHead>
-                          <TableRow>
-                            <TableCell>Date</TableCell>
-                            <TableCell>Time</TableCell>
-                            <TableCell>Organization</TableCell>
-                            <TableCell>Location</TableCell>
-                            <TableCell>Course Type</TableCell>
-                            <TableCell>Students</TableCell>
-                            <TableCell>Status</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {selectedTimesheet.courseDetails.map((course: CourseDetail, index: number) => (
-                            <TableRow key={index}>
-                              <TableCell>{format(new Date(course.date), 'MMM dd, yyyy')}</TableCell>
-                              <TableCell>
-                                {course.startTime && course.endTime
-                                  ? `${course.startTime} - ${course.endTime}`
-                                  : 'TBD'
-                                }
-                              </TableCell>
-                              <TableCell>{course.organizationName || 'TBD'}</TableCell>
-                              <TableCell>{course.location || 'TBD'}</TableCell>
-                              <TableCell>{course.courseType}</TableCell>
-                              <TableCell>{course.studentCount ?? '-'}</TableCell>
-                              <TableCell>
-                                {course.status ? (
-                                  <Chip
-                                    label={course.status}
-                                    color={course.status === 'completed' ? 'success' : 'primary'}
-                                    size="small"
-                                  />
-                                ) : '-'}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
-                  </Grid>
-                )}
-                <Grid item xs={12}>
-                  <TimesheetNotes 
-                    timesheetId={selectedTimesheet.id}
-                    onNotesChange={() => {
-                      // Optionally refresh timesheet data if needed
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="textSecondary">
-                    Submitted
-                  </Typography>
-                  <Typography variant="body1">
-                    {format(new Date(selectedTimesheet.createdAt), 'MMM dd, yyyy HH:mm')}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="textSecondary">
-                    Last Updated
-                  </Typography>
-                  <Typography variant="body1">
-                    {format(new Date(selectedTimesheet.updatedAt), 'MMM dd, yyyy HH:mm')}
-                  </Typography>
-                </Grid>
-              </Grid>
+            <Box sx={{ pt: 1 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 2 }}>
+                {[
+                  ['Instructor', `${selectedTimesheet.instructorName} (${selectedTimesheet.instructorEmail})`],
+                  ['Week Period', `${format(new Date(selectedTimesheet.weekStartDate), 'EEEE, MMMM dd, yyyy')} — ${format(new Date(new Date(selectedTimesheet.weekStartDate).getTime() + 6 * 24 * 60 * 60 * 1000), 'EEEE, MMMM dd, yyyy')}`],
+                  ['Total Hours', selectedTimesheet.totalHours],
+                  ['Courses Taught', selectedTimesheet.coursesTaught],
+                  ['Submitted', format(new Date(selectedTimesheet.createdAt), 'MMM dd, yyyy HH:mm')],
+                  ['Last Updated', format(new Date(selectedTimesheet.updatedAt), 'MMM dd, yyyy HH:mm')],
+                ].map(([label, value]) => (
+                  <Box key={String(label)}>
+                    <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF' }}>{label}</Typography>
+                    <Typography sx={{ fontSize: 13, color: '#111827' }}>{value}</Typography>
+                  </Box>
+                ))}
+              </Box>
+
+              {selectedTimesheet.courseDetails && selectedTimesheet.courseDetails.length > 0 && (
+                <Box sx={{ mb: 2 }}>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Course Details</Typography>
+                  <DataTable columns={courseDetailColumns} shownCount={selectedTimesheet.courseDetails.length} totalCount={selectedTimesheet.courseDetails.length}>
+                    {selectedTimesheet.courseDetails.map((course: CourseDetail, index: number) => (
+                      <DataTableRow key={index} columns={courseDetailColumns}>
+                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{format(new Date(course.date), 'MMM dd, yyyy')}</Typography>
+                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.startTime && course.endTime ? `${course.startTime} - ${course.endTime}` : 'TBD'}</Typography>
+                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.organizationName || 'TBD'}</Typography>
+                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.location || 'TBD'}</Typography>
+                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.courseType}</Typography>
+                        <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'right' }}>{course.studentCount ?? '—'}</Typography>
+                        {course.status ? <StatusChip kind={course.status === 'completed' ? 'success' : 'active'} label={course.status} /> : <Typography sx={{ fontSize: 13, color: '#9CA3AF' }}>—</Typography>}
+                      </DataTableRow>
+                    ))}
+                  </DataTable>
+                </Box>
+              )}
+
+              <TimesheetNotes timesheetId={selectedTimesheet.id} onNotesChange={() => {}} />
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: 2 }}>
           {selectedTimesheet?.status === 'pending' && (
             <>
-              <Button
-                color="success"
-                startIcon={<ApproveIcon />}
-                onClick={() => {
-                  setDetailDialogOpen(false);
-                  openApprovalDialog(selectedTimesheet, 'approve');
-                }}
-              >
-                Approve
-              </Button>
-              <Button
-                color="error"
-                startIcon={<RejectIcon />}
-                onClick={() => {
-                  setDetailDialogOpen(false);
-                  openApprovalDialog(selectedTimesheet, 'reject');
-                }}
-              >
-                Reject
-              </Button>
+              <GhostButton onClick={() => { setDetailDialogOpen(false); setApprovalAction('approve'); setApprovalComment(''); setApprovalDialogOpen(true); }}>Approve</GhostButton>
+              <GhostButton onClick={() => { setDetailDialogOpen(false); setApprovalAction('reject'); setApprovalComment(''); setApprovalDialogOpen(true); }}>Reject</GhostButton>
             </>
           )}
-          <Button onClick={() => setDetailDialogOpen(false)}>Close</Button>
+          <GhostButton onClick={() => setDetailDialogOpen(false)}>Close</GhostButton>
         </DialogActions>
       </Dialog>
 
-      {/* Approval/Rejection Dialog */}
-      <Dialog
-        open={approvalDialogOpen}
-        onClose={() => setApprovalDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
+      {/* Approval Dialog */}
+      <Dialog open={approvalDialogOpen} onClose={() => setApprovalDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
           {approvalAction === 'approve' ? 'Approve' : 'Reject'} Timesheet
         </DialogTitle>
         <DialogContent>
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="body2" sx={{ mb: 2 }}>
-              {approvalAction === 'approve' 
-                ? 'Are you sure you want to approve this timesheet?'
-                : 'Are you sure you want to reject this timesheet?'
-              }
+          <Box sx={{ pt: 1 }}>
+            <Typography sx={{ fontSize: 14, color: '#4B5563', mb: 2 }}>
+              Are you sure you want to {approvalAction} this timesheet?
             </Typography>
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              label="Comment (optional)"
-              value={approvalComment}
-              onChange={(e) => setApprovalComment(e.target.value)}
-              placeholder={`Add a comment for the ${approvalAction === 'approve' ? 'approval' : 'rejection'}...`}
-            />
+            <TextField fullWidth multiline rows={4} label="Comment (optional)" value={approvalComment} onChange={(e) => setApprovalComment(e.target.value)} />
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button 
-            onClick={() => setApprovalDialogOpen(false)}
-            disabled={approvalLoading}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            color={approvalAction === 'approve' ? 'success' : 'error'}
-            startIcon={approvalAction === 'approve' ? <ApproveIcon /> : <RejectIcon />}
-            onClick={handleApproval}
-            disabled={approvalLoading}
-          >
-            {approvalLoading ? <CircularProgress size={20} /> : approvalAction === 'approve' ? 'Approve' : 'Reject'}
-          </Button>
+        <DialogActions sx={{ p: 2 }}>
+          <GhostButton onClick={() => setApprovalDialogOpen(false)} disabled={approvalLoading}>Cancel</GhostButton>
+          <PrimaryButton onClick={handleApproval} disabled={approvalLoading}>
+            {approvalLoading ? 'Processing...' : approvalAction === 'approve' ? 'Approve' : 'Reject'}
+          </PrimaryButton>
         </DialogActions>
       </Dialog>
 
       {/* Reminder Dialog */}
-      <Dialog
-        open={reminderDialogOpen}
-        onClose={() => setReminderDialogOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <ReminderIcon color="warning" />
-            <Typography variant="h6">Send Timesheet Reminders</Typography>
-          </Box>
-        </DialogTitle>
+      <Dialog open={reminderDialogOpen} onClose={() => setReminderDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>Send Timesheet Reminders</DialogTitle>
         <DialogContent>
           {reminderLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress />
-            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={24} /></Box>
           ) : pendingReminders ? (
-            <Box>
+            <Box sx={{ pt: 1 }}>
               <Alert severity="info" sx={{ mb: 2 }}>
                 Week of {pendingReminders.weekStartDate}: {pendingReminders.instructorsWithoutTimesheet.length} instructor(s) have not submitted timesheets.
               </Alert>
-
               {pendingReminders.instructorsWithoutTimesheet.length > 0 ? (
-                <TableContainer component={Paper} variant="outlined">
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Instructor</TableCell>
-                        <TableCell>Email</TableCell>
-                        <TableCell align="center">Completed Courses</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {pendingReminders.instructorsWithoutTimesheet.map((instructor) => (
-                        <TableRow key={instructor.id}>
-                          <TableCell>{instructor.username}</TableCell>
-                          <TableCell>{instructor.email}</TableCell>
-                          <TableCell align="center">
-                            <Chip
-                              label={instructor.completed_courses}
-                              color={instructor.completed_courses > 0 ? 'primary' : 'default'}
-                              size="small"
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                <DataTable columns={reminderColumns} shownCount={pendingReminders.instructorsWithoutTimesheet.length} totalCount={pendingReminders.instructorsWithoutTimesheet.length}>
+                  {pendingReminders.instructorsWithoutTimesheet.map((instructor) => (
+                    <DataTableRow key={instructor.id} columns={reminderColumns}>
+                      <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{instructor.username}</Typography>
+                      <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{instructor.email}</Typography>
+                      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                        <StatusChip kind={instructor.completed_courses > 0 ? 'active' : 'neutral'} label={String(instructor.completed_courses)} />
+                      </Box>
+                    </DataTableRow>
+                  ))}
+                </DataTable>
               ) : (
-                <Alert severity="success">
-                  All instructors have submitted their timesheets for last week!
-                </Alert>
+                <Alert severity="success">All instructors have submitted their timesheets for last week!</Alert>
               )}
             </Box>
           ) : (
             <Alert severity="error">Failed to load pending reminders.</Alert>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setReminderDialogOpen(false)}>Close</Button>
-          <Button
-            variant="contained"
-            color="warning"
-            startIcon={sendingReminders ? <CircularProgress size={20} /> : <ReminderIcon />}
-            onClick={handleSendReminders}
-            disabled={sendingReminders || !pendingReminders?.instructorsWithoutTimesheet.length}
-          >
+        <DialogActions sx={{ p: 2 }}>
+          <GhostButton onClick={() => setReminderDialogOpen(false)}>Close</GhostButton>
+          <PrimaryButton onClick={handleSendReminders} disabled={sendingReminders || !pendingReminders?.instructorsWithoutTimesheet.length}>
             {sendingReminders ? 'Sending...' : `Send Reminders (${pendingReminders?.instructorsWithoutTimesheet.length || 0})`}
-          </Button>
+          </PrimaryButton>
         </DialogActions>
       </Dialog>
     </Box>
   );
 };
 
-export default TimesheetProcessingDashboard; 
+export default TimesheetProcessingDashboard;

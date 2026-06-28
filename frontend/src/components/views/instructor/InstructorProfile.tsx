@@ -2,39 +2,19 @@ import React, { useState } from 'react';
 import {
   Box,
   Typography,
-  Paper,
   Grid,
   Card,
-  CardContent,
-  Avatar,
-  Divider,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Button,
-  Chip,
   Alert,
   TextField,
   Switch,
   FormControlLabel,
 } from '@mui/material';
-import {
-  Person as PersonIcon,
-  Email as EmailIcon,
-  Phone as PhoneIcon,
-  LocationOn as LocationIcon,
-  Badge as BadgeIcon,
-  Notifications as NotificationsIcon,
-  Security as SecurityIcon,
-  Edit as EditIcon,
-  Save as SaveIcon,
-  Cancel as CancelIcon,
-  Download as DownloadIcon,
-} from '@mui/icons-material';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useToast } from '../../../contexts/ToastContext';
 import api from '../../../services/api';
+import UserAvatar from '../../gtacpr/UserAvatar';
+import StatusChip from '../../gtacpr/StatusChip';
+import { PrimaryButton, GhostButton } from '../../gtacpr/Buttons';
 
 const InstructorProfile: React.FC = () => {
   const { user } = useAuth();
@@ -43,7 +23,6 @@ const InstructorProfile: React.FC = () => {
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [smsNotifications, setSmsNotifications] = useState(false);
 
-  // Mock profile data - in real app this would come from API
   const [profileData, setProfileData] = useState({
     firstName: 'John',
     lastName: 'Doe',
@@ -58,31 +37,18 @@ const InstructorProfile: React.FC = () => {
 
   const [editData, setEditData] = useState(profileData);
 
-  const handleEdit = () => {
-    setIsEditing(true);
-    setEditData(profileData);
-  };
-
+  const handleEdit = () => { setIsEditing(true); setEditData(profileData); };
   const handleSave = () => {
     setProfileData(editData);
     setIsEditing(false);
-    success('Profile updated successfully!', {
-      title: 'Profile Saved',
-      context: 'profile_update',
-    });
+    success('Profile updated successfully!', { title: 'Profile Saved', context: 'profile_update' });
   };
-
-  const handleCancel = () => {
-    setEditData(profileData);
-    setIsEditing(false);
-  };
+  const handleCancel = () => { setEditData(profileData); setIsEditing(false); };
 
   const handleNotificationChange = (type: 'email' | 'sms') => {
     if (type === 'email') {
       setEmailNotifications(!emailNotifications);
-      info(
-        `Email notifications ${!emailNotifications ? 'enabled' : 'disabled'}`
-      );
+      info(`Email notifications ${!emailNotifications ? 'enabled' : 'disabled'}`);
     } else {
       setSmsNotifications(!smsNotifications);
       info(`SMS notifications ${!smsNotifications ? 'enabled' : 'disabled'}`);
@@ -110,357 +76,142 @@ const InstructorProfile: React.FC = () => {
     }
   };
 
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-  };
+  const getInitials = (firstName: string, lastName: string) =>
+    `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant='h4' gutterBottom>
-        Instructor Profile
-      </Typography>
-
-      <Typography variant='body1' color='text.secondary' sx={{ mb: 3 }}>
-        Manage your profile information, certifications, and notification
-        preferences.
-      </Typography>
-
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <Grid container spacing={3}>
         {/* Profile Overview Card */}
         <Grid item xs={12} md={4}>
-          <Card>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <Avatar
-                sx={{
-                  width: 100,
-                  height: 100,
-                  mx: 'auto',
-                  mb: 2,
-                  bgcolor: 'primary.main',
-                  fontSize: '2rem',
-                }}
-              >
-                {getInitials(profileData.firstName, profileData.lastName)}
-              </Avatar>
+          <Card sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', p: 3, textAlign: 'center' }}>
+            <UserAvatar initials={getInitials(profileData.firstName, profileData.lastName)} size={80} />
+            <Typography sx={{ fontSize: 20, fontWeight: 700, color: '#111827', mt: 2 }}>
+              {profileData.firstName} {profileData.lastName}
+            </Typography>
+            <Typography sx={{ fontSize: 13, color: '#9CA3AF', mb: 1 }}>CPR Instructor</Typography>
+            <StatusChip kind="active" label="Active" />
 
-              <Typography variant='h5' gutterBottom>
-                {profileData.firstName} {profileData.lastName}
-              </Typography>
-
-              <Typography variant='body2' color='text.secondary' gutterBottom>
-                CPR Instructor
-              </Typography>
-
-              <Chip
-                label='Active'
-                color='success'
-                size='small'
-                sx={{ mb: 2 }}
-              />
-
-              <Divider sx={{ my: 2 }} />
-
-              <Grid container spacing={2} sx={{ textAlign: 'center' }}>
-                <Grid item xs={6}>
-                  <Typography variant='h6' color='primary'>
-                    {profileData.totalClasses}
-                  </Typography>
-                  <Typography variant='caption' color='text.secondary'>
-                    Classes Taught
-                  </Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant='h6' color='primary'>
-                    {profileData.totalStudents}
-                  </Typography>
-                  <Typography variant='caption' color='text.secondary'>
-                    Students Trained
-                  </Typography>
-                </Grid>
-              </Grid>
-            </CardContent>
+            <Box sx={{ borderTop: '1px solid #E5E7EB', mt: 3, pt: 3, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              <Box>
+                <Typography sx={{ fontSize: 20, fontWeight: 700, color: '#CC1F1F' }}>{profileData.totalClasses}</Typography>
+                <Typography sx={{ fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase' }}>Classes Taught</Typography>
+              </Box>
+              <Box>
+                <Typography sx={{ fontSize: 20, fontWeight: 700, color: '#CC1F1F' }}>{profileData.totalStudents}</Typography>
+                <Typography sx={{ fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase' }}>Students Trained</Typography>
+              </Box>
+            </Box>
           </Card>
         </Grid>
 
         {/* Profile Details */}
         <Grid item xs={12} md={8}>
-          <Card>
-            <CardContent>
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  mb: 3,
-                }}
-              >
-                <Typography variant='h6'>Profile Information</Typography>
-                {!isEditing ? (
-                  <Button
-                    startIcon={<EditIcon />}
-                    onClick={handleEdit}
-                    variant='outlined'
-                  >
-                    Edit Profile
-                  </Button>
-                ) : (
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button
-                      startIcon={<SaveIcon />}
-                      onClick={handleSave}
-                      variant='contained'
-                      color='primary'
-                    >
-                      Save
-                    </Button>
-                    <Button
-                      startIcon={<CancelIcon />}
-                      onClick={handleCancel}
-                      variant='outlined'
-                    >
-                      Cancel
-                    </Button>
-                  </Box>
-                )}
-              </Box>
-
-              {isEditing ? (
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <TextField
-                      fullWidth
-                      label='First Name'
-                      value={editData.firstName}
-                      onChange={e =>
-                        setEditData({ ...editData, firstName: e.target.value })
-                      }
-                    />
-                  </Grid>
-                  <Grid item xs={6}>
-                    <TextField
-                      fullWidth
-                      label='Last Name'
-                      value={editData.lastName}
-                      onChange={e =>
-                        setEditData({ ...editData, lastName: e.target.value })
-                      }
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label='Email'
-                      value={editData.email}
-                      onChange={e =>
-                        setEditData({ ...editData, email: e.target.value })
-                      }
-                    />
-                  </Grid>
-                  <Grid item xs={6}>
-                    <TextField
-                      fullWidth
-                      label='Phone'
-                      value={editData.phone}
-                      onChange={e =>
-                        setEditData({ ...editData, phone: e.target.value })
-                      }
-                    />
-                  </Grid>
-                  <Grid item xs={6}>
-                    <TextField
-                      fullWidth
-                      label='Location'
-                      value={editData.location}
-                      onChange={e =>
-                        setEditData({ ...editData, location: e.target.value })
-                      }
-                    />
-                  </Grid>
-                </Grid>
+          <Card sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', p: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Profile Information</Typography>
+              {!isEditing ? (
+                <GhostButton onClick={handleEdit}>Edit Profile</GhostButton>
               ) : (
-                <List>
-                  <ListItem>
-                    <ListItemIcon>
-                      <PersonIcon />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary='Full Name'
-                      secondary={`${profileData.firstName} ${profileData.lastName}`}
-                    />
-                  </ListItem>
-                  <ListItem>
-                    <ListItemIcon>
-                      <EmailIcon />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary='Email'
-                      secondary={profileData.email}
-                    />
-                  </ListItem>
-                  <ListItem>
-                    <ListItemIcon>
-                      <PhoneIcon />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary='Phone'
-                      secondary={profileData.phone}
-                    />
-                  </ListItem>
-                  <ListItem>
-                    <ListItemIcon>
-                      <LocationIcon />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary='Location'
-                      secondary={profileData.location}
-                    />
-                  </ListItem>
-                  <ListItem>
-                    <ListItemIcon>
-                      <BadgeIcon />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary='Member Since'
-                      secondary={new Date(
-                        profileData.joinDate
-                      ).toLocaleDateString()}
-                    />
-                  </ListItem>
-                </List>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <PrimaryButton onClick={handleSave}>Save</PrimaryButton>
+                  <GhostButton onClick={handleCancel}>Cancel</GhostButton>
+                </Box>
               )}
-            </CardContent>
+            </Box>
+
+            {isEditing ? (
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <TextField fullWidth label="First Name" value={editData.firstName} onChange={e => setEditData({ ...editData, firstName: e.target.value })} />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField fullWidth label="Last Name" value={editData.lastName} onChange={e => setEditData({ ...editData, lastName: e.target.value })} />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField fullWidth label="Email" value={editData.email} onChange={e => setEditData({ ...editData, email: e.target.value })} />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField fullWidth label="Phone" value={editData.phone} onChange={e => setEditData({ ...editData, phone: e.target.value })} />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField fullWidth label="Location" value={editData.location} onChange={e => setEditData({ ...editData, location: e.target.value })} />
+                </Grid>
+              </Grid>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {[
+                  ['Full Name', `${profileData.firstName} ${profileData.lastName}`],
+                  ['Email', profileData.email],
+                  ['Phone', profileData.phone],
+                  ['Location', profileData.location],
+                  ['Member Since', new Date(profileData.joinDate).toLocaleDateString()],
+                ].map(([label, value]) => (
+                  <Box key={label} sx={{ display: 'flex', borderBottom: '1px solid #F3F4F6', pb: 1.5 }}>
+                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#9CA3AF', width: 140 }}>{label}</Typography>
+                    <Typography sx={{ fontSize: 13, color: '#111827' }}>{value}</Typography>
+                  </Box>
+                ))}
+              </Box>
+            )}
           </Card>
         </Grid>
 
         {/* Certifications */}
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant='h6' gutterBottom>
-                Certifications
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {profileData.certifications.map((cert, index) => (
-                  <Chip
-                    key={index}
-                    label={cert}
-                    color='primary'
-                    variant='outlined'
-                  />
-                ))}
-              </Box>
-              <Button
-                variant='text'
-                size='small'
-                sx={{ mt: 2 }}
-                onClick={() => info('Certification management coming soon!')}
-              >
+          <Card sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', p: 3 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Certifications</Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              {profileData.certifications.map((cert, index) => (
+                <StatusChip key={index} kind="brand" label={cert} />
+              ))}
+            </Box>
+            <Box sx={{ mt: 2 }}>
+              <Box onClick={() => info('Certification management coming soon!')} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
                 Manage Certifications
-              </Button>
-            </CardContent>
+              </Box>
+            </Box>
           </Card>
         </Grid>
 
         {/* Notification Settings */}
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography
-                variant='h6'
-                gutterBottom
-                sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-              >
-                <NotificationsIcon />
-                Notification Preferences
-              </Typography>
-
-              <List>
-                <ListItem>
-                  <ListItemText
-                    primary='Email Notifications'
-                    secondary='Receive updates about classes and schedule changes'
-                  />
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={emailNotifications}
-                        onChange={() => handleNotificationChange('email')}
-                      />
-                    }
-                    label=''
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemText
-                    primary='SMS Notifications'
-                    secondary='Receive urgent notifications via text message'
-                  />
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={smsNotifications}
-                        onChange={() => handleNotificationChange('sms')}
-                      />
-                    }
-                    label=''
-                  />
-                </ListItem>
-              </List>
-            </CardContent>
+          <Card sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', p: 3 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Notification Preferences</Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Email Notifications</Typography>
+                  <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>Receive updates about classes and schedule changes</Typography>
+                </Box>
+                <FormControlLabel control={<Switch checked={emailNotifications} onChange={() => handleNotificationChange('email')} />} label="" />
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>SMS Notifications</Typography>
+                  <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>Receive urgent notifications via text message</Typography>
+                </Box>
+                <FormControlLabel control={<Switch checked={smsNotifications} onChange={() => handleNotificationChange('sms')} />} label="" />
+              </Box>
+            </Box>
           </Card>
         </Grid>
 
         {/* Security Settings */}
         <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <Typography
-                variant='h6'
-                gutterBottom
-                sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-              >
-                <SecurityIcon />
-                Security Settings
-              </Typography>
-
-              <Alert severity='info' sx={{ mb: 2 }}>
-                Keep your account secure by regularly updating your password and
-                reviewing your security settings.
-              </Alert>
-
-              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                <Button
-                  variant='outlined'
-                  onClick={() =>
-                    info('Password change functionality coming soon!')
-                  }
-                >
-                  Change Password
-                </Button>
-                <Button
-                  variant='outlined'
-                  onClick={() =>
-                    info('Two-factor authentication setup coming soon!')
-                  }
-                >
-                  Enable 2FA
-                </Button>
-                <Button
-                  variant='outlined'
-                  onClick={() => info('Login history view coming soon!')}
-                >
-                  View Login History
-                </Button>
-                <Button
-                  variant='outlined'
-                  startIcon={<DownloadIcon />}
-                  onClick={handleDownloadMyData}
-                  disabled={downloadingData}
-                >
-                  {downloadingData ? 'Downloading…' : 'Download My Data'}
-                </Button>
-              </Box>
-            </CardContent>
+          <Card sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', p: 3 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Security Settings</Typography>
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Keep your account secure by regularly updating your password and reviewing your security settings.
+            </Alert>
+            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+              <GhostButton onClick={() => info('Password change functionality coming soon!')}>Change Password</GhostButton>
+              <GhostButton onClick={() => info('Two-factor authentication setup coming soon!')}>Enable 2FA</GhostButton>
+              <GhostButton onClick={() => info('Login history view coming soon!')}>View Login History</GhostButton>
+              <GhostButton onClick={handleDownloadMyData} disabled={downloadingData}>
+                {downloadingData ? 'Downloading...' : 'Download My Data'}
+              </GhostButton>
+            </Box>
           </Card>
         </Grid>
       </Grid>

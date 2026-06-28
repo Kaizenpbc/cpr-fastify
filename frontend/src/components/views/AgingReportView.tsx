@@ -1,47 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
   Grid,
-  Card,
-  CardContent,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Button,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   TextField,
-  Chip,
   Alert,
   CircularProgress,
   Tabs,
   Tab,
-  IconButton,
   Tooltip,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Divider,
 } from '@mui/material';
-import {
-  Assessment as ReportIcon,
-  Download as DownloadIcon,
-  Refresh as RefreshIcon,
-  TrendingUp as TrendingUpIcon,
-  Warning as WarningIcon,
-  CheckCircle as CheckCircleIcon,
-  Schedule as ScheduleIcon,
-  Visibility as ViewIcon,
-  FilterList as FilterIcon,
-} from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
 import {
   PieChart,
@@ -57,6 +33,10 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import api from '../../services/api';
+import DataTable, { DataTableRow } from '../gtacpr/DataTable';
+import StatusChip from '../gtacpr/StatusChip';
+import StatCard from '../gtacpr/StatCard';
+import { PrimaryButton, GhostButton } from '../gtacpr/Buttons';
 
 const AgingReportView = () => {
   const [selectedTab, setSelectedTab] = useState(0);
@@ -85,7 +65,7 @@ const AgingReportView = () => {
       });
       return response.data.data;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch organizations for filter
@@ -109,7 +89,6 @@ const AgingReportView = () => {
   const handleExportCSV = () => {
     if (!reportData) return;
 
-    // Create CSV content
     const csvContent = [
       [
         'Aging Report - Generated ' +
@@ -152,7 +131,6 @@ const AgingReportView = () => {
       .map(row => row.join(','))
       .join('\n');
 
-    // Download CSV
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -174,33 +152,33 @@ const AgingReportView = () => {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const getStatusColor = (bucket: any) => {
+  const getBucketKind = (bucket: string): 'success' | 'warning' | 'danger' | 'neutral' => {
     switch (bucket) {
       case 'Current':
         return 'success';
       case '1-30 Days':
         return 'warning';
       case '31-60 Days':
-        return 'error';
+        return 'danger';
       case '61-90 Days':
-        return 'error';
+        return 'danger';
       case '90+ Days':
-        return 'error';
+        return 'danger';
       default:
-        return 'default';
+        return 'neutral';
     }
   };
 
-  const getRiskColor = (riskScore: any) => {
+  const getRiskKind = (riskScore: string): 'success' | 'warning' | 'danger' | 'neutral' => {
     switch (riskScore) {
       case 'Low':
         return 'success';
       case 'Medium':
         return 'warning';
       case 'High':
-        return 'error';
+        return 'danger';
       default:
-        return 'default';
+        return 'neutral';
     }
   };
 
@@ -219,7 +197,36 @@ const AgingReportView = () => {
       count: bucket.invoice_count,
     })) || [];
 
-  const COLORS = ['#4caf50', '#ff9800', '#f44336', '#9c27b0', '#e91e63'];
+  const COLORS = ['#16A34A', '#ED6C02', '#CC1F1F', '#9c27b0', '#e91e63'];
+
+  const agingSummaryColumns = [
+    { key: 'aging_bucket', label: 'Aging Bucket', width: '20%' },
+    { key: 'invoice_count', label: 'Invoice Count', width: '15%', align: 'right' as const },
+    { key: 'total_balance', label: 'Total Balance', width: '20%', align: 'right' as const },
+    { key: 'percentage_of_total', label: '% of Total', width: '15%', align: 'right' as const },
+    { key: 'avg_days_outstanding', label: 'Avg Days Outstanding', width: '20%', align: 'right' as const },
+    { key: 'actions', label: 'Actions', width: '10%', align: 'center' as const },
+  ];
+
+  const orgBreakdownColumns = [
+    { key: 'organization_name', label: 'Organization', width: '18%' },
+    { key: 'total_balance', label: 'Total Balance', width: '12%', align: 'right' as const },
+    { key: 'current_balance', label: 'Current', width: '12%', align: 'right' as const },
+    { key: 'days_1_30', label: '1-30 Days', width: '10%', align: 'right' as const },
+    { key: 'days_31_60', label: '31-60 Days', width: '10%', align: 'right' as const },
+    { key: 'days_61_90', label: '61-90 Days', width: '10%', align: 'right' as const },
+    { key: 'days_90_plus', label: '90+ Days', width: '10%', align: 'right' as const },
+    { key: 'risk_score', label: 'Risk Score', width: '10%', align: 'center' as const },
+  ];
+
+  const invoiceDetailColumns = [
+    { key: 'invoice_number', label: 'Invoice #', width: '16%' },
+    { key: 'organization_name', label: 'Organization', width: '22%' },
+    { key: 'amount', label: 'Amount', width: '14%', align: 'right' as const },
+    { key: 'balance_due', label: 'Balance Due', width: '14%', align: 'right' as const },
+    { key: 'due_date', label: 'Due Date', width: '16%' },
+    { key: 'days_outstanding', label: 'Days Outstanding', width: '18%', align: 'right' as const },
+  ];
 
   if (isLoading) {
     return (
@@ -230,7 +237,7 @@ const AgingReportView = () => {
         minHeight='400px'
       >
         <CircularProgress />
-        <Typography variant='h6' sx={{ ml: 2 }}>
+        <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#4B5563', ml: 2 }}>
           Generating Aging Report...
         </Typography>
       </Box>
@@ -240,7 +247,7 @@ const AgingReportView = () => {
   if (error) {
     return (
       <Alert severity='error' sx={{ m: 3 }}>
-        Error loading aging report: {error.message}
+        Error loading aging report: {(error as any).message}
       </Alert>
     );
   }
@@ -256,15 +263,12 @@ const AgingReportView = () => {
       >
         <Box>
           <Typography
-            variant="h4"
-            gutterBottom
-            sx={{ fontWeight: 'bold' }}
+            sx={{ fontSize: 22, fontWeight: 700, color: '#111827', mb: 0.5 }}
           >
-            <ReportIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
             Aging Report
           </Typography>
-          <Typography variant='body2' color='text.secondary'>
-            As of {formatDate(reportData?.report_metadata?.as_of_date)} •
+          <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+            As of {formatDate(reportData?.report_metadata?.as_of_date)} &bull;
             Generated{' '}
             {new Date(
               reportData?.report_metadata?.generated_at
@@ -273,173 +277,97 @@ const AgingReportView = () => {
         </Box>
         <Box display='flex' gap={1}>
           <Tooltip title='Refresh Report'>
-            <IconButton onClick={() => refetch()} color='primary'>
-              <RefreshIcon />
-            </IconButton>
+            <span>
+              <GhostButton size='small' onClick={() => refetch()}>
+                Refresh
+              </GhostButton>
+            </span>
           </Tooltip>
-          <Button
-            variant='outlined'
-            startIcon={<DownloadIcon />}
-            onClick={handleExportCSV}
-            size='small'
-          >
+          <GhostButton size='small' onClick={handleExportCSV}>
             Export CSV
-          </Button>
+          </GhostButton>
         </Box>
       </Box>
 
       {/* Filters */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant='h6' gutterBottom>
-            <FilterIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-            Report Filters
-          </Typography>
-          <Grid container spacing={2} alignItems='center'>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                fullWidth
-                label='As of Date'
-                type='date'
-                value={asOfDate}
-                onChange={e => setAsOfDate(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-                size='small'
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <FormControl fullWidth size='small'>
-                <InputLabel>Organization</InputLabel>
-                <Select
-                  value={organizationFilter}
-                  label='Organization'
-                  onChange={e => setOrganizationFilter(e.target.value)}
-                >
-                  <MenuItem value=''>All Organizations</MenuItem>
-                  {organizations?.map((org: any) => (
-                    <MenuItem key={org.id} value={org.id}>
-                      {org.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <Button
-                variant='contained'
-                onClick={() => refetch()}
-                fullWidth
-                startIcon={<RefreshIcon />}
-              >
-                Update Report
-              </Button>
-            </Grid>
+      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3, mb: 3 }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
+          Report Filters
+        </Typography>
+        <Grid container spacing={2} alignItems='center'>
+          <Grid item xs={12} sm={4}>
+            <TextField
+              fullWidth
+              label='As of Date'
+              type='date'
+              value={asOfDate}
+              onChange={e => setAsOfDate(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              size='small'
+            />
           </Grid>
-        </CardContent>
-      </Card>
+          <Grid item xs={12} sm={4}>
+            <FormControl fullWidth size='small'>
+              <InputLabel>Organization</InputLabel>
+              <Select
+                value={organizationFilter}
+                label='Organization'
+                onChange={e => setOrganizationFilter(e.target.value)}
+              >
+                <MenuItem value=''>All Organizations</MenuItem>
+                {organizations?.map((org: any) => (
+                  <MenuItem key={org.id} value={org.id}>
+                    {org.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <PrimaryButton fullWidth onClick={() => refetch()}>
+              Update Report
+            </PrimaryButton>
+          </Grid>
+        </Grid>
+      </Box>
 
       {/* Executive Summary */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
-          <Card
-            sx={{ bgcolor: 'primary.light', color: 'primary.contrastText' }}
-          >
-            <CardContent>
-              <Box
-                display='flex'
-                alignItems='center'
-                justifyContent='space-between'
-              >
-                <Box>
-                  <Typography variant='h6' component='div' fontWeight='bold'>
-                    {formatCurrency(
-                      reportData?.executive_summary?.total_outstanding
-                    )}
-                  </Typography>
-                  <Typography variant='body2'>Total Outstanding</Typography>
-                </Box>
-                <TrendingUpIcon sx={{ fontSize: 40, opacity: 0.8 }} />
-              </Box>
-              <Typography variant='caption' sx={{ mt: 1 }}>
-                {reportData?.executive_summary?.total_invoices} invoices
-              </Typography>
-            </CardContent>
-          </Card>
+          <StatCard
+            label='Total Outstanding'
+            value={formatCurrency(reportData?.executive_summary?.total_outstanding)}
+            sub={`${reportData?.executive_summary?.total_invoices ?? 0} invoices`}
+            dotColor='#1D4ED8'
+          />
         </Grid>
-
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ bgcolor: 'error.light', color: 'error.contrastText' }}>
-            <CardContent>
-              <Box
-                display='flex'
-                alignItems='center'
-                justifyContent='space-between'
-              >
-                <Box>
-                  <Typography variant='h6' component='div' fontWeight='bold'>
-                    {formatCurrency(
-                      reportData?.executive_summary?.total_overdue
-                    )}
-                  </Typography>
-                  <Typography variant='body2'>Total Overdue</Typography>
-                </Box>
-                <WarningIcon sx={{ fontSize: 40, opacity: 0.8 }} />
-              </Box>
-              <Typography variant='caption' sx={{ mt: 1 }}>
-                {reportData?.executive_summary?.overdue_invoices} invoices
-              </Typography>
-            </CardContent>
-          </Card>
+          <StatCard
+            label='Total Overdue'
+            value={formatCurrency(reportData?.executive_summary?.total_overdue)}
+            sub={`${reportData?.executive_summary?.overdue_invoices ?? 0} invoices`}
+            dotColor='#CC1F1F'
+          />
         </Grid>
-
         <Grid item xs={12} sm={6} md={3}>
-          <Card
-            sx={{ bgcolor: 'warning.light', color: 'warning.contrastText' }}
-          >
-            <CardContent>
-              <Box
-                display='flex'
-                alignItems='center'
-                justifyContent='space-between'
-              >
-                <Box>
-                  <Typography variant='h6' component='div' fontWeight='bold'>
-                    {reportData?.executive_summary?.overdue_percentage}%
-                  </Typography>
-                  <Typography variant='body2'>Overdue Rate</Typography>
-                </Box>
-                <ScheduleIcon sx={{ fontSize: 40, opacity: 0.8 }} />
-              </Box>
-            </CardContent>
-          </Card>
+          <StatCard
+            label='Overdue Rate'
+            value={`${reportData?.executive_summary?.overdue_percentage ?? 0}%`}
+            dotColor='#ED6C02'
+          />
         </Grid>
-
         <Grid item xs={12} sm={6} md={3}>
-          <Card
-            sx={{ bgcolor: 'success.light', color: 'success.contrastText' }}
-          >
-            <CardContent>
-              <Box
-                display='flex'
-                alignItems='center'
-                justifyContent='space-between'
-              >
-                <Box>
-                  <Typography variant='h6' component='div' fontWeight='bold'>
-                    {reportData?.executive_summary?.collection_efficiency}%
-                  </Typography>
-                  <Typography variant='body2'>Collection Efficiency</Typography>
-                </Box>
-                <CheckCircleIcon sx={{ fontSize: 40, opacity: 0.8 }} />
-              </Box>
-            </CardContent>
-          </Card>
+          <StatCard
+            label='Collection Efficiency'
+            value={`${reportData?.executive_summary?.collection_efficiency ?? 0}%`}
+            dotColor='#16A34A'
+          />
         </Grid>
       </Grid>
 
       {/* Charts and Tables */}
-      <Card>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', overflow: 'hidden' }}>
+        <Box sx={{ borderBottom: '1px solid #E5E7EB' }}>
           <Tabs value={selectedTab} onChange={handleTabChange}>
             <Tab label='Aging Summary' />
             <Tab label='Organization Breakdown' />
@@ -450,151 +378,99 @@ const AgingReportView = () => {
         {/* Aging Summary Tab */}
         {selectedTab === 0 && (
           <Box sx={{ p: 3 }}>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold' }}>
-                      Aging Bucket
-                    </TableCell>
-                    <TableCell align='right' sx={{ fontWeight: 'bold' }}>
-                      Invoice Count
-                    </TableCell>
-                    <TableCell align='right' sx={{ fontWeight: 'bold' }}>
-                      Total Balance
-                    </TableCell>
-                    <TableCell align='right' sx={{ fontWeight: 'bold' }}>
-                      % of Total
-                    </TableCell>
-                    <TableCell align='right' sx={{ fontWeight: 'bold' }}>
-                      Avg Days Outstanding
-                    </TableCell>
-                    <TableCell align='center' sx={{ fontWeight: 'bold' }}>
-                      Actions
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {reportData?.aging_summary?.map((bucket: any) => (
-                    <TableRow key={bucket.aging_bucket} hover>
-                      <TableCell>
-                        <Chip
-                          label={bucket.aging_bucket}
-                          color={getStatusColor(bucket.aging_bucket)}
-                          size='small'
-                        />
-                      </TableCell>
-                      <TableCell align='right'>
-                        <Typography variant='body2' fontWeight='medium'>
-                          {bucket.invoice_count}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align='right'>
-                        <Typography variant='body2' fontWeight='medium'>
-                          {formatCurrency(bucket.total_balance)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align='right'>
-                        <Typography variant='body2'>
-                          {bucket.percentage_of_total}%
-                        </Typography>
-                      </TableCell>
-                      <TableCell align='right'>
-                        <Typography variant='body2'>
-                          {bucket.avg_days_outstanding} days
-                        </Typography>
-                      </TableCell>
-                      <TableCell align='center'>
-                        <Tooltip title='View Details'>
-                          <IconButton
-                            size='small'
-                            onClick={() => handleBucketClick(bucket)}
-                          >
-                            <ViewIcon fontSize='small' />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <DataTable
+              columns={agingSummaryColumns}
+              shownCount={reportData?.aging_summary?.length ?? 0}
+              totalCount={reportData?.aging_summary?.length ?? 0}
+            >
+              {reportData?.aging_summary?.map((bucket: any) => (
+                <DataTableRow key={bucket.aging_bucket} columns={agingSummaryColumns}>
+                  {/* Aging Bucket */}
+                  <StatusChip kind={getBucketKind(bucket.aging_bucket)} label={bucket.aging_bucket} />
+
+                  {/* Invoice Count */}
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                    {bucket.invoice_count}
+                  </Typography>
+
+                  {/* Total Balance */}
+                  <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace' }}>
+                    {formatCurrency(bucket.total_balance)}
+                  </Typography>
+
+                  {/* % of Total */}
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                    {bucket.percentage_of_total}%
+                  </Typography>
+
+                  {/* Avg Days Outstanding */}
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                    {bucket.avg_days_outstanding} days
+                  </Typography>
+
+                  {/* Actions */}
+                  <Box
+                    onClick={() => handleBucketClick(bucket)}
+                    sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                  >
+                    View
+                  </Box>
+                </DataTableRow>
+              ))}
+            </DataTable>
           </Box>
         )}
 
         {/* Organization Breakdown Tab */}
         {selectedTab === 1 && (
           <Box sx={{ p: 3 }}>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold' }}>
-                      Organization
-                    </TableCell>
-                    <TableCell align='right' sx={{ fontWeight: 'bold' }}>
-                      Total Balance
-                    </TableCell>
-                    <TableCell align='right' sx={{ fontWeight: 'bold' }}>
-                      Current
-                    </TableCell>
-                    <TableCell align='right' sx={{ fontWeight: 'bold' }}>
-                      1-30 Days
-                    </TableCell>
-                    <TableCell align='right' sx={{ fontWeight: 'bold' }}>
-                      31-60 Days
-                    </TableCell>
-                    <TableCell align='right' sx={{ fontWeight: 'bold' }}>
-                      61-90 Days
-                    </TableCell>
-                    <TableCell align='right' sx={{ fontWeight: 'bold' }}>
-                      90+ Days
-                    </TableCell>
-                    <TableCell align='center' sx={{ fontWeight: 'bold' }}>
-                      Risk Score
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {reportData?.organization_breakdown?.map((org: any) => (
-                    <TableRow key={org.organization_id} hover>
-                      <TableCell>
-                        <Typography variant='body2' fontWeight='medium'>
-                          {org.organization_name}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align='right'>
-                        <Typography variant='body2' fontWeight='bold'>
-                          {formatCurrency(org.total_balance)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align='right'>
-                        {formatCurrency(org.current_balance)}
-                      </TableCell>
-                      <TableCell align='right'>
-                        {formatCurrency(org.days_1_30)}
-                      </TableCell>
-                      <TableCell align='right'>
-                        {formatCurrency(org.days_31_60)}
-                      </TableCell>
-                      <TableCell align='right'>
-                        {formatCurrency(org.days_61_90)}
-                      </TableCell>
-                      <TableCell align='right'>
-                        {formatCurrency(org.days_90_plus)}
-                      </TableCell>
-                      <TableCell align='center'>
-                        <Chip
-                          label={org.risk_score}
-                          color={getRiskColor(org.risk_score)}
-                          size='small'
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <DataTable
+              columns={orgBreakdownColumns}
+              shownCount={reportData?.organization_breakdown?.length ?? 0}
+              totalCount={reportData?.organization_breakdown?.length ?? 0}
+            >
+              {reportData?.organization_breakdown?.map((org: any) => (
+                <DataTableRow key={org.organization_id} columns={orgBreakdownColumns}>
+                  {/* Organization */}
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                    {org.organization_name}
+                  </Typography>
+
+                  {/* Total Balance */}
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827', fontFamily: 'monospace' }}>
+                    {formatCurrency(org.total_balance)}
+                  </Typography>
+
+                  {/* Current */}
+                  <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace' }}>
+                    {formatCurrency(org.current_balance)}
+                  </Typography>
+
+                  {/* 1-30 Days */}
+                  <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace' }}>
+                    {formatCurrency(org.days_1_30)}
+                  </Typography>
+
+                  {/* 31-60 Days */}
+                  <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace' }}>
+                    {formatCurrency(org.days_31_60)}
+                  </Typography>
+
+                  {/* 61-90 Days */}
+                  <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace' }}>
+                    {formatCurrency(org.days_61_90)}
+                  </Typography>
+
+                  {/* 90+ Days */}
+                  <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace' }}>
+                    {formatCurrency(org.days_90_plus)}
+                  </Typography>
+
+                  {/* Risk Score */}
+                  <StatusChip kind={getRiskKind(org.risk_score)} label={org.risk_score} />
+                </DataTableRow>
+              ))}
+            </DataTable>
           </Box>
         )}
 
@@ -603,7 +479,7 @@ const AgingReportView = () => {
           <Box sx={{ p: 3 }}>
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
-                <Typography variant='h6' gutterBottom>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
                   Aging Distribution
                 </Typography>
                 <ResponsiveContainer width='100%' height={300}>
@@ -627,12 +503,12 @@ const AgingReportView = () => {
                         />
                       ))}
                     </Pie>
-                    <ChartTooltip formatter={value => formatCurrency(value)} />
+                    <ChartTooltip formatter={(value: any) => formatCurrency(value)} />
                   </PieChart>
                 </ResponsiveContainer>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography variant='h6' gutterBottom>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
                   Aging Amounts by Bucket
                 </Typography>
                 <ResponsiveContainer width='100%' height={300}>
@@ -642,16 +518,16 @@ const AgingReportView = () => {
                     <YAxis
                       tickFormatter={value => `$${(value / 1000).toFixed(0)}K`}
                     />
-                    <ChartTooltip formatter={value => formatCurrency(value)} />
+                    <ChartTooltip formatter={(value: any) => formatCurrency(value)} />
                     <Legend />
-                    <Bar dataKey='amount' fill='#8884d8' />
+                    <Bar dataKey='amount' fill='#1D4ED8' />
                   </BarChart>
                 </ResponsiveContainer>
               </Grid>
             </Grid>
           </Box>
         )}
-      </Card>
+      </Box>
 
       {/* Detail Dialog */}
       <Dialog
@@ -665,47 +541,64 @@ const AgingReportView = () => {
         </DialogTitle>
         <DialogContent>
           {selectedBucket && (
-            <TableContainer>
-              <Table size='small'>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Invoice #</TableCell>
-                    <TableCell>Organization</TableCell>
-                    <TableCell align='right'>Amount</TableCell>
-                    <TableCell align='right'>Balance Due</TableCell>
-                    <TableCell>Due Date</TableCell>
-                    <TableCell align='right'>Days Outstanding</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {reportData?.invoice_details
-                    ?.filter(
-                      (invoice: any) =>
-                        invoice.aging_bucket === selectedBucket.aging_bucket
-                    )
-                    ?.map((invoice: any) => (
-                      <TableRow key={invoice.id}>
-                        <TableCell>{invoice.invoice_number}</TableCell>
-                        <TableCell>{invoice.organization_name}</TableCell>
-                        <TableCell align='right'>
-                          {formatCurrency(invoice.amount)}
-                        </TableCell>
-                        <TableCell align='right'>
-                          {formatCurrency(invoice.balance_due)}
-                        </TableCell>
-                        <TableCell>{formatDate(invoice.due_date)}</TableCell>
-                        <TableCell align='right'>
-                          {invoice.days_outstanding} days
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <DataTable
+              columns={invoiceDetailColumns}
+              shownCount={
+                reportData?.invoice_details?.filter(
+                  (invoice: any) =>
+                    invoice.aging_bucket === selectedBucket.aging_bucket
+                )?.length ?? 0
+              }
+              totalCount={
+                reportData?.invoice_details?.filter(
+                  (invoice: any) =>
+                    invoice.aging_bucket === selectedBucket.aging_bucket
+                )?.length ?? 0
+              }
+            >
+              {reportData?.invoice_details
+                ?.filter(
+                  (invoice: any) =>
+                    invoice.aging_bucket === selectedBucket.aging_bucket
+                )
+                ?.map((invoice: any) => (
+                  <DataTableRow key={invoice.id} columns={invoiceDetailColumns}>
+                    {/* Invoice # */}
+                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                      {invoice.invoice_number}
+                    </Typography>
+
+                    {/* Organization */}
+                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                      {invoice.organization_name}
+                    </Typography>
+
+                    {/* Amount */}
+                    <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace' }}>
+                      {formatCurrency(invoice.amount)}
+                    </Typography>
+
+                    {/* Balance Due */}
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827', fontFamily: 'monospace' }}>
+                      {formatCurrency(invoice.balance_due)}
+                    </Typography>
+
+                    {/* Due Date */}
+                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                      {formatDate(invoice.due_date)}
+                    </Typography>
+
+                    {/* Days Outstanding */}
+                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                      {invoice.days_outstanding} days
+                    </Typography>
+                  </DataTableRow>
+                ))}
+            </DataTable>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDetailDialogOpen(false)}>Close</Button>
+          <GhostButton onClick={() => setDetailDialogOpen(false)}>Close</GhostButton>
         </DialogActions>
       </Dialog>
     </Box>

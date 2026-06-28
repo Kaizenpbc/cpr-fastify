@@ -2,19 +2,11 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
-  Button,
   Select,
   MenuItem,
   FormControl,
   InputLabel,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Checkbox,
-  Paper,
   Alert,
   CircularProgress,
   Dialog,
@@ -22,56 +14,44 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  IconButton,
-  Tooltip,
-  Card,
-  CardContent,
-  Chip,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Person as PersonIcon,
-  Schedule as ScheduleIcon,
-} from '@mui/icons-material';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useTodayClasses, useClassStudents, useMarkAttendance } from '../../../services/instructorService';
 import { instructorApi } from '../../../services/api';
 import { handleError } from '../../../services/errorHandler';
+import DataTable, { DataTableRow } from '../../gtacpr/DataTable';
+import StatusChip from '../../gtacpr/StatusChip';
+import { PrimaryButton, GhostButton } from '../../gtacpr/Buttons';
+
+const studentColumns = [
+  { key: 'name', label: 'STUDENT NAME', width: '1.5fr' },
+  { key: 'email', label: 'EMAIL', width: '1.5fr' },
+  { key: 'present', label: 'PRESENT', width: '0.6fr', align: 'center' as const },
+  { key: 'status', label: 'STATUS', width: '0.7fr' },
+];
 
 const AttendanceView = ({ onAttendanceUpdate }: { onAttendanceUpdate: any }) => {
   const { logout } = useAuth();
   const navigate = useNavigate();
-  
-  // State
+
   const [selectedClass, setSelectedClass] = useState<any>(null);
   const [students, setStudents] = useState<any[]>([]);
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [error, setError] = useState('');
   const [addStudentDialog, setAddStudentDialog] = useState(false);
-  const [newStudent, setNewStudent] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-  });
+  const [newStudent, setNewStudent] = useState({ firstName: '', lastName: '', email: '' });
 
-  // Use centralized service hooks
   const { data: todaysClasses = [], isLoading: loading, error: classesError } = useTodayClasses();
   const { data: classStudents = [], isLoading: studentsQueryLoading } = useClassStudents(selectedClass?.courseId);
   const markAttendanceMutation = useMarkAttendance();
 
-  // Update students when class students data changes
   useEffect(() => {
-    if (classStudents && selectedClass) {
-      setStudents(classStudents);
-    }
+    if (classStudents && selectedClass) setStudents(classStudents);
   }, [classStudents, selectedClass]);
 
-  // Handle errors
   useEffect(() => {
-    if (classesError) {
-      setError('Failed to load today\'s classes');
-    }
+    if (classesError) setError('Failed to load today\'s classes');
   }, [classesError]);
 
   const handleClassChange = (event: any) => {
@@ -82,30 +62,18 @@ const AttendanceView = ({ onAttendanceUpdate }: { onAttendanceUpdate: any }) => 
 
   const handleAttendanceChange = async (studentId: any, attended: any) => {
     if (!selectedClass) return;
-
     try {
-      // Update local state immediately for better UX
-      setStudents(prev =>
-        prev.map(student =>
-          student.studentId === studentId
-            ? { ...student, attendance: attended, attendanceMarked: true }
-            : student
-        )
-      );
-
-      // Use centralized mutation
+      setStudents(prev => prev.map(student =>
+        student.studentId === studentId ? { ...student, attendance: attended, attendanceMarked: true } : student
+      ));
       await markAttendanceMutation.mutateAsync({
         courseId: selectedClass.courseId,
         students: students.map(student => ({
           studentId: student.studentId,
-          attended: student.studentId === studentId ? attended : student.attendance
-        }))
+          attended: student.studentId === studentId ? attended : student.attendance,
+        })),
       });
-
-      // Call onAttendanceUpdate to refresh parent's scheduled classes data
-      if (onAttendanceUpdate) {
-        onAttendanceUpdate();
-      }
+      if (onAttendanceUpdate) onAttendanceUpdate();
     } catch (error: any) {
       handleError(error, { component: 'AttendanceView', action: 'update attendance' });
       setError('Failed to update attendance');
@@ -117,22 +85,13 @@ const AttendanceView = ({ onAttendanceUpdate }: { onAttendanceUpdate: any }) => 
       setError('Please fill in at least first and last name');
       return;
     }
-
     try {
       const response = await instructorApi.addStudent(selectedClass.courseId, newStudent);
-
-      // Add new student to the list
       setStudents(prev => [...prev, response.data]);
-
-      // Clear form and close dialog
       setNewStudent({ firstName: '', lastName: '', email: '' });
       setAddStudentDialog(false);
       setError('');
-
-      // Call onAttendanceUpdate to refresh parent's scheduled classes data
-      if (onAttendanceUpdate) {
-        onAttendanceUpdate();
-      }
+      if (onAttendanceUpdate) onAttendanceUpdate();
     } catch (error: any) {
       handleError(error, { component: 'AttendanceView', action: 'add student' });
       setError('Failed to add student');
@@ -141,274 +100,111 @@ const AttendanceView = ({ onAttendanceUpdate }: { onAttendanceUpdate: any }) => 
 
   const formatTime = (timeString: any) => {
     if (!timeString) return '';
-    return timeString.slice(0, 5); // Convert "09:00:00" to "09:00"
+    return timeString.slice(0, 5);
   };
 
   if (loading) {
     return (
-      <Box
-        display='flex'
-        justifyContent='center'
-        alignItems='center'
-        minHeight='400px'
-      >
-        <CircularProgress />
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+        <CircularProgress size={48} />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography
-        variant='h4'
-        gutterBottom
-        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-      >
-        <ScheduleIcon />
-        Today's Attendance
-      </Typography>
-
-      {error && (
-        <Alert severity='error' sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {error && <Alert severity="error" onClose={() => setError('')}>{error}</Alert>}
 
       {todaysClasses.length === 0 ? (
-        <Card sx={{ mt: 2 }}>
-          <CardContent>
-            <Typography variant='h6' color='text.secondary' align='center'>
-              No classes scheduled for today
-            </Typography>
-            <Typography
-              variant='body2'
-              color='text.secondary'
-              align='center'
-              sx={{ mt: 1 }}
-            >
-              Check back on days when you have scheduled classes.
-            </Typography>
-          </CardContent>
-        </Card>
+        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ fontSize: 16, fontWeight: 600, color: '#9CA3AF' }}>No classes scheduled for today</Typography>
+          <Typography sx={{ fontSize: 13, color: '#9CA3AF', mt: 1 }}>Check back on days when you have scheduled classes.</Typography>
+        </Box>
       ) : (
         <>
           {/* Class Selection */}
-          <Paper sx={{ p: 2, mb: 3 }}>
-            <Typography variant='h6' gutterBottom>
-              Select Class for Attendance
-            </Typography>
+          <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Select Class for Attendance</Typography>
             <FormControl fullWidth>
               <InputLabel>Today's Classes</InputLabel>
-              <Select
-                value={selectedClass?.courseId || ''}
-                label="Today's Classes"
-                onChange={handleClassChange}
-              >
+              <Select value={selectedClass?.courseId || ''} label="Today's Classes" onChange={handleClassChange}>
                 {todaysClasses.map((course: any) => (
                   <MenuItem key={course.courseId} value={course.courseId}>
                     <Box>
-                      <Typography variant='body1'>
-                        {course.name} - {course.organizationName}
-                      </Typography>
-                      <Typography variant='body2' color='text.secondary'>
-                        {formatTime(course.startTime)} -{' '}
-                        {formatTime(course.endTime)} | {course.location}
-                      </Typography>
+                      <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{course.name} - {course.organizationName}</Typography>
+                      <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{formatTime(course.startTime)} - {formatTime(course.endTime)} | {course.location}</Typography>
                     </Box>
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
-          </Paper>
+          </Box>
 
           {/* Student Management */}
           {selectedClass && (
-            <Paper sx={{ p: 2 }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  mb: 2,
-                }}
-              >
-                <Typography variant='h6'>Student Attendance</Typography>
-                <Button
-                  variant='contained'
-                  startIcon={<AddIcon />}
-                  onClick={() => setAddStudentDialog(true)}
-                  size='small'
-                >
-                  Add Student
-                </Button>
+            <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Student Attendance</Typography>
+                <PrimaryButton onClick={() => setAddStudentDialog(true)}>+ Add Student</PrimaryButton>
               </Box>
 
               {/* Class Info */}
-              <Box
-                sx={{
-                  mb: 2,
-                  p: 2,
-                  bgcolor: 'background.default',
-                  borderRadius: 1,
-                }}
-              >
-                <Typography variant='subtitle1' gutterBottom>
-                  {selectedClass.name} -{' '}
-                  {selectedClass.organizationName}
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                  <Chip
-                    icon={<ScheduleIcon />}
-                    label={`${formatTime(selectedClass.startTime)} - ${formatTime(selectedClass.endTime)}`}
-                    size='small'
-                  />
-                  <Chip
-                    icon={<PersonIcon />}
-                    label={`${students.length} Students`}
-                    size='small'
-                  />
-                  <Chip
-                    label={selectedClass.location}
-                    size='small'
-                    variant='outlined'
-                  />
+              <Box sx={{ mb: 2, p: 2, bgcolor: '#F9FAFB', borderRadius: '8px' }}>
+                <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#111827', mb: 1 }}>{selectedClass.name} - {selectedClass.organizationName}</Typography>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <StatusChip kind="neutral" label={`${formatTime(selectedClass.startTime)} - ${formatTime(selectedClass.endTime)}`} />
+                  <StatusChip kind="neutral" label={`${students.length} Students`} />
+                  <StatusChip kind="neutral" label={selectedClass.location} />
                 </Box>
               </Box>
 
               {/* Students Table */}
               {studentsLoading ? (
-                <Box display='flex' justifyContent='center' p={2}>
-                  <CircularProgress size={24} />
-                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress size={24} /></Box>
               ) : students.length === 0 ? (
                 <Box sx={{ textAlign: 'center', py: 4 }}>
-                  <PersonIcon
-                    sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }}
-                  />
-                  <Typography variant='h6' color='text.secondary'>
-                    No Students Registered
-                  </Typography>
-                  <Typography variant='body2' color='text.secondary'>
-                    Add students to this class to mark attendance
-                  </Typography>
+                  <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#9CA3AF' }}>No Students Registered</Typography>
+                  <Typography sx={{ fontSize: 13, color: '#9CA3AF', mt: 0.5 }}>Add students to this class to mark attendance</Typography>
                 </Box>
               ) : (
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell sx={{ fontWeight: 'bold' }}>
-                          Student Name
-                        </TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Email</TableCell>
-                        <TableCell
-                          sx={{ fontWeight: 'bold', textAlign: 'center' }}
-                        >
-                          Present
-                        </TableCell>
-                        <TableCell
-                          sx={{ fontWeight: 'bold', textAlign: 'center' }}
-                        >
-                          Status
-                        </TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {students.map(student => (
-                        <TableRow key={student.studentId}>
-                          <TableCell>
-                            {student.firstName} {student.lastName}
-                          </TableCell>
-                          <TableCell>{student.email || '-'}</TableCell>
-                          <TableCell align='center'>
-                            <Checkbox
-                              checked={student.attendance || false}
-                              onChange={e =>
-                                handleAttendanceChange(
-                                  student.studentId,
-                                  e.target.checked
-                                )
-                              }
-                              color='primary'
-                            />
-                          </TableCell>
-                          <TableCell align='center'>
-                            <Chip
-                              label={
-                                student.attendanceMarked
-                                  ? student.attendance
-                                    ? 'Present'
-                                    : 'Absent'
-                                  : 'Not Marked'
-                              }
-                              color={
-                                student.attendanceMarked
-                                  ? student.attendance
-                                    ? 'success'
-                                    : 'error'
-                                  : 'default'
-                              }
-                              size='small'
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                <DataTable columns={studentColumns} shownCount={students.length} totalCount={students.length}>
+                  {students.map(student => (
+                    <DataTableRow key={student.studentId} columns={studentColumns}>
+                      <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{student.firstName} {student.lastName}</Typography>
+                      <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{student.email || '—'}</Typography>
+                      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                        <Checkbox
+                          checked={student.attendance || false}
+                          onChange={e => handleAttendanceChange(student.studentId, e.target.checked)}
+                          sx={{ '&.Mui-checked': { color: '#CC1F1F' } }}
+                        />
+                      </Box>
+                      <StatusChip
+                        kind={student.attendanceMarked ? (student.attendance ? 'success' : 'danger') : 'neutral'}
+                        label={student.attendanceMarked ? (student.attendance ? 'Present' : 'Absent') : 'Not Marked'}
+                      />
+                    </DataTableRow>
+                  ))}
+                </DataTable>
               )}
-            </Paper>
+            </Box>
           )}
         </>
       )}
 
       {/* Add Student Dialog */}
-      <Dialog
-        open={addStudentDialog}
-        onClose={() => setAddStudentDialog(false)}
-        maxWidth='sm'
-        fullWidth
-      >
-        <DialogTitle>Add Student to Class</DialogTitle>
+      <Dialog open={addStudentDialog} onClose={() => setAddStudentDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>Add Student to Class</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 1 }}>
-            <TextField
-              fullWidth
-              label='First Name'
-              value={newStudent.firstName}
-              onChange={e =>
-                setNewStudent(prev => ({ ...prev, firstName: e.target.value }))
-              }
-              margin='normal'
-              required
-            />
-            <TextField
-              fullWidth
-              label='Last Name'
-              value={newStudent.lastName}
-              onChange={e =>
-                setNewStudent(prev => ({ ...prev, lastName: e.target.value }))
-              }
-              margin='normal'
-              required
-            />
-            <TextField
-              fullWidth
-              label='Email (Optional)'
-              value={newStudent.email}
-              onChange={e =>
-                setNewStudent(prev => ({ ...prev, email: e.target.value }))
-              }
-              margin='normal'
-              type='email'
-            />
+            <TextField fullWidth label="First Name" value={newStudent.firstName} onChange={e => setNewStudent(prev => ({ ...prev, firstName: e.target.value }))} margin="normal" required />
+            <TextField fullWidth label="Last Name" value={newStudent.lastName} onChange={e => setNewStudent(prev => ({ ...prev, lastName: e.target.value }))} margin="normal" required />
+            <TextField fullWidth label="Email (Optional)" value={newStudent.email} onChange={e => setNewStudent(prev => ({ ...prev, email: e.target.value }))} margin="normal" type="email" />
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setAddStudentDialog(false)}>Cancel</Button>
-          <Button onClick={handleAddStudent} variant='contained'>
-            Add Student
-          </Button>
+        <DialogActions sx={{ p: 2 }}>
+          <GhostButton onClick={() => setAddStudentDialog(false)}>Cancel</GhostButton>
+          <PrimaryButton onClick={handleAddStudent}>Add Student</PrimaryButton>
         </DialogActions>
       </Dialog>
     </Box>

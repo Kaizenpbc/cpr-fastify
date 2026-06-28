@@ -1,14 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Container,
   Typography,
-  Paper,
-  Grid,
-  Button,
   CircularProgress,
   Alert,
-  IconButton,
   Tooltip,
   useTheme,
   Dialog,
@@ -18,12 +13,7 @@ import {
   DialogActions,
   Snackbar,
 } from '@mui/material';
-import {
-  Event as EventIcon,
-  EventAvailable as EventAvailableIcon,
-  EventBusy as EventBusyIcon,
-  HolidayVillage as HolidayVillageIcon,
-} from '@mui/icons-material';
+import { PrimaryButton, GhostButton } from '../../gtacpr/Buttons';
 import { format } from 'date-fns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -351,15 +341,14 @@ const AvailabilityView: React.FC<AvailabilityViewProps> = ({
   }
 
   return (
-    <Container maxWidth='lg'>
-      <Paper elevation={3} sx={{ p: 3, mt: 3 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.05)', p: 3 }}>
         <Box sx={{ mb: 3 }}>
-          <Typography variant='h5' gutterBottom>
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>
             Manage Your Availability
           </Typography>
-          <Typography variant='body1' color='text.secondary'>
-            Click on dates to mark them as available or unavailable for
-            teaching.
+          <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+            Click on dates to mark them as available or unavailable for teaching.
           </Typography>
         </Box>
 
@@ -388,8 +377,8 @@ const AvailabilityView: React.FC<AvailabilityViewProps> = ({
             </LocalizationProvider>
           </Box>
           <Box sx={{ flex: '0 0 auto', width: { xs: '100%', md: '300px' } }}>
-            <Paper elevation={2} sx={{ p: 2 }}>
-              <Typography variant='h6' gutterBottom>
+            <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 2 }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1.5 }}>
                 Legend
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -451,11 +440,11 @@ const AvailabilityView: React.FC<AvailabilityViewProps> = ({
                   </Typography>
                 </Box>
               </Box>
-            </Paper>
+            </Box>
 
             {/* Additional Info Panel */}
-            <Paper elevation={2} sx={{ p: 2, mt: 2 }}>
-              <Typography variant='h6' gutterBottom>
+            <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 2, mt: 2 }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1.5 }}>
                 Quick Stats
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -466,10 +455,10 @@ const AvailabilityView: React.FC<AvailabilityViewProps> = ({
                   Scheduled Classes: <strong>{scheduledClasses.length}</strong>
                 </Typography>
               </Box>
-            </Paper>
+            </Box>
           </Box>
         </Box>
-      </Paper>
+      </Box>
 
       {/* Confirmation Dialog */}
       <Dialog
@@ -490,20 +479,11 @@ const AvailabilityView: React.FC<AvailabilityViewProps> = ({
               : `Are you sure you want to remove your availability for ${confirmation.date}?`}
           </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleConfirmationClose} color='inherit'>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirmationConfirm}
-            color={confirmation.action === 'add' ? 'success' : 'error'}
-            variant='contained'
-            autoFocus
-          >
-            {confirmation.action === 'add'
-              ? 'Add Availability'
-              : 'Remove Availability'}
-          </Button>
+        <DialogActions sx={{ p: 2 }}>
+          <GhostButton onClick={handleConfirmationClose}>Cancel</GhostButton>
+          <PrimaryButton onClick={handleConfirmationConfirm}>
+            {confirmation.action === 'add' ? 'Add Availability' : 'Remove Availability'}
+          </PrimaryButton>
         </DialogActions>
       </Dialog>
 
@@ -514,7 +494,7 @@ const AvailabilityView: React.FC<AvailabilityViewProps> = ({
         onClose={() => setSuccessMessage('')}
         message={successMessage}
       />
-    </Container>
+    </Box>
   );
 };
 

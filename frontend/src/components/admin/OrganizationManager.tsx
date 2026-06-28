@@ -1,46 +1,37 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as api from '../../services/api';
-import {
-  Box,
-  Typography,
-  Button,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  CircularProgress,
-  Alert,
-  IconButton,
-} from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-// Import Add/Edit Dialog component
+import { Box, Typography, CircularProgress, Alert } from '@mui/material';
 import OrganizationDialog from './OrganizationDialog';
-// Phone formatting
-import {
-  formatPhoneNumber,
-  formatPhoneNumberIntl,
-} from 'react-phone-number-input'; // Use built-in formatters
+import { formatPhoneNumber } from 'react-phone-number-input';
+import DataTable, { DataTableRow } from '../gtacpr/DataTable';
+import UserAvatar from '../gtacpr/UserAvatar';
+import { PrimaryButton } from '../gtacpr/Buttons';
 
-// Helper to safely format phone numbers
 const formatPhone = (phoneString: any) => {
-  if (!phoneString) return '-';
-  // Use formatPhoneNumber for national format, formatPhoneNumberIntl for international
-  // formatPhoneNumber might return undefined if invalid, so handle that
-  return formatPhoneNumber(phoneString) || phoneString; // Fallback to original string if formatting fails
+  if (!phoneString) return '—';
+  return formatPhoneNumber(phoneString) || phoneString;
 };
+
+const columns = [
+  { key: 'org', label: 'ORGANIZATION', width: '1.6fr' },
+  { key: 'contact', label: 'CONTACT', width: '1fr' },
+  { key: 'email', label: 'EMAIL', width: '1.2fr' },
+  { key: 'phone', label: 'PHONE', width: '1fr' },
+  { key: 'address', label: 'ADDRESS', width: '1.4fr' },
+  { key: 'actions', label: '', width: '0.6fr', align: 'right' as const },
+];
+
+function getInitials(name?: string): string {
+  if (!name) return '?';
+  return name.split(' ').map(p => p[0] || '').join('').slice(0, 2).toUpperCase();
+}
 
 function OrganizationManager() {
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  // State for Add/Edit Dialog
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingOrg, setEditingOrg] = useState(null); // null for Add, org object for Edit
+  const [editingOrg, setEditingOrg] = useState(null);
 
   const fetchOrganizations = useCallback(async () => {
     setLoading(true);
@@ -55,147 +46,67 @@ function OrganizationManager() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchOrganizations();
-  }, [fetchOrganizations]);
+  useEffect(() => { fetchOrganizations(); }, [fetchOrganizations]);
 
-  const handleAddOpen = () => {
-    setEditingOrg(null); // Set to null for Add mode
-    setDialogOpen(true);
-    // alert('Add Organization dialog not implemented yet.'); // Remove placeholder
-  };
-
-  const handleEditOpen = (org: any) => {
-    setEditingOrg(org); // Set the org data for Edit mode
-    setDialogOpen(true);
-    // alert(`Edit Organization ${org.organizationid} dialog not implemented yet.`); // Remove placeholder
-  };
-
+  const handleAddOpen = () => { setEditingOrg(null); setDialogOpen(true); };
+  const handleEditOpen = (org: any) => { setEditingOrg(org); setDialogOpen(true); };
   const handleDelete = async (orgId: any) => {
-    // Add confirmation dialog later
-    if (
-      window.confirm(
-        `Are you sure you want to delete organization ID ${orgId}?`
-      )
-    ) {
-      alert(`DELETE Organization ${orgId} API call not implemented yet.`); // Placeholder
-      // Implement actual delete API call later
+    if (window.confirm(`Are you sure you want to delete organization ID ${orgId}?`)) {
+      alert(`DELETE Organization ${orgId} API call not implemented yet.`);
     }
   };
+  const handleDialogClose = () => { setDialogOpen(false); setEditingOrg(null); };
+  const handleDialogSave = () => { fetchOrganizations(); };
 
-  const handleDialogClose = () => {
-    setDialogOpen(false);
-    setEditingOrg(null);
+  const formatAddress = (org: any) => {
+    const parts = [org.addressStreet, org.addressCity, org.addressProvince].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : '—';
   };
 
-  const handleDialogSave = () => {
-    fetchOrganizations(); // Refresh list after save
-    // Dialog will close itself via its own logic
-  };
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+        <CircularProgress size={48} />
+      </Box>
+    );
+  }
 
   return (
-    <Paper sx={{ p: 2, mt: 2 }}>
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 2,
-        }}
-      >
-        <Typography variant='h6'>Manage Organizations</Typography>
-        <Button
-          variant='contained'
-          startIcon={<AddIcon />}
-          onClick={handleAddOpen}
-        >
-          Add Organization
-        </Button>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {error && <Alert severity="error">{error}</Alert>}
+
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <PrimaryButton onClick={handleAddOpen}>+ Add Organization</PrimaryButton>
       </Box>
 
-      {error && (
-        <Alert severity='error' sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-          <CircularProgress />
+      {organizations.length === 0 ? (
+        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ color: '#9CA3AF', fontSize: 14 }}>No organizations found.</Typography>
         </Box>
       ) : (
-        <TableContainer>
-          <Table stickyHeader size='small'>
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 'bold' }}>ID</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>
-                  Organization Name
-                </TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Contact Name</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Email</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Phone</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Address</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {organizations.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={9} align='center'>
-                    No organizations found.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                organizations.map((org, index) => (
-                  <TableRow
-                    key={org.id}
-                    hover
-                    sx={{
-                      backgroundColor: index % 2 !== 0 ? '#f9f9f9' : 'inherit',
-                    }}
-                  >
-                    <TableCell>{org.id}</TableCell>
-                    <TableCell>{org.organizationName}</TableCell>
-                    <TableCell>{org.contactName || '-'}</TableCell>
-                    <TableCell>{org.contactEmail || '-'}</TableCell>
-                    <TableCell>{formatPhone(org.contactPhone)}</TableCell>
-                    <TableCell>
-                      {`${org.addressStreet || ''}${org.addressStreet && (org.addressCity || org.addressProvince) ? ', ' : ''}${org.addressCity || ''}${org.addressCity && org.addressProvince ? ', ' : ''}${org.addressProvince || ''}` ||
-                        '-'}
-                    </TableCell>
-                    <TableCell>
-                      <IconButton
-                        size='small'
-                        onClick={() => handleEditOpen(org)}
-                        title='Edit'
-                      >
-                        <EditIcon fontSize='small' />
-                      </IconButton>
-                      <IconButton
-                        size='small'
-                        onClick={() => handleDelete(org.id)}
-                        title='Delete'
-                      >
-                        <DeleteIcon fontSize='small' />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <DataTable columns={columns} shownCount={organizations.length} totalCount={organizations.length}>
+          {organizations.map(org => (
+            <DataTableRow key={org.id} columns={columns}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <UserAvatar initials={getInitials(org.organizationName)} />
+                <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{org.organizationName}</Typography>
+              </Box>
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{org.contactName || '—'}</Typography>
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{org.contactEmail || '—'}</Typography>
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatPhone(org.contactPhone)}</Typography>
+              <Typography sx={{ fontSize: 12.5, color: '#4B5563' }}>{formatAddress(org)}</Typography>
+              <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                <Box onClick={() => handleEditOpen(org)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Edit</Box>
+                <Typography sx={{ fontSize: 12, color: '#E5E7EB' }}>|</Typography>
+                <Box onClick={() => handleDelete(org.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' } }}>Delete</Box>
+              </Box>
+            </DataTableRow>
+          ))}
+        </DataTable>
       )}
 
-      {/* Add/Edit Dialog */}
-      <OrganizationDialog
-        open={dialogOpen}
-        onClose={handleDialogClose}
-        onSave={handleDialogSave}
-        organization={editingOrg}
-      />
-    </Paper>
+      <OrganizationDialog open={dialogOpen} onClose={handleDialogClose} onSave={handleDialogSave} organization={editingOrg} />
+    </Box>
   );
 }
 

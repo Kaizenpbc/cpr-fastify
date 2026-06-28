@@ -1,20 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Card,
-  CardContent,
   Typography,
-  Grid,
-  Chip,
-  IconButton,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -22,22 +9,18 @@ import {
   Alert,
   CircularProgress,
   Pagination,
-  Tooltip,
   TextField,
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  Grid,
 } from '@mui/material';
-import {
-  Visibility as VisibilityIcon,
-  CheckCircle as OverrideIcon,
-  Cancel as RejectIcon,
-  Refresh as RefreshIcon,
-  Warning as WarningIcon,
-  Assignment as AssignmentIcon
-} from '@mui/icons-material';
 import { hrService } from '../../services/hrService';
+import StatCard from '../gtacpr/StatCard';
+import StatusChip from '../gtacpr/StatusChip';
+import DataTable, { DataTableRow } from '../gtacpr/DataTable';
+import { PrimaryButton, GhostButton } from '../gtacpr/Buttons';
 
 interface ReturnedPaymentRequest {
   id: number;
@@ -58,48 +41,40 @@ interface ReturnedPaymentRequest {
   updatedAt: string;
 }
 
-interface ReturnedPaymentRequestDetailDialogProps {
+const requestColumns = [
+  { key: 'id', label: 'ID', width: '0.3fr' },
+  { key: 'instructor', label: 'INSTRUCTOR', width: '1.2fr' },
+  { key: 'amount', label: 'AMOUNT', width: '0.7fr', align: 'right' as const },
+  { key: 'week', label: 'WEEK STARTING', width: '0.8fr' },
+  { key: 'hours', label: 'HOURS / COURSES', width: '0.8fr' },
+  { key: 'returned', label: 'RETURNED DATE', width: '0.8fr' },
+  { key: 'actions', label: '', width: '0.5fr', align: 'right' as const },
+];
+
+// Detail Dialog
+const ReturnedPaymentRequestDetailDialog: React.FC<{
   open: boolean;
   request: ReturnedPaymentRequest | null;
   onClose: () => void;
   onActionSuccess?: () => void;
-}
-
-const ReturnedPaymentRequestDetailDialog: React.FC<ReturnedPaymentRequestDetailDialogProps> = ({
-  open,
-  request,
-  onClose,
-  onActionSuccess
-}) => {
+}> = ({ open, request, onClose, onActionSuccess }) => {
   const [action, setAction] = useState<'override_approve' | 'final_reject'>('override_approve');
   const [notes, setNotes] = useState('');
   const [processing, setProcessing] = useState(false);
 
-  const handleClose = () => {
-    onClose();
-    setAction('override_approve');
-    setNotes('');
-    setProcessing(false);
-  };
+  const handleClose = () => { onClose(); setAction('override_approve'); setNotes(''); };
 
   const handleProcessRequest = async () => {
-    if (!request) return;
-    
-    if (!notes.trim()) {
+    if (!request || !notes.trim()) {
       alert('Notes are required when processing returned payment request.');
       return;
     }
-    
     setProcessing(true);
     try {
       await hrService.processReturnedPaymentRequest(request.id, action, notes.trim());
-      
-      if (onActionSuccess) {
-        onActionSuccess();
-      }
+      if (onActionSuccess) onActionSuccess();
       handleClose();
     } catch (error: any) {
-      console.error('Error processing returned payment request:', error);
       alert('Failed to process payment request. Please try again.');
     } finally {
       setProcessing(false);
@@ -110,142 +85,96 @@ const ReturnedPaymentRequestDetailDialog: React.FC<ReturnedPaymentRequestDetailD
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
-      <DialogTitle>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="h5">
-            Review Returned Payment Request
-          </Typography>
-          <Chip 
-            label="RETURNED TO HR" 
-            color="warning"
-            size="medium"
-          />
-        </Box>
+      <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        Review Returned Payment Request
+        <StatusChip kind="warning" label="RETURNED TO HR" />
       </DialogTitle>
       <DialogContent>
-        <Grid container spacing={3}>
-          {/* Instructor Information */}
-          <Grid item xs={12} md={6}>
-            <Card variant="outlined">
-              <CardContent>
-                <Typography variant="h6" gutterBottom color="primary">
-                  👤 Instructor Information
-                </Typography>
-                <Typography><strong>Name:</strong> {request.instructorName}</Typography>
-                <Typography><strong>Email:</strong> {request.instructorEmail}</Typography>
-                <Typography><strong>ID:</strong> {request.instructorId}</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
+        <Box sx={{ pt: 1 }}>
+          <Grid container spacing={2}>
+            {/* Instructor Information */}
+            <Grid item xs={12} md={6}>
+              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 3 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Instructor Information</Typography>
+                {[['Name', request.instructorName], ['Email', request.instructorEmail], ['ID', request.instructorId]].map(([l, v]) => (
+                  <Box key={String(l)} sx={{ display: 'flex', py: 0.5 }}>
+                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#9CA3AF', width: 60 }}>{l}</Typography>
+                    <Typography sx={{ fontSize: 13, color: '#111827' }}>{v}</Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Grid>
 
-          {/* Payment Information */}
-          <Grid item xs={12} md={6}>
-            <Card variant="outlined">
-              <CardContent>
-                <Typography variant="h6" gutterBottom color="primary">
-                  💰 Payment Information
-                </Typography>
-                <Typography variant="h5" color="success.main" fontWeight="bold">
-                  ${Number(request.amount).toFixed(2)}
-                </Typography>
-                <Typography><strong>Week Starting:</strong> {new Date(request.weekStartDate).toLocaleDateString()}</Typography>
-                <Typography><strong>Hours:</strong> {request.totalHours}h</Typography>
-                <Typography><strong>Courses:</strong> {request.coursesTaught}</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
+            {/* Payment Information */}
+            <Grid item xs={12} md={6}>
+              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 3 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Payment Information</Typography>
+                <Typography sx={{ fontSize: 24, fontWeight: 700, fontFamily: 'monospace', color: '#16A34A', mb: 1 }}>${Number(request.amount).toFixed(2)}</Typography>
+                {[['Week Starting', new Date(request.weekStartDate).toLocaleDateString()], ['Hours', `${request.totalHours}h`], ['Courses', request.coursesTaught]].map(([l, v]) => (
+                  <Box key={String(l)} sx={{ display: 'flex', py: 0.25 }}>
+                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#9CA3AF', width: 100 }}>{l}</Typography>
+                    <Typography sx={{ fontSize: 13, color: '#111827' }}>{v}</Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Grid>
 
-          {/* Payment Breakdown */}
-          <Grid item xs={12} md={6}>
-            <Card variant="outlined">
-              <CardContent>
-                <Typography variant="h6" gutterBottom color="primary">
-                  🧮 Payment Breakdown
-                </Typography>
-                <Typography><strong>Hourly Rate:</strong> ${request.hourlyRate}/hr</Typography>
-                <Typography><strong>Course Bonus:</strong> ${request.courseBonus}/course</Typography>
-                <Typography><strong>Base Amount:</strong> ${Number(request.baseAmount).toFixed(2)}</Typography>
-                <Typography><strong>Bonus Amount:</strong> ${Number(request.bonusAmount).toFixed(2)}</Typography>
-                <Typography><strong>Pay Tier:</strong> {request.tierName}</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
+            {/* Payment Breakdown */}
+            <Grid item xs={12} md={6}>
+              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 3 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Payment Breakdown</Typography>
+                {[
+                  ['Hourly Rate', `$${request.hourlyRate}/hr`],
+                  ['Course Bonus', `$${request.courseBonus}/course`],
+                  ['Base Amount', `$${Number(request.baseAmount).toFixed(2)}`],
+                  ['Bonus Amount', `$${Number(request.bonusAmount).toFixed(2)}`],
+                  ['Pay Tier', request.tierName],
+                ].map(([l, v]) => (
+                  <Box key={String(l)} sx={{ display: 'flex', py: 0.25 }}>
+                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#9CA3AF', width: 110 }}>{l}</Typography>
+                    <Typography sx={{ fontSize: 13, fontFamily: 'monospace', color: '#111827' }}>{v}</Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Grid>
 
-          {/* Accountant Notes */}
-          <Grid item xs={12} md={6}>
-            <Card variant="outlined" sx={{ bgcolor: 'warning.50' }}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom color="warning.main">
-                  ⚠️ Accountant Notes
-                </Typography>
-                <Typography variant="body2" sx={{ bgcolor: 'white', p: 1, borderRadius: 1 }}>
-                  {request.notes || 'No notes provided'}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
+            {/* Accountant Notes */}
+            <Grid item xs={12} md={6}>
+              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 3, bgcolor: '#FFFBEB' }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Accountant Notes</Typography>
+                <Typography sx={{ fontSize: 13, color: '#111827', p: 1, bgcolor: '#fff', borderRadius: '6px' }}>{request.notes || 'No notes provided'}</Typography>
+              </Box>
+            </Grid>
 
-          {/* HR Decision Section */}
-          <Grid item xs={12}>
-            <Card variant="outlined" sx={{ bgcolor: 'primary.50' }}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom color="primary">
-                  🎯 HR Decision Required
-                </Typography>
+            {/* HR Decision */}
+            <Grid item xs={12}>
+              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 3, bgcolor: '#F0F9FF' }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#1E40AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>HR Decision Required</Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
                     <FormControl fullWidth>
                       <InputLabel>Action</InputLabel>
-                      <Select
-                        value={action}
-                        onChange={(e) => setAction(e.target.value as 'override_approve' | 'final_reject')}
-                        label="Action"
-                      >
-                        <MenuItem value="override_approve">✅ Override & Approve</MenuItem>
-                        <MenuItem value="final_reject">❌ Final Rejection</MenuItem>
+                      <Select value={action} onChange={(e) => setAction(e.target.value as any)} label="Action">
+                        <MenuItem value="override_approve">Override & Approve</MenuItem>
+                        <MenuItem value="final_reject">Final Rejection</MenuItem>
                       </Select>
                     </FormControl>
                   </Grid>
                   <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      multiline
-                      rows={4}
-                      label="HR Decision Notes (Required)"
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder={
-                        action === 'override_approve' 
-                          ? 'Explain why you are overriding the accountant\'s decision...'
-                          : 'Explain why you are confirming the final rejection...'
-                      }
-                      required
-                    />
+                    <TextField fullWidth multiline rows={4} label="HR Decision Notes (Required)" value={notes} onChange={(e) => setNotes(e.target.value)}
+                      placeholder={action === 'override_approve' ? "Explain why you are overriding the accountant's decision..." : 'Explain why you are confirming the final rejection...'} required />
                   </Grid>
                 </Grid>
-              </CardContent>
-            </Card>
+              </Box>
+            </Grid>
           </Grid>
-        </Grid>
+        </Box>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose} disabled={processing}>
-          Cancel
-        </Button>
-        <Button
-          onClick={handleProcessRequest}
-          variant="contained"
-          color={action === 'override_approve' ? 'success' : 'error'}
-          disabled={processing || !notes.trim()}
-          startIcon={processing ? <CircularProgress size={20} /> : undefined}
-        >
-          {processing 
-            ? 'Processing...' 
-            : action === 'override_approve' 
-              ? 'Override & Approve' 
-              : 'Final Rejection'
-          }
-        </Button>
+      <DialogActions sx={{ p: 2 }}>
+        <GhostButton onClick={handleClose} disabled={processing}>Cancel</GhostButton>
+        <PrimaryButton onClick={handleProcessRequest} disabled={processing || !notes.trim()}>
+          {processing ? 'Processing...' : action === 'override_approve' ? 'Override & Approve' : 'Final Rejection'}
+        </PrimaryButton>
       </DialogActions>
     </Dialog>
   );
@@ -257,198 +186,86 @@ const ReturnedPaymentRequests: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<ReturnedPaymentRequest | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    pages: 0
-  });
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
 
   const loadData = async () => {
     setLoading(true);
     setError(null);
-    
     try {
-      const data = await hrService.getReturnedPaymentRequests({
-        page: pagination.page,
-        limit: pagination.limit
-      }) as {
+      const data = await hrService.getReturnedPaymentRequests({ page: pagination.page, limit: pagination.limit }) as {
         requests: ReturnedPaymentRequest[];
-        pagination: { page: number; limit: number; total: number; pages: number }
+        pagination: { page: number; limit: number; total: number; pages: number };
       };
-
       setRequests(data.requests);
       setPagination(data.pagination);
     } catch (err: any) {
       setError('Failed to load returned payment requests');
-      console.error('Error loading returned payment requests:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, [pagination.page]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'returned_to_hr': return 'warning';
-      default: return 'default';
-    }
-  };
+  useEffect(() => { loadData(); }, [pagination.page]);
 
   if (loading && requests.length === 0) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
-    );
+    return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}><CircularProgress size={48} /></Box>;
   }
 
   return (
-    <Box>
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {error && <Alert severity="error" onClose={() => setError(null)}>{error}</Alert>}
 
       {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Box>
-          <Typography variant="h4" gutterBottom>
-            🔄 Returned Payment Requests
-          </Typography>
-          <Typography variant="body1" color="textSecondary">
-            Review payment requests returned by accounting for HR decision
-          </Typography>
-        </Box>
-        <Button
-          variant="outlined"
-          startIcon={<RefreshIcon />}
-          onClick={loadData}
-          disabled={loading}
-        >
-          Refresh
-        </Button>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Review payment requests returned by accounting for HR decision</Typography>
+        <GhostButton onClick={loadData} disabled={loading}>Refresh</GhostButton>
       </Box>
 
-      {/* Statistics */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <WarningIcon color="warning" sx={{ mr: 1 }} />
-                <Box>
-                  <Typography variant="h4">{requests.length}</Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Returned Requests
-                  </Typography>
-                </Box>
+      {/* Stats */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+        <StatCard label="Returned Requests" value={requests.length} sub="Awaiting HR review" dotColor="#ED6C02" />
+      </Box>
+
+      {/* Table */}
+      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
+        {requests.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 4 }}>
+            <Typography sx={{ fontSize: 16, fontWeight: 600, color: '#9CA3AF' }}>No Returned Payment Requests</Typography>
+            <Typography sx={{ fontSize: 13, color: '#9CA3AF', mt: 0.5 }}>All payment requests have been processed or are still pending</Typography>
+          </Box>
+        ) : (
+          <>
+            <DataTable columns={requestColumns} shownCount={requests.length} totalCount={pagination.total}>
+              {requests.map((request) => (
+                <DataTableRow key={request.id} columns={requestColumns}>
+                  <Typography sx={{ fontSize: 13, fontFamily: 'monospace', color: '#4B5563' }}>{request.id}</Typography>
+                  <Box>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{request.instructorName}</Typography>
+                    <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>ID: {request.instructorId}</Typography>
+                  </Box>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, fontFamily: 'monospace', color: '#111827', textAlign: 'right' }}>${Number(request.amount).toFixed(2)}</Typography>
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{new Date(request.weekStartDate).toLocaleDateString()}</Typography>
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{request.totalHours}h / {request.coursesTaught} courses</Typography>
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{new Date(request.updatedAt).toLocaleDateString()}</Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <Box onClick={() => { setSelectedRequest(request); setDetailDialogOpen(true); }} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Review</Box>
+                  </Box>
+                </DataTableRow>
+              ))}
+            </DataTable>
+
+            {pagination.pages > 1 && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <Pagination count={pagination.pages} page={pagination.page} onChange={(_, p) => setPagination({ ...pagination, page: p })} />
               </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+            )}
+          </>
+        )}
+      </Box>
 
-      {/* Returned Payment Requests Table */}
-      <Card>
-        <CardContent>
-          {requests.length === 0 ? (
-            <Box textAlign="center" py={4}>
-              <AssignmentIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-              <Typography variant="h6" color="textSecondary">
-                No Returned Payment Requests
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                All payment requests have been processed or are still pending
-              </Typography>
-            </Box>
-          ) : (
-            <>
-              <TableContainer component={Paper}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>ID</TableCell>
-                      <TableCell>Instructor</TableCell>
-                      <TableCell>Amount</TableCell>
-                      <TableCell>Week Starting</TableCell>
-                      <TableCell>Hours/Courses</TableCell>
-                      <TableCell>Returned Date</TableCell>
-                      <TableCell>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {requests.map((request) => (
-                      <TableRow key={request.id} hover>
-                        <TableCell>{request.id}</TableCell>
-                        <TableCell>
-                          <Typography variant="body2">{request.instructorName}</Typography>
-                          <Typography variant="caption" color="textSecondary">
-                            ID: {request.instructorId}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" fontWeight="bold">
-                            ${Number(request.amount).toFixed(2)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>{new Date(request.weekStartDate).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <Typography variant="body2">
-                            {request.totalHours}h / {request.coursesTaught} courses
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          {new Date(request.updatedAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <Tooltip title="Review Details">
-                            <IconButton
-                              size="small"
-                              onClick={() => {
-                                setSelectedRequest(request);
-                                setDetailDialogOpen(true);
-                              }}
-                            >
-                              <VisibilityIcon />
-                            </IconButton>
-                          </Tooltip>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-
-              {/* Pagination */}
-              {pagination.pages > 1 && (
-                <Box display="flex" justifyContent="center" mt={2}>
-                  <Pagination
-                    count={pagination.pages}
-                    page={pagination.page}
-                    onChange={(_, page) => setPagination({ ...pagination, page })}
-                    color="primary"
-                  />
-                </Box>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Detail Dialog */}
-      <ReturnedPaymentRequestDetailDialog
-        open={detailDialogOpen}
-        request={selectedRequest}
-        onClose={() => setDetailDialogOpen(false)}
-        onActionSuccess={loadData}
-      />
+      <ReturnedPaymentRequestDetailDialog open={detailDialogOpen} request={selectedRequest} onClose={() => setDetailDialogOpen(false)} onActionSuccess={loadData} />
     </Box>
   );
 };
 
-export default ReturnedPaymentRequests; 
+export default ReturnedPaymentRequests;

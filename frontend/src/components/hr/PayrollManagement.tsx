@@ -1,19 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Paper, 
-  Grid, 
-  Card, 
-  CardContent, 
-  Button, 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableContainer, 
-  TableHead, 
-  TableRow,
-  Chip,
+import {
+  Box,
+  Typography,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -26,34 +14,42 @@ import {
   Pagination,
   Alert,
   CircularProgress,
-  IconButton,
-  Tooltip,
   Tabs,
-  Tab
+  Tab,
+  Grid,
 } from '@mui/material';
-import { 
-  Visibility as VisibilityIcon,
-  CheckCircle as ApproveIcon,
-  Cancel as RejectIcon,
-  Refresh as RefreshIcon,
-  Add as AddIcon,
-  Calculate as CalculateIcon
-} from '@mui/icons-material';
 import { payrollService, PayrollPayment, PayrollStats, PayrollFilters, PayrollCalculation } from '../../services/payrollService';
+import StatCard from '../gtacpr/StatCard';
+import StatusChip from '../gtacpr/StatusChip';
+import DataTable, { DataTableRow } from '../gtacpr/DataTable';
+import { PrimaryButton, GhostButton } from '../gtacpr/Buttons';
 
-interface PaymentDetailsDialogProps {
+const getStatusKind = (status: string) => {
+  switch (status) {
+    case 'completed': return 'success' as const;
+    case 'rejected': return 'danger' as const;
+    case 'pending': return 'warning' as const;
+    default: return 'neutral' as const;
+  }
+};
+
+const paymentColumns = [
+  { key: 'instructor', label: 'INSTRUCTOR', width: '1.3fr' },
+  { key: 'amount', label: 'AMOUNT', width: '0.7fr', align: 'right' as const },
+  { key: 'date', label: 'PAYMENT DATE', width: '0.8fr' },
+  { key: 'method', label: 'METHOD', width: '0.7fr' },
+  { key: 'status', label: 'STATUS', width: '0.7fr' },
+  { key: 'created', label: 'CREATED', width: '0.8fr' },
+  { key: 'actions', label: '', width: '0.4fr', align: 'right' as const },
+];
+
+// Payment Details Dialog
+const PaymentDetailsDialog: React.FC<{
   open: boolean;
   payment: PayrollPayment | null;
   onClose: () => void;
   onProcess: (paymentId: number, action: 'approve' | 'reject', transactionId?: string, notes?: string) => void;
-}
-
-const PaymentDetailsDialog: React.FC<PaymentDetailsDialogProps> = ({
-  open,
-  payment,
-  onClose,
-  onProcess
-}) => {
+}> = ({ open, payment, onClose, onProcess }) => {
   const [action, setAction] = useState<'approve' | 'reject'>('approve');
   const [transactionId, setTransactionId] = useState('');
   const [notes, setNotes] = useState('');
@@ -61,179 +57,80 @@ const PaymentDetailsDialog: React.FC<PaymentDetailsDialogProps> = ({
 
   const handleSubmit = async () => {
     if (!payment) return;
-    
     setLoading(true);
     try {
       await onProcess(payment.id, action, transactionId || undefined, notes || undefined);
       onClose();
-      setTransactionId('');
-      setNotes('');
-      setAction('approve');
-    } catch (error: any) {
-      console.error('Error processing payment:', error);
-    } finally {
-      setLoading(false);
-    }
+      setTransactionId(''); setNotes(''); setAction('approve');
+    } finally { setLoading(false); }
   };
 
-  const handleClose = () => {
-    onClose();
-    setTransactionId('');
-    setNotes('');
-    setAction('approve');
-  };
+  const handleClose = () => { onClose(); setTransactionId(''); setNotes(''); setAction('approve'); };
 
   if (!payment) return null;
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        Payment Details - {payment.instructorName}
-      </DialogTitle>
+      <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>Payment Details — {payment.instructorName}</DialogTitle>
       <DialogContent>
-        <Grid container spacing={2} sx={{ mt: 1 }}>
-          <Grid item xs={12} md={6}>
-            <Typography variant="subtitle2" color="textSecondary">
-              Instructor
-            </Typography>
-            <Typography variant="body1" gutterBottom>
-              {payment.instructorName} ({payment.instructorEmail})
-            </Typography>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Typography variant="subtitle2" color="textSecondary">
-              Payment Date
-            </Typography>
-            <Typography variant="body1" gutterBottom>
-              {new Date(payment.paymentDate).toLocaleDateString()}
-            </Typography>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Typography variant="subtitle2" color="textSecondary">
-              Amount
-            </Typography>
-            <Typography variant="body1" gutterBottom>
-              ${Number(payment.amount || 0).toFixed(2)}
-            </Typography>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Typography variant="subtitle2" color="textSecondary">
-              Payment Method
-            </Typography>
-            <Typography variant="body1" gutterBottom>
-              {payment.paymentMethod}
-            </Typography>
-          </Grid>
-          <Grid item xs={12}>
-            <Typography variant="subtitle2" color="textSecondary">
-              Notes
-            </Typography>
-            <Typography variant="body1" gutterBottom>
-              {payment.notes || 'No notes provided'}
-            </Typography>
-          </Grid>
-          <Grid item xs={12}>
-            <Typography variant="subtitle2" color="textSecondary">
-              Status
-            </Typography>
-            <Chip 
-              label={payment.status.toUpperCase()} 
-              color={
-                payment.status === 'completed' ? 'success' : 
-                payment.status === 'rejected' ? 'error' : 
-                'warning'
-              }
-              size="small"
-            />
-          </Grid>
+        <Box sx={{ pt: 1 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 2 }}>
+            {[
+              ['Instructor', `${payment.instructorName} (${payment.instructorEmail})`],
+              ['Payment Date', new Date(payment.paymentDate).toLocaleDateString()],
+              ['Amount', `$${Number(payment.amount || 0).toFixed(2)}`],
+              ['Payment Method', payment.paymentMethod],
+              ['Notes', payment.notes || 'No notes provided'],
+            ].map(([label, value]) => (
+              <Box key={String(label)}>
+                <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF' }}>{label}</Typography>
+                <Typography sx={{ fontSize: 13, color: '#111827' }}>{value}</Typography>
+              </Box>
+            ))}
+            <Box>
+              <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF' }}>Status</Typography>
+              <StatusChip kind={getStatusKind(payment.status)} label={payment.status.toUpperCase()} />
+            </Box>
+          </Box>
           {payment.transactionId && (
-            <Grid item xs={12}>
-              <Typography variant="subtitle2" color="textSecondary">
-                Transaction ID
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                {payment.transactionId}
-              </Typography>
-            </Grid>
+            <Box sx={{ mb: 1 }}><Typography sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF' }}>Transaction ID</Typography><Typography sx={{ fontSize: 13, color: '#111827' }}>{payment.transactionId}</Typography></Box>
           )}
           {payment.hrNotes && (
-            <Grid item xs={12}>
-              <Typography variant="subtitle2" color="textSecondary">
-                HR Notes
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                {payment.hrNotes}
-              </Typography>
-            </Grid>
+            <Box sx={{ mb: 1 }}><Typography sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF' }}>HR Notes</Typography><Typography sx={{ fontSize: 13, color: '#111827' }}>{payment.hrNotes}</Typography></Box>
           )}
           {payment.status === 'pending' && (
-            <>
-              <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel>Action</InputLabel>
-                  <Select
-                    value={action}
-                    onChange={(e) => setAction(e.target.value as 'approve' | 'reject')}
-                    label="Action"
-                  >
-                    <MenuItem value="approve">Approve</MenuItem>
-                    <MenuItem value="reject">Reject</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Transaction ID (Optional)"
-                  value={transactionId}
-                  onChange={(e) => setTransactionId(e.target.value)}
-                  placeholder="Enter transaction ID..."
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={3}
-                  label="Notes (Optional)"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Add notes..."
-                />
-              </Grid>
-            </>
+            <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <FormControl fullWidth>
+                <InputLabel>Action</InputLabel>
+                <Select value={action} onChange={(e) => setAction(e.target.value as any)} label="Action">
+                  <MenuItem value="approve">Approve</MenuItem>
+                  <MenuItem value="reject">Reject</MenuItem>
+                </Select>
+              </FormControl>
+              <TextField fullWidth label="Transaction ID (Optional)" value={transactionId} onChange={(e) => setTransactionId(e.target.value)} />
+              <TextField fullWidth multiline rows={3} label="Notes (Optional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
+            </Box>
           )}
-        </Grid>
+        </Box>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
+      <DialogActions sx={{ p: 2 }}>
+        <GhostButton onClick={handleClose}>Cancel</GhostButton>
         {payment.status === 'pending' && (
-          <Button 
-            onClick={handleSubmit}
-            variant="contained"
-            color={action === 'approve' ? 'success' : 'error'}
-            disabled={loading}
-            startIcon={loading ? <CircularProgress size={20} /> : undefined}
-          >
-            {action === 'approve' ? 'Approve' : 'Reject'}
-          </Button>
+          <PrimaryButton onClick={handleSubmit} disabled={loading}>
+            {loading ? 'Processing...' : action === 'approve' ? 'Approve' : 'Reject'}
+          </PrimaryButton>
         )}
       </DialogActions>
     </Dialog>
   );
 };
 
-interface CalculatePayrollDialogProps {
+// Calculate Payroll Dialog
+const CalculatePayrollDialog: React.FC<{
   open: boolean;
   onClose: () => void;
   onCalculate: (instructorId: number, startDate: string, endDate: string, hourlyRate: number) => void;
-}
-
-const CalculatePayrollDialog: React.FC<CalculatePayrollDialogProps> = ({
-  open,
-  onClose,
-  onCalculate
-}) => {
+}> = ({ open, onClose, onCalculate }) => {
   const [instructorId, setInstructorId] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -242,92 +139,32 @@ const CalculatePayrollDialog: React.FC<CalculatePayrollDialogProps> = ({
 
   const handleSubmit = async () => {
     if (!instructorId || !startDate || !endDate || !hourlyRate) return;
-    
     setLoading(true);
     try {
       await onCalculate(parseInt(instructorId), startDate, endDate, parseFloat(hourlyRate));
       onClose();
-      setInstructorId('');
-      setStartDate('');
-      setEndDate('');
-      setHourlyRate('');
-    } catch (error: any) {
-      console.error('Error calculating payroll:', error);
-    } finally {
-      setLoading(false);
-    }
+      setInstructorId(''); setStartDate(''); setEndDate(''); setHourlyRate('');
+    } finally { setLoading(false); }
   };
 
-  const handleClose = () => {
-    onClose();
-    setInstructorId('');
-    setStartDate('');
-    setEndDate('');
-    setHourlyRate('');
-  };
+  const handleClose = () => { onClose(); setInstructorId(''); setStartDate(''); setEndDate(''); setHourlyRate(''); };
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        Calculate Payroll
-      </DialogTitle>
+      <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>Calculate Payroll</DialogTitle>
       <DialogContent>
-        <Grid container spacing={2} sx={{ mt: 1 }}>
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Instructor ID"
-              type="number"
-              value={instructorId}
-              onChange={(e) => setInstructorId(e.target.value)}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label="Start Date"
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label="End Date"
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              required
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Hourly Rate ($)"
-              type="number"
-              value={hourlyRate}
-              onChange={(e) => setHourlyRate(e.target.value)}
-              inputProps={{ min: 0, step: 0.01 }}
-              required
-            />
-          </Grid>
+        <Grid container spacing={2} sx={{ mt: 0.5 }}>
+          <Grid item xs={12}><TextField fullWidth label="Instructor ID" type="number" value={instructorId} onChange={(e) => setInstructorId(e.target.value)} required /></Grid>
+          <Grid item xs={6}><TextField fullWidth label="Start Date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} InputLabelProps={{ shrink: true }} required /></Grid>
+          <Grid item xs={6}><TextField fullWidth label="End Date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} InputLabelProps={{ shrink: true }} required /></Grid>
+          <Grid item xs={12}><TextField fullWidth label="Hourly Rate ($)" type="number" value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} inputProps={{ min: 0, step: 0.01 }} required /></Grid>
         </Grid>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
-        <Button 
-          onClick={handleSubmit}
-          variant="contained"
-          disabled={loading || !instructorId || !startDate || !endDate || !hourlyRate}
-          startIcon={loading ? <CircularProgress size={20} /> : <CalculateIcon />}
-        >
-          Calculate
-        </Button>
+      <DialogActions sx={{ p: 2 }}>
+        <GhostButton onClick={handleClose}>Cancel</GhostButton>
+        <PrimaryButton onClick={handleSubmit} disabled={loading || !instructorId || !startDate || !endDate || !hourlyRate}>
+          {loading ? 'Calculating...' : 'Calculate'}
+        </PrimaryButton>
       </DialogActions>
     </Dialog>
   );
@@ -342,405 +179,150 @@ const PayrollManagement: React.FC = () => {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [calculateDialogOpen, setCalculateDialogOpen] = useState(false);
   const [calculation, setCalculation] = useState<PayrollCalculation | null>(null);
-  const [filters, setFilters] = useState<PayrollFilters>({
-    page: 1,
-    limit: 10
-  });
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    pages: 0
-  });
+  const [filters, setFilters] = useState<PayrollFilters>({ page: 1, limit: 10 });
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
   const [activeTab, setActiveTab] = useState(0);
 
   const loadData = async () => {
     setLoading(true);
     setError(null);
-    
     try {
-      const [paymentsData, statsData] = await Promise.all([
-        payrollService.getPayments(filters),
-        payrollService.getStats()
-      ]);
-      
+      const [paymentsData, statsData] = await Promise.all([payrollService.getPayments(filters), payrollService.getStats()]);
       setPayments(paymentsData.payments);
       setPagination(paymentsData.pagination);
       setStats(statsData);
     } catch (err: any) {
       setError('Failed to load payroll data');
-      console.error('Error loading payroll data:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, [filters]);
-
-  const handleFilterChange = (newFilters: Partial<PayrollFilters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters, page: 1 }));
-  };
-
-  const handlePageChange = (page: number) => {
-    setFilters(prev => ({ ...prev, page }));
-  };
-
-  const handleViewDetails = (payment: PayrollPayment) => {
-    setSelectedPayment(payment);
-    setDetailsDialogOpen(true);
-  };
+  useEffect(() => { loadData(); }, [filters]);
 
   const handleProcessPayment = async (paymentId: number, action: 'approve' | 'reject', transactionId?: string, notes?: string) => {
-    try {
-      await payrollService.processPayment(paymentId, { action, transaction_id: transactionId, notes });
-      await loadData(); // Refresh data
-    } catch (err: any) {
-      console.error('Error processing payment:', err);
-      throw err;
-    }
+    await payrollService.processPayment(paymentId, { action, transaction_id: transactionId, notes });
+    await loadData();
   };
 
   const handleCalculatePayroll = async (instructorId: number, startDate: string, endDate: string, hourlyRate: number) => {
-    try {
-      const result = await payrollService.calculatePayroll(instructorId, startDate, endDate, hourlyRate);
-      setCalculation(result);
-      setActiveTab(1); // Switch to calculation tab
-    } catch (err: any) {
-      console.error('Error calculating payroll:', err);
-      throw err;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'success';
-      case 'rejected': return 'error';
-      case 'pending': return 'warning';
-      default: return 'default';
-    }
+    const result = await payrollService.calculatePayroll(instructorId, startDate, endDate, hourlyRate);
+    setCalculation(result);
+    setActiveTab(1);
   };
 
   if (loading && payments.length === 0) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
-    );
+    return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}><CircularProgress size={48} /></Box>;
   }
 
   return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
-        Payroll Management
-      </Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {error && <Alert severity="error" onClose={() => setError(null)}>{error}</Alert>}
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      {/* Statistics Cards */}
+      {/* Stats */}
       {stats && stats.totalPayrollThisMonth !== undefined && (
-        <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Total Payroll This Month
-                </Typography>
-                <Typography variant="h4">
-                  ${Number(stats.totalPayrollThisMonth || 0).toFixed(2)}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Pending Payments
-                </Typography>
-                <Typography variant="h4">
-                  {stats.pendingPayments}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Instructors with Pending
-                </Typography>
-                <Typography variant="h4">
-                  {stats.instructorsWithPending}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Average Payment
-                </Typography>
-                <Typography variant="h4">
-                  ${Number(stats.averagePayment || 0).toFixed(2)}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+          <StatCard label="Total Payroll" value={`$${Number(stats.totalPayrollThisMonth || 0).toFixed(2)}`} sub="This month" dotColor="#CC1F1F" />
+          <StatCard label="Pending Payments" value={stats.pendingPayments} sub="Awaiting processing" dotColor="#ED6C02" />
+          <StatCard label="Instructors Pending" value={stats.instructorsWithPending} sub="With pending payments" dotColor="#4B5563" />
+          <StatCard label="Avg Payment" value={`$${Number(stats.averagePayment || 0).toFixed(2)}`} sub="Per instructor" dotColor="#16A34A" />
+        </Box>
       )}
 
-      {/* Action Buttons */}
-      <Box sx={{ mb: 2 }}>
-        <Button
-          variant="contained"
-          startIcon={<CalculateIcon />}
-          onClick={() => setCalculateDialogOpen(true)}
-          sx={{ mr: 2 }}
-        >
-          Calculate Payroll
-        </Button>
-        <Button
-          variant="outlined"
-          startIcon={<RefreshIcon />}
-          onClick={loadData}
-          disabled={loading}
-        >
-          Refresh
-        </Button>
+      {/* Actions */}
+      <Box sx={{ display: 'flex', gap: 1 }}>
+        <PrimaryButton onClick={() => setCalculateDialogOpen(true)}>Calculate Payroll</PrimaryButton>
+        <GhostButton onClick={loadData} disabled={loading}>Refresh</GhostButton>
       </Box>
 
       {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-        <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
-          <Tab label="Payments" />
-          <Tab label="Calculation" />
-        </Tabs>
+      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff' }}>
+        <Box sx={{ borderBottom: 1, borderColor: '#E5E7EB', px: 3, pt: 1 }}>
+          <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{
+            '& .MuiTab-root': { textTransform: 'none', fontSize: 13, fontWeight: 600, color: '#9CA3AF', minHeight: 42 },
+            '& .Mui-selected': { color: '#CC1F1F !important' },
+            '& .MuiTabs-indicator': { backgroundColor: '#CC1F1F' },
+          }}>
+            <Tab label="Payments" />
+            <Tab label="Calculation" />
+          </Tabs>
+        </Box>
+
+        {/* Payments Tab */}
+        {activeTab === 0 && (
+          <Box sx={{ p: 3 }}>
+            {/* Filters */}
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, mb: 2 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Status</InputLabel>
+                <Select value={filters.status || ''} onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value, page: 1 }))} label="Status">
+                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="pending">Pending</MenuItem>
+                  <MenuItem value="completed">Completed</MenuItem>
+                  <MenuItem value="rejected">Rejected</MenuItem>
+                </Select>
+              </FormControl>
+              <TextField fullWidth size="small" label="Instructor ID" value={filters.instructor_id || ''} onChange={(e) => setFilters(prev => ({ ...prev, instructor_id: e.target.value, page: 1 }))} />
+              <TextField fullWidth size="small" label="Month" type="number" value={filters.month || ''} onChange={(e) => setFilters(prev => ({ ...prev, month: e.target.value, page: 1 }))} inputProps={{ min: 1, max: 12 }} />
+            </Box>
+
+            <DataTable columns={paymentColumns} shownCount={payments.length} totalCount={pagination.total}>
+              {payments.map((payment) => (
+                <DataTableRow key={payment.id} columns={paymentColumns}>
+                  <Box>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{payment.instructorName}</Typography>
+                    <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{payment.instructorEmail}</Typography>
+                  </Box>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, fontFamily: 'monospace', color: '#111827', textAlign: 'right' }}>${Number(payment.amount || 0).toFixed(2)}</Typography>
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{new Date(payment.paymentDate).toLocaleDateString()}</Typography>
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{payment.paymentMethod}</Typography>
+                  <StatusChip kind={getStatusKind(payment.status)} label={payment.status.toUpperCase()} />
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{new Date(payment.createdAt).toLocaleDateString()}</Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <Box onClick={() => { setSelectedPayment(payment); setDetailsDialogOpen(true); }} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>View</Box>
+                  </Box>
+                </DataTableRow>
+              ))}
+            </DataTable>
+
+            {pagination.pages > 1 && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <Pagination count={pagination.pages} page={pagination.page} onChange={(_, p) => setFilters(prev => ({ ...prev, page: p }))} />
+              </Box>
+            )}
+          </Box>
+        )}
+
+        {/* Calculation Tab */}
+        {activeTab === 1 && calculation && (
+          <Box sx={{ p: 3 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Payroll Calculation</Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 3 }}>
+              {[
+                ['Instructor', `${calculation.instructor.username} (${calculation.instructor.email})`],
+                ['Period', `${new Date(calculation.period.startDate).toLocaleDateString()} — ${new Date(calculation.period.endDate).toLocaleDateString()}`],
+                ['Timesheets', `${calculation.timesheets.count} timesheets, ${calculation.timesheets.totalHours} hours, ${calculation.timesheets.totalCourses} courses`],
+                ['Rates', `$${calculation.rates.hourlyRate}/hr + $${calculation.rates.courseBonus}/course`],
+              ].map(([label, value]) => (
+                <Box key={String(label)}>
+                  <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF' }}>{label}</Typography>
+                  <Typography sx={{ fontSize: 13, color: '#111827' }}>{value}</Typography>
+                </Box>
+              ))}
+            </Box>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+              <StatCard label="Base Amount" value={`$${Number(calculation.calculation.baseAmount || 0).toFixed(2)}`} sub="Hours x Rate" dotColor="#4B5563" />
+              <StatCard label="Course Bonus" value={`$${Number(calculation.calculation.courseBonus || 0).toFixed(2)}`} sub="Courses x Bonus" dotColor="#ED6C02" />
+              <StatCard label="Total Amount" value={`$${Number(calculation.calculation.totalAmount || 0).toFixed(2)}`} sub="Total payable" dotColor="#CC1F1F" />
+            </Box>
+          </Box>
+        )}
       </Box>
 
-      {/* Payments Tab */}
-      {activeTab === 0 && (
-        <>
-          {/* Filters */}
-          <Paper sx={{ p: 2, mb: 2 }}>
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} sm={6} md={3}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Status</InputLabel>
-                  <Select
-                    value={filters.status || ''}
-                    onChange={(e) => handleFilterChange({ status: e.target.value })}
-                    label="Status"
-                  >
-                    <MenuItem value="">All</MenuItem>
-                    <MenuItem value="pending">Pending</MenuItem>
-                    <MenuItem value="completed">Completed</MenuItem>
-                    <MenuItem value="rejected">Rejected</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Instructor ID"
-                  value={filters.instructor_id || ''}
-                  onChange={(e) => handleFilterChange({ instructor_id: e.target.value })}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Month"
-                  type="number"
-                  value={filters.month || ''}
-                  onChange={(e) => handleFilterChange({ month: e.target.value })}
-                  inputProps={{ min: 1, max: 12 }}
-                />
-              </Grid>
-            </Grid>
-          </Paper>
-
-          {/* Payments Table */}
-          <Paper>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Instructor</TableCell>
-                    <TableCell>Amount</TableCell>
-                    <TableCell>Payment Date</TableCell>
-                    <TableCell>Method</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Created</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {payments.map((payment) => (
-                    <TableRow key={payment.id}>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight="medium">
-                          {payment.instructorName}
-                        </Typography>
-                        <Typography variant="caption" color="textSecondary">
-                          {payment.instructorEmail}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>${Number(payment.amount || 0).toFixed(2)}</TableCell>
-                      <TableCell>
-                        {new Date(payment.paymentDate).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>{payment.paymentMethod}</TableCell>
-                      <TableCell>
-                        <Chip 
-                          label={payment.status.toUpperCase()} 
-                          color={getStatusColor(payment.status) as any}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {new Date(payment.createdAt).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <Tooltip title="View Details">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleViewDetails(payment)}
-                          >
-                            <VisibilityIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
-
-          {/* Pagination */}
-          {pagination.pages > 1 && (
-            <Box display="flex" justifyContent="center" mt={2}>
-              <Pagination
-                count={pagination.pages}
-                page={pagination.page}
-                onChange={(_, page) => handlePageChange(page)}
-                color="primary"
-              />
-            </Box>
-          )}
-        </>
-      )}
-
-      {/* Calculation Tab */}
-      {activeTab === 1 && calculation && (
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            Payroll Calculation
-          </Typography>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Typography variant="subtitle2" color="textSecondary">
-                Instructor
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                {calculation.instructor.username} ({calculation.instructor.email})
-              </Typography>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="subtitle2" color="textSecondary">
-                Period
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                {new Date(calculation.period.startDate).toLocaleDateString()} - {new Date(calculation.period.endDate).toLocaleDateString()}
-              </Typography>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="subtitle2" color="textSecondary">
-                Timesheets
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                {calculation.timesheets.count} timesheets, {calculation.timesheets.totalHours} hours, {calculation.timesheets.totalCourses} courses
-              </Typography>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="subtitle2" color="textSecondary">
-                Rates
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                ${calculation.rates.hourlyRate}/hour + ${calculation.rates.courseBonus} per course
-              </Typography>
-            </Grid>
-            <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom>
-                Calculation Breakdown
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={4}>
-                  <Card>
-                    <CardContent>
-                      <Typography color="textSecondary" gutterBottom>
-                        Base Amount
-                      </Typography>
-                      <Typography variant="h5">
-                        ${Number(calculation.calculation.baseAmount || 0).toFixed(2)}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <Card>
-                    <CardContent>
-                      <Typography color="textSecondary" gutterBottom>
-                        Course Bonus
-                      </Typography>
-                      <Typography variant="h5">
-                        ${Number(calculation.calculation.courseBonus || 0).toFixed(2)}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <Card>
-                    <CardContent>
-                      <Typography color="textSecondary" gutterBottom>
-                        Total Amount
-                      </Typography>
-                      <Typography variant="h5" color="primary">
-                        ${Number(calculation.calculation.totalAmount || 0).toFixed(2)}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
-            </Grid>
-          </Grid>
-        </Paper>
-      )}
-
-      {/* Dialogs */}
-      <PaymentDetailsDialog
-        open={detailsDialogOpen}
-        payment={selectedPayment}
-        onClose={() => setDetailsDialogOpen(false)}
-        onProcess={handleProcessPayment}
-      />
-
-      <CalculatePayrollDialog
-        open={calculateDialogOpen}
-        onClose={() => setCalculateDialogOpen(false)}
-        onCalculate={handleCalculatePayroll}
-      />
+      <PaymentDetailsDialog open={detailsDialogOpen} payment={selectedPayment} onClose={() => setDetailsDialogOpen(false)} onProcess={handleProcessPayment} />
+      <CalculatePayrollDialog open={calculateDialogOpen} onClose={() => setCalculateDialogOpen(false)} onCalculate={handleCalculatePayroll} />
     </Box>
   );
 };
 
-export default PayrollManagement; 
+export default PayrollManagement;

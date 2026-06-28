@@ -2,39 +2,13 @@ import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
-  Grid,
-  Card,
-  CardContent,
-  Button,
-  Chip,
-  Paper,
-  useTheme,
-  useMediaQuery,
-  IconButton,
-  Divider,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  Avatar,
   Alert,
   CircularProgress,
 } from '@mui/material';
-import {
-  CalendarToday as CalendarIcon,
-  Class as ClassIcon,
-  People as PeopleIcon,
-  Assignment as AssignmentIcon,
-  Schedule as ScheduleIcon,
-  EventAvailable as EventAvailableIcon,
-  Download as DownloadIcon,
-  ArrowForward as ArrowForwardIcon,
-  LocationOn as LocationIcon,
-  Group as GroupIcon,
-  AccessTime as TimeIcon,
-  Visibility as VisibilityIcon,
-  Refresh as RefreshIcon,
-} from '@mui/icons-material';
+import {} from '@mui/icons-material';
+import StatCard from '../gtacpr/StatCard';
+import StatusChip from '../gtacpr/StatusChip';
+import { GhostButton } from '../gtacpr/Buttons';
 import { useNavigate } from 'react-router-dom';
 import { 
   useInstructorClasses, 
@@ -82,8 +56,6 @@ const InstructorDashboard: React.FC = () => {
   console.log('[DEBUG] Consolidated InstructorDashboard rendered');
   
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
   // Use centralized service hooks instead of useInstructorData
   const { data: scheduledClasses = [], isLoading: classesLoading, error: classesError } = useInstructorClasses();
@@ -197,19 +169,16 @@ const InstructorDashboard: React.FC = () => {
       
       {/* Force Refresh Button */}
       <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
-        <Button
-          variant="outlined"
-          startIcon={<RefreshIcon />}
+        <GhostButton
           onClick={() => {
-            console.log('[DEBUG] Force refreshing all data');
             queryClient.clear();
             setDashboardData(null);
             setForceRefresh(prev => prev + 1);
             refreshData();
           }}
         >
-          Force Refresh
-        </Button>
+          Refresh
+        </GhostButton>
       </Box>
       
       {errorState && (
@@ -219,115 +188,12 @@ const InstructorDashboard: React.FC = () => {
       )}
 
       {/* Quick Stats */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ 
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white',
-            boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)',
-            transition: 'transform 0.2s ease-in-out',
-            '&:hover': {
-              transform: 'translateY(-4px)',
-              boxShadow: '0 12px 40px rgba(102, 126, 234, 0.4)',
-            }
-          }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <ClassIcon sx={{ mr: 1, color: 'white', fontSize: 28 }} />
-                <Box>
-                  <Typography color="rgba(255,255,255,0.8)" gutterBottom sx={{ fontSize: '0.875rem' }}>
-                    Total Classes
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 600, color: 'white' }}>
-                    {totalClasses}
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ 
-            background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-            color: 'white',
-            boxShadow: '0 8px 32px rgba(240, 147, 251, 0.3)',
-            transition: 'transform 0.2s ease-in-out',
-            '&:hover': {
-              transform: 'translateY(-4px)',
-              boxShadow: '0 12px 40px rgba(240, 147, 251, 0.4)',
-            }
-          }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <ScheduleIcon sx={{ mr: 1, color: 'white', fontSize: 28 }} />
-                <Box>
-                  <Typography color="rgba(255,255,255,0.8)" gutterBottom sx={{ fontSize: '0.875rem' }}>
-                    Today's Classes
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 600, color: 'white' }}>
-                    {todayClassesCount}
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ 
-            background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-            color: 'white',
-            boxShadow: '0 8px 32px rgba(79, 172, 254, 0.3)',
-            transition: 'transform 0.2s ease-in-out',
-            '&:hover': {
-              transform: 'translateY(-4px)',
-              boxShadow: '0 12px 40px rgba(79, 172, 254, 0.4)',
-            }
-          }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <PeopleIcon sx={{ mr: 1, color: 'white', fontSize: 28 }} />
-                <Box>
-                  <Typography color="rgba(255,255,255,0.8)" gutterBottom sx={{ fontSize: '0.875rem' }}>
-                    Total Students
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 600, color: 'white' }}>
-                    {totalStudents}
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ 
-            background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-            color: 'white',
-            boxShadow: '0 8px 32px rgba(67, 233, 123, 0.3)',
-            transition: 'transform 0.2s ease-in-out',
-            '&:hover': {
-              transform: 'translateY(-4px)',
-              boxShadow: '0 12px 40px rgba(67, 233, 123, 0.4)',
-            }
-          }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <EventAvailableIcon sx={{ mr: 1, color: 'white', fontSize: 28 }} />
-                <Box>
-                  <Typography color="rgba(255,255,255,0.8)" gutterBottom sx={{ fontSize: '0.875rem' }}>
-                    Available Dates
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 600, color: 'white' }}>
-                    {(availableDates as unknown[]).length}
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', mb: 4 }}>
+        <StatCard label="Total Classes" value={totalClasses} sub="All scheduled" dotColor="#CC1F1F" />
+        <StatCard label="Today's Classes" value={todayClassesCount} sub="Scheduled today" dotColor="#ED6C02" />
+        <StatCard label="Total Students" value={totalStudents} sub="Enrolled students" dotColor="#4B5563" />
+        <StatCard label="Available Dates" value={(availableDates as unknown[]).length} sub="Your availability" dotColor="#16A34A" />
+      </Box>
 
       {/* Quick Actions */}
       <QuickActionsGrid />
@@ -338,73 +204,45 @@ const InstructorDashboard: React.FC = () => {
       </Box>
 
       {/* Recent Classes */}
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Upcoming Classes
-              </Typography>
-              {upcomingClasses.length > 0 ? (
-                <List>
-                  {upcomingClasses.slice(0, 5).map((cls, index: number) => (
-                    <ListItem key={index} divider>
-                      <ListItemText
-                        primary={cls.coursename || 'Course'}
-                        secondary={`${formatDate(cls.date)} • ${cls.studentcount || 0} students`}
-                      />
-                      <ListItemSecondaryAction>
-                        <IconButton
-                          edge="end"
-                          onClick={() => navigate(`/instructor/classes/${cls.id}`)}
-                        >
-                          <ArrowForwardIcon />
-                        </IconButton>
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                  ))}
-                </List>
-              ) : (
-                <Typography color="textSecondary">
-                  No upcoming classes scheduled.
-                </Typography>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Recent Completed Classes
-              </Typography>
-              {(completedClasses as InstructorClass[]).length > 0 ? (
-                <List>
-                  {(completedClasses as InstructorClass[]).slice(0, 5).map((cls, index: number) => (
-                    <ListItem key={index} divider>
-                      <ListItemText
-                        primary={cls.coursename || 'Course'}
-                        secondary={`${formatDate(cls.date)} • ${cls.studentcount || 0} students`}
-                      />
-                      <Chip
-                        label="Completed"
-                        color="success"
-                        size="small"
-                        sx={{ ml: 1 }}
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              ) : (
-                <Typography color="textSecondary">
-                  No completed classes yet.
-                </Typography>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+        <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Upcoming Classes</Typography>
+          {upcomingClasses.length > 0 ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              {upcomingClasses.slice(0, 5).map((cls, index: number) => (
+                <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: '1px solid #F3F4F6' }}>
+                  <Box>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{cls.coursename || 'Course'}</Typography>
+                    <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{formatDate(cls.date)} &bull; {cls.studentcount || 0} students</Typography>
+                  </Box>
+                  <Box onClick={() => navigate(`/instructor/classes/${cls.id}`)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>View</Box>
+                </Box>
+              ))}
+            </Box>
+          ) : (
+            <Typography sx={{ color: '#9CA3AF', fontSize: 13 }}>No upcoming classes scheduled.</Typography>
+          )}
+        </Box>
+
+        <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Recent Completed Classes</Typography>
+          {(completedClasses as InstructorClass[]).length > 0 ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              {(completedClasses as InstructorClass[]).slice(0, 5).map((cls, index: number) => (
+                <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: '1px solid #F3F4F6' }}>
+                  <Box>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{cls.coursename || 'Course'}</Typography>
+                    <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{formatDate(cls.date)} &bull; {cls.studentcount || 0} students</Typography>
+                  </Box>
+                  <StatusChip kind="success" label="Completed" />
+                </Box>
+              ))}
+            </Box>
+          ) : (
+            <Typography sx={{ color: '#9CA3AF', fontSize: 13 }}>No completed classes yet.</Typography>
+          )}
+        </Box>
+      </Box>
     </Box>
   );
 };

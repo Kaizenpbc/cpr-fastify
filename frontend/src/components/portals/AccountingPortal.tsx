@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Box, Typography, Paper, Button,
+  Box, Typography,
   CircularProgress
 } from '@mui/material';
+import DataTable, { DataTableRow } from '../gtacpr/DataTable';
+import { PrimaryButton, GhostButton } from '../gtacpr/Buttons';
 import ErrorBoundary from '../common/ErrorBoundary';
 import { AdminShell } from '../gtacpr';
 import AccountingDashboard from './accounting/AccountingDashboard';
@@ -83,14 +85,7 @@ const ReadyForBillingView: React.FC = () => {
   };
 
   return (
-    <Box>
-      <Typography variant="h5" gutterBottom>
-        Ready for Billing
-      </Typography>
-      <Typography variant="body1" color="textSecondary" sx={{ mb: 3 }}>
-        Review completed courses and create invoices for billing
-      </Typography>
-
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <ReadyForBillingTable
         courses={billingQueue}
         onCreateInvoice={handleCreateInvoice}
@@ -178,14 +173,7 @@ const AccountsReceivableView: React.FC = () => {
   };
 
   return (
-    <Box>
-      <Typography variant="h5" gutterBottom>
-        Organization Receivables
-      </Typography>
-      <Typography variant="body1" color="textSecondary" sx={{ mb: 3 }}>
-        Manage outstanding invoices from organizations and payment tracking
-      </Typography>
-
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <AccountsReceivableTable
         invoices={invoices}
         onRecordPaymentClick={handleRecordPaymentClick}
@@ -310,77 +298,38 @@ const PendingApprovalsView: React.FC = () => {
     );
   }
 
-  return (
-    <Box>
-      <Typography variant="h5" gutterBottom>
-        Pending Invoice Approvals
-      </Typography>
-      <Typography variant="body1" color="textSecondary" sx={{ mb: 3 }}>
-        Review and approve invoices before they are posted to organizations
-      </Typography>
+  const pendingColumns = [
+    { key: 'invoice', label: 'INVOICE #', width: '0.8fr' },
+    { key: 'org', label: 'ORGANIZATION', width: '1fr' },
+    { key: 'course', label: 'COURSE', width: '1fr' },
+    { key: 'date', label: 'DATE', width: '0.7fr' },
+    { key: 'amount', label: 'AMOUNT', width: '0.7fr', align: 'right' as const },
+    { key: 'action', label: '', width: '0.5fr', align: 'right' as const },
+  ];
 
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {invoices.length === 0 ? (
-        <Paper sx={{ p: 3, textAlign: 'center' }}>
-          <Typography color="textSecondary">
-            No invoices pending approval
-          </Typography>
-        </Paper>
+        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#9CA3AF' }}>No invoices pending approval</Typography>
+        </Box>
       ) : (
-        <Paper sx={{ p: 2 }}>
-          <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
-            <Box component="thead">
-              <Box component="tr" sx={{ borderBottom: '2px solid #e0e0e0' }}>
-                <Box component="th" sx={{ p: 1.5, textAlign: 'left' }}>Invoice #</Box>
-                <Box component="th" sx={{ p: 1.5, textAlign: 'left' }}>Organization</Box>
-                <Box component="th" sx={{ p: 1.5, textAlign: 'left' }}>Course</Box>
-                <Box component="th" sx={{ p: 1.5, textAlign: 'left' }}>Date</Box>
-                <Box component="th" sx={{ p: 1.5, textAlign: 'right' }}>Amount</Box>
-                <Box component="th" sx={{ p: 1.5, textAlign: 'center' }}>Action</Box>
+        <DataTable columns={pendingColumns} shownCount={invoices.length} totalCount={invoices.length}>
+          {invoices.map((invoice) => (
+            <DataTableRow key={invoice.id} columns={pendingColumns}>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{(invoice as Record<string, unknown>).invoice_number as string || '-'}</Typography>
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{(invoice as Record<string, unknown>).organization_name as string || '-'}</Typography>
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{(invoice as Record<string, unknown>).course_type_name as string || '-'}</Typography>
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatDate((invoice as Record<string, unknown>).invoice_date as string)}</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', fontFamily: 'monospace', textAlign: 'right' }}>
+                {formatCurrency(parseFloat(String((invoice as Record<string, unknown>).base_cost || 0)) + parseFloat(String((invoice as Record<string, unknown>).tax_amount || 0)))}
+              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Box onClick={() => handleReview(invoice.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Review</Box>
               </Box>
-            </Box>
-            <Box component="tbody">
-              {invoices.map((invoice) => (
-                <Box
-                  component="tr"
-                  key={invoice.id}
-                  sx={{
-                    borderBottom: '1px solid #e0e0e0',
-                    '&:hover': { backgroundColor: 'rgba(0,0,0,0.04)' }
-                  }}
-                >
-                  <Box component="td" sx={{ p: 1.5 }}>
-                    {(invoice as Record<string, unknown>).invoice_number as string || '-'}
-                  </Box>
-                  <Box component="td" sx={{ p: 1.5 }}>
-                    {(invoice as Record<string, unknown>).organization_name as string || '-'}
-                  </Box>
-                  <Box component="td" sx={{ p: 1.5 }}>
-                    {(invoice as Record<string, unknown>).course_type_name as string || '-'}
-                  </Box>
-                  <Box component="td" sx={{ p: 1.5 }}>
-                    {formatDate((invoice as Record<string, unknown>).invoice_date as string)}
-                  </Box>
-                  <Box component="td" sx={{ p: 1.5, textAlign: 'right' }}>
-                    {formatCurrency(
-                      (parseFloat(String((invoice as Record<string, unknown>).base_cost || 0)) +
-                       parseFloat(String((invoice as Record<string, unknown>).tax_amount || 0)))
-                    )}
-                  </Box>
-                  <Box component="td" sx={{ p: 1.5, textAlign: 'center' }}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      size="small"
-                      onClick={() => handleReview(invoice.id)}
-                    >
-                      Review
-                    </Button>
-                  </Box>
-                </Box>
-              ))}
-            </Box>
-          </Box>
-        </Paper>
+            </DataTableRow>
+          ))}
+        </DataTable>
       )}
 
       <InvoiceDetailDialog
@@ -483,101 +432,43 @@ const RejectedInvoicesView: React.FC = () => {
     );
   }
 
-  return (
-    <Box>
-      <Typography variant="h5" gutterBottom>
-        Rejected Invoices
-      </Typography>
-      <Typography variant="body1" color="textSecondary" sx={{ mb: 3 }}>
-        Review rejection reasons, make corrections, and resubmit invoices for approval
-      </Typography>
+  const rejectedColumns = [
+    { key: 'invoice', label: 'INVOICE #', width: '0.7fr' },
+    { key: 'org', label: 'ORGANIZATION', width: '0.9fr' },
+    { key: 'course', label: 'COURSE', width: '0.8fr' },
+    { key: 'amount', label: 'AMOUNT', width: '0.6fr', align: 'right' as const },
+    { key: 'rejected', label: 'REJECTED', width: '0.7fr' },
+    { key: 'reason', label: 'REASON', width: '1fr' },
+    { key: 'actions', label: '', width: '0.8fr', align: 'right' as const },
+  ];
 
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {invoices.length === 0 ? (
-        <Paper sx={{ p: 3, textAlign: 'center' }}>
-          <Typography color="textSecondary">
-            No rejected invoices
-          </Typography>
-        </Paper>
+        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#9CA3AF' }}>No rejected invoices</Typography>
+        </Box>
       ) : (
-        <Paper sx={{ p: 2 }}>
-          <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
-            <Box component="thead">
-              <Box component="tr" sx={{ borderBottom: '2px solid #e0e0e0' }}>
-                <Box component="th" sx={{ p: 1.5, textAlign: 'left' }}>Invoice #</Box>
-                <Box component="th" sx={{ p: 1.5, textAlign: 'left' }}>Organization</Box>
-                <Box component="th" sx={{ p: 1.5, textAlign: 'left' }}>Course</Box>
-                <Box component="th" sx={{ p: 1.5, textAlign: 'right' }}>Amount</Box>
-                <Box component="th" sx={{ p: 1.5, textAlign: 'left' }}>Rejected</Box>
-                <Box component="th" sx={{ p: 1.5, textAlign: 'left' }}>Rejection Reason</Box>
-                <Box component="th" sx={{ p: 1.5, textAlign: 'center' }}>Actions</Box>
+        <DataTable columns={rejectedColumns} shownCount={invoices.length} totalCount={invoices.length}>
+          {invoices.map((invoice) => (
+            <DataTableRow key={invoice.id} columns={rejectedColumns}>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{(invoice as Record<string, unknown>).invoiceNumber as string || '-'}</Typography>
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{(invoice as Record<string, unknown>).organizationName as string || '-'}</Typography>
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{(invoice as Record<string, unknown>).courseTypeName as string || '-'}</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', fontFamily: 'monospace', textAlign: 'right' }}>
+                {formatCurrency(parseFloat(String((invoice as Record<string, unknown>).baseCost || 0)) + parseFloat(String((invoice as Record<string, unknown>).taxAmount || 0)))}
+              </Typography>
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatDate((invoice as Record<string, unknown>).rejectedAt as string)}</Typography>
+              <Typography sx={{ fontSize: 12, color: '#CC1F1F', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={(invoice as Record<string, unknown>).rejectionReason as string}>
+                {(invoice as Record<string, unknown>).rejectionReason as string || '-'}
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'flex-end' }}>
+                <Box onClick={() => handleViewDetails(invoice.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>View</Box>
+                <Box onClick={() => handleResubmit(invoice.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#16A34A', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Resubmit</Box>
               </Box>
-            </Box>
-            <Box component="tbody">
-              {invoices.map((invoice) => (
-                <Box
-                  component="tr"
-                  key={invoice.id}
-                  sx={{
-                    borderBottom: '1px solid #e0e0e0',
-                    '&:hover': { backgroundColor: 'rgba(0,0,0,0.04)' }
-                  }}
-                >
-                  <Box component="td" sx={{ p: 1.5 }}>
-                    {(invoice as Record<string, unknown>).invoiceNumber as string || '-'}
-                  </Box>
-                  <Box component="td" sx={{ p: 1.5 }}>
-                    {(invoice as Record<string, unknown>).organizationName as string || '-'}
-                  </Box>
-                  <Box component="td" sx={{ p: 1.5 }}>
-                    {(invoice as Record<string, unknown>).courseTypeName as string || '-'}
-                  </Box>
-                  <Box component="td" sx={{ p: 1.5, textAlign: 'right' }}>
-                    {formatCurrency(
-                      (parseFloat(String((invoice as Record<string, unknown>).baseCost || 0)) +
-                       parseFloat(String((invoice as Record<string, unknown>).taxAmount || 0)))
-                    )}
-                  </Box>
-                  <Box component="td" sx={{ p: 1.5 }}>
-                    {formatDate((invoice as Record<string, unknown>).rejectedAt as string)}
-                  </Box>
-                  <Box component="td" sx={{ p: 1.5, maxWidth: 200 }}>
-                    <Typography
-                      variant="body2"
-                      color="error"
-                      sx={{
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}
-                      title={(invoice as Record<string, unknown>).rejectionReason as string}
-                    >
-                      {(invoice as Record<string, unknown>).rejectionReason as string || '-'}
-                    </Typography>
-                  </Box>
-                  <Box component="td" sx={{ p: 1.5, textAlign: 'center' }}>
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      size="small"
-                      onClick={() => handleViewDetails(invoice.id)}
-                      sx={{ mr: 1 }}
-                    >
-                      View/Edit
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="success"
-                      size="small"
-                      onClick={() => handleResubmit(invoice.id)}
-                    >
-                      Resubmit
-                    </Button>
-                  </Box>
-                </Box>
-              ))}
-            </Box>
-          </Box>
-        </Paper>
+            </DataTableRow>
+          ))}
+        </DataTable>
       )}
 
       <InvoiceDetailDialog
@@ -684,7 +575,7 @@ const AccountingPortal: React.FC = () => {
           <Route path="vendor-invoices" element={<VendorInvoiceManagement />} />
           <Route path="paid-vendor-invoices" element={<PaidVendorInvoices />} />
           <Route path="" element={<Navigate to="dashboard" replace />} />
-          <Route path="*" element={<Box sx={{ p: 3 }}><Typography variant="h6">View not found</Typography></Box>} />
+          <Route path="*" element={<Box sx={{ p: 3 }}><Typography sx={{ fontSize: 14, fontWeight: 600, color: '#9CA3AF' }}>View not found</Typography></Box>} />
         </Routes>
       </AdminShell>
     </ErrorBoundary>

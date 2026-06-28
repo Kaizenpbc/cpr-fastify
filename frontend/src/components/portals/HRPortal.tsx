@@ -10,9 +10,9 @@ import NotificationsPanel from '../hr/NotificationsPanel';
 import ReturnedPaymentRequests from '../hr/ReturnedPaymentRequests';
 
 const HRReports = () => (
-  <Box>
-    <Typography variant="h4" gutterBottom>HR Reports</Typography>
-    <Typography>Analytics and compliance reports will be implemented here.</Typography>
+  <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
+    <Typography sx={{ fontSize: 16, fontWeight: 600, color: '#9CA3AF' }}>HR Reports</Typography>
+    <Typography sx={{ fontSize: 13, color: '#9CA3AF', mt: 1 }}>Analytics and compliance reports will be implemented here.</Typography>
   </Box>
 );
 

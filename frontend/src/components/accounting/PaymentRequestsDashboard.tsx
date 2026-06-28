@@ -1,52 +1,67 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Card,
-  CardContent,
   Typography,
-  Grid,
-  Chip,
-  IconButton,
-  Button,
-  TextField,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
+  TextField,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   Alert,
   CircularProgress,
-  Pagination,
-  Tooltip,
-  Badge,
-  Checkbox,
-  FormControlLabel
+  Pagination
 } from '@mui/material';
-import {
-  Visibility as VisibilityIcon,
-  CheckCircle as ApproveIcon,
-  Cancel as RejectIcon,
-  FilterList as FilterIcon,
-  Refresh as RefreshIcon,
-  TrendingUp as TrendingUpIcon,
-  Schedule as ScheduleIcon,
-  Payment as PaymentIcon,
-  AttachMoney as MoneyIcon,
-  CheckBox as CheckBoxIcon,
-  CheckBoxOutlineBlank as CheckBoxOutlineBlankIcon,
-  Cancel
-} from '@mui/icons-material';
 import { paymentRequestService, PaymentRequest, PaymentRequestStats, PaymentRequestFilters } from '../../services/paymentRequestService';
+import StatCard from '../gtacpr/StatCard';
+import StatusChip from '../gtacpr/StatusChip';
+import DataTable, { DataTableRow } from '../gtacpr/DataTable';
+import { PrimaryButton, GhostButton } from '../gtacpr/Buttons';
+
+/* ── helpers ─────────────────────────────────────────────────── */
+
+const statusToChipKind = (status: string): 'success' | 'active' | 'warning' | 'danger' | 'neutral' | 'pending' | 'brand' => {
+  switch (status) {
+    case 'pending': return 'warning';
+    case 'approved': return 'success';
+    case 'returned_to_hr': return 'active';
+    case 'rejected': return 'danger';
+    case 'completed': return 'active';
+    default: return 'neutral';
+  }
+};
+
+const sectionHeader = {
+  fontSize: 13,
+  fontWeight: 700,
+  color: '#9CA3AF',
+  textTransform: 'uppercase' as const,
+  letterSpacing: '0.07em',
+  mb: 1.5,
+};
+
+const detailSection = {
+  p: 2,
+  bgcolor: '#F9FAFB',
+  borderRadius: '8px',
+  border: '1px solid #E5E7EB',
+};
+
+const labelValue = (label: string, value: React.ReactNode) => (
+  <Box sx={{ mb: 0.75 }}>
+    <Typography component="span" sx={{ fontSize: 13, fontWeight: 600, color: '#4B5563' }}>
+      {label}:{' '}
+    </Typography>
+    <Typography component="span" sx={{ fontSize: 13, color: '#111827' }}>
+      {value}
+    </Typography>
+  </Box>
+);
+
+/* ── Detail Dialog ───────────────────────────────────────────── */
 
 interface PaymentRequestDetailDialogProps {
   open: boolean;
@@ -76,12 +91,12 @@ const PaymentRequestDetailDialog: React.FC<PaymentRequestDetailDialogProps> = ({
 
   const handleProcessPayment = async () => {
     if (!request) return;
-    
+
     if (action === 'return_to_hr' && !notes.trim()) {
       alert('Notes are required when returning to HR.');
       return;
     }
-    
+
     setProcessing(true);
     try {
       await paymentRequestService.processPaymentRequest(request.id, {
@@ -89,7 +104,7 @@ const PaymentRequestDetailDialog: React.FC<PaymentRequestDetailDialogProps> = ({
         payment_method: action === 'approve' ? paymentMethod : undefined,
         notes: notes.trim()
       });
-      
+
       if (onActionSuccess) {
         onActionSuccess();
       }
@@ -104,238 +119,204 @@ const PaymentRequestDetailDialog: React.FC<PaymentRequestDetailDialogProps> = ({
 
   if (!request) return null;
 
-  // Calculate payment breakdown if available
   const baseAmount = request.baseAmount || ((request.totalHours ?? 0) * (request.hourlyRate || 25));
   const bonusAmount = request.bonusAmount || ((request.coursesTaught ?? 0) * (request.courseBonus || 50));
   const totalAmount = request.amount || (baseAmount + bonusAmount);
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
-      <DialogTitle>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="h5">
+      <DialogTitle sx={{ pb: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
             Payment Request Details
           </Typography>
-          <Chip 
-            label={request.status.toUpperCase()} 
-            color={request.status === 'pending' ? 'warning' : request.status === 'approved' ? 'success' : 'error'}
-            size="medium"
+          <StatusChip
+            kind={statusToChipKind(request.status)}
+            label={request.status.toUpperCase()}
           />
         </Box>
       </DialogTitle>
       <DialogContent>
-        <Grid container spacing={3}>
-          {/* Instructor Information */}
-          <Grid item xs={12} md={6}>
-            <Card variant="outlined">
-              <CardContent>
-                <Typography variant="h6" gutterBottom color="primary">
-                  👤 Instructor Information
-                </Typography>
-                <Typography><strong>Name:</strong> {request.instructorName}</Typography>
-                <Typography><strong>Email:</strong> {request.instructorEmail}</Typography>
-                <Typography><strong>ID:</strong> {request.instructorId}</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px', mt: 1 }}>
 
-          {/* Payment Information */}
-          <Grid item xs={12} md={6}>
-            <Card variant="outlined">
-              <CardContent>
-                <Typography variant="h6" gutterBottom color="primary">
-                  💰 Payment Information
-                </Typography>
-                <Typography variant="h5" color="success.main" fontWeight="bold">
-                  ${Number(totalAmount).toFixed(2)}
-                </Typography>
-                <Typography><strong>Payment Date:</strong> {new Date(request.paymentDate).toLocaleDateString()}</Typography>
-                <Typography><strong>Payment Method:</strong> {request.paymentMethod?.replace('_', ' ').toUpperCase()}</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
+          {/* Row: Instructor + Payment */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+            <Box sx={detailSection}>
+              <Typography sx={sectionHeader}>Instructor Information</Typography>
+              {labelValue('Name', request.instructorName)}
+              {labelValue('Email', request.instructorEmail)}
+              {labelValue('ID', request.instructorId)}
+            </Box>
 
-          {/* Timesheet Information */}
-          <Grid item xs={12} md={6}>
-            <Card variant="outlined">
-              <CardContent>
-                <Typography variant="h6" gutterBottom color="primary">
-                  📅 Timesheet Information
-                </Typography>
-                <Typography><strong>Week Starting:</strong> {request.weekStartDate ? new Date(request.weekStartDate).toLocaleDateString() : '-'}</Typography>
-                <Typography><strong>Total Hours:</strong> {request.totalHours} hours</Typography>
-                <Typography><strong>Courses Taught:</strong> {request.coursesTaught} courses</Typography>
-                {request.timesheetComment && (
-                  <Typography><strong>HR Comment:</strong> {request.timesheetComment}</Typography>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
+            <Box sx={detailSection}>
+              <Typography sx={sectionHeader}>Payment Information</Typography>
+              <Typography sx={{ fontSize: 22, fontWeight: 700, color: '#16A34A', fontFamily: 'monospace', mb: 0.5 }}>
+                ${Number(totalAmount).toFixed(2)}
+              </Typography>
+              {labelValue('Payment Date', new Date(request.paymentDate).toLocaleDateString())}
+              {labelValue('Payment Method', request.paymentMethod?.replace('_', ' ').toUpperCase())}
+            </Box>
+          </Box>
 
-          {/* Payment Breakdown */}
-          <Grid item xs={12} md={6}>
-            <Card variant="outlined">
-              <CardContent>
-                <Typography variant="h6" gutterBottom color="primary">
-                  🧮 Payment Breakdown
-                </Typography>
-                <Typography><strong>Hourly Rate:</strong> ${request.hourlyRate || 25}/hr</Typography>
-                <Typography><strong>Course Bonus:</strong> ${request.courseBonus || 50}/course</Typography>
-                <Typography><strong>Base Amount:</strong> ${Number(baseAmount).toFixed(2)} ({request.totalHours}h × ${request.hourlyRate || 25})</Typography>
-                <Typography><strong>Bonus Amount:</strong> ${Number(bonusAmount).toFixed(2)} ({request.coursesTaught} courses × ${request.courseBonus || 50})</Typography>
-                <Typography variant="h6" color="success.main" fontWeight="bold">
-                  Total: ${Number(totalAmount).toFixed(2)}
-                </Typography>
-                {request.tierName && (
-                  <Typography><strong>Pay Tier:</strong> {request.tierName}</Typography>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
+          {/* Row: Timesheet + Breakdown */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+            <Box sx={detailSection}>
+              <Typography sx={sectionHeader}>Timesheet Information</Typography>
+              {labelValue('Week Starting', request.weekStartDate ? new Date(request.weekStartDate).toLocaleDateString() : '-')}
+              {labelValue('Total Hours', `${request.totalHours} hours`)}
+              {labelValue('Courses Taught', `${request.coursesTaught} courses`)}
+              {request.timesheetComment && labelValue('HR Comment', request.timesheetComment)}
+            </Box>
 
-          {/* Class Details */}
+            <Box sx={detailSection}>
+              <Typography sx={sectionHeader}>Payment Breakdown</Typography>
+              {labelValue('Hourly Rate', <Box component="span" sx={{ fontFamily: 'monospace' }}>${request.hourlyRate || 25}/hr</Box>)}
+              {labelValue('Course Bonus', <Box component="span" sx={{ fontFamily: 'monospace' }}>${request.courseBonus || 50}/course</Box>)}
+              {labelValue('Base Amount', <Box component="span" sx={{ fontFamily: 'monospace' }}>${Number(baseAmount).toFixed(2)} ({request.totalHours}h x ${request.hourlyRate || 25})</Box>)}
+              {labelValue('Bonus Amount', <Box component="span" sx={{ fontFamily: 'monospace' }}>${Number(bonusAmount).toFixed(2)} ({request.coursesTaught} courses x ${request.courseBonus || 50})</Box>)}
+              <Typography sx={{ fontSize: 16, fontWeight: 700, color: '#16A34A', fontFamily: 'monospace', mt: 1 }}>
+                Total: ${Number(totalAmount).toFixed(2)}
+              </Typography>
+              {request.tierName && labelValue('Pay Tier', request.tierName)}
+            </Box>
+          </Box>
+
+          {/* Classes Covered */}
           {request.classDetails && request.classDetails.length > 0 && (
-            <Grid item xs={12}>
-              <Card variant="outlined">
-                <CardContent>
-                  <Typography variant="h6" gutterBottom color="primary">
-                    📚 Classes Covered
-                  </Typography>
-                  <Box sx={{ maxHeight: 200, overflow: 'auto' }}>
-                    {request.classDetails.map((classDetail, index) => (
-                      <Box key={index} sx={{ mb: 1, p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
-                        <Typography variant="subtitle2" fontWeight="bold">
-                          {classDetail.course_name}
-                        </Typography>
-                        <Typography variant="body2">
-                          Hours: {classDetail.hours} | Date: {new Date(classDetail.date).toLocaleDateString()}
-                          {classDetail.location && ` | Location: ${classDetail.location}`}
-                        </Typography>
-                      </Box>
-                    ))}
+            <Box sx={detailSection}>
+              <Typography sx={sectionHeader}>Classes Covered</Typography>
+              <Box sx={{ maxHeight: 200, overflow: 'auto' }}>
+                {request.classDetails.map((classDetail, index) => (
+                  <Box key={index} sx={{ mb: 1, p: 1.5, bgcolor: '#fff', borderRadius: '6px', border: '1px solid #E5E7EB' }}>
+                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>
+                      {classDetail.course_name}
+                    </Typography>
+                    <Typography sx={{ fontSize: 12, color: '#4B5563' }}>
+                      Hours: {classDetail.hours} | Date: {new Date(classDetail.date).toLocaleDateString()}
+                      {classDetail.location && ` | Location: ${classDetail.location}`}
+                    </Typography>
                   </Box>
-                </CardContent>
-              </Card>
-            </Grid>
+                ))}
+              </Box>
+            </Box>
           )}
 
           {/* Request Information */}
-          <Grid item xs={12}>
-            <Card variant="outlined">
-              <CardContent>
-                <Typography variant="h6" gutterBottom color="primary">
-                  📋 Request Information
+          <Box sx={detailSection}>
+            <Typography sx={sectionHeader}>Request Information</Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+              <Box>
+                {labelValue('Created', new Date(request.createdAt).toLocaleString())}
+                {labelValue('Updated', new Date(request.updatedAt).toLocaleString())}
+              </Box>
+              <Box>
+                {labelValue('Timesheet ID', request.timesheetId)}
+                {labelValue('Request ID', request.id)}
+              </Box>
+            </Box>
+            {request.notes && (
+              <Box sx={{ mt: 1 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#4B5563', mb: 0.5 }}>Notes:</Typography>
+                <Typography sx={{ fontSize: 13, color: '#111827', bgcolor: '#fff', p: 1.5, borderRadius: '6px', border: '1px solid #E5E7EB' }}>
+                  {request.notes}
                 </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
-                    <Typography><strong>Created:</strong> {new Date(request.createdAt).toLocaleString()}</Typography>
-                    <Typography><strong>Updated:</strong> {new Date(request.updatedAt).toLocaleString()}</Typography>
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <Typography><strong>Timesheet ID:</strong> {request.timesheetId}</Typography>
-                    <Typography><strong>Request ID:</strong> {request.id}</Typography>
-                  </Grid>
-                  {request.notes && (
-                    <Grid item xs={12}>
-                      <Typography><strong>Notes:</strong></Typography>
-                      <Typography variant="body2" sx={{ bgcolor: 'grey.50', p: 1, borderRadius: 1 }}>
-                        {request.notes}
-                      </Typography>
-                    </Grid>
-                  )}
-                </Grid>
-              </CardContent>
-            </Card>
-          </Grid>
+              </Box>
+            )}
+          </Box>
 
-          {/* Payment Processing Section - Only show for pending requests */}
+          {/* Process Payment -- only for pending */}
           {request.status === 'pending' && (
-            <Grid item xs={12}>
-              <Card variant="outlined" sx={{ bgcolor: 'primary.50' }}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom color="primary">
-                    ⚙️ Process Payment Request
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
-                      <FormControl fullWidth>
-                        <InputLabel>Action</InputLabel>
-                        <Select
-                          value={action}
-                          onChange={(e) => setAction(e.target.value as 'approve' | 'return_to_hr')}
-                          label="Action"
-                        >
-                          <MenuItem value="approve">✅ Approve Payment</MenuItem>
-                          <MenuItem value="return_to_hr">🔄 Return to HR</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    {action === 'approve' && (
-                      <Grid item xs={12} md={6}>
-                        <FormControl fullWidth>
-                          <InputLabel>Payment Method</InputLabel>
-                          <Select
-                            value={paymentMethod}
-                            onChange={(e) => setPaymentMethod(e.target.value)}
-                            label="Payment Method"
-                          >
-                            <MenuItem value="direct_deposit">Direct Deposit</MenuItem>
-                            <MenuItem value="bank_transfer">Bank Transfer</MenuItem>
-                            <MenuItem value="check">Check</MenuItem>
-                            <MenuItem value="cash">Cash</MenuItem>
-                            <MenuItem value="credit_card">Credit Card</MenuItem>
-                            <MenuItem value="other">Other</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                    )}
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        multiline
-                        rows={3}
-                        label={action === 'approve' ? 'Notes (Optional)' : 'Notes (Required)'}
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        placeholder={
-                          action === 'approve' 
-                            ? 'Add optional notes about this approval...'
-                            : 'Required: Explain why this payment request is being returned to HR...'
-                        }
-                        required={action === 'return_to_hr'}
-                      />
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-            </Grid>
+            <Box sx={{ ...detailSection, bgcolor: '#F9FAFB' }}>
+              <Typography sx={sectionHeader}>Process Payment Request</Typography>
+              <Box sx={{ display: 'grid', gridTemplateColumns: action === 'approve' ? '1fr 1fr' : '1fr', gap: 2, mb: 2 }}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Action</InputLabel>
+                  <Select
+                    value={action}
+                    onChange={(e) => setAction(e.target.value as 'approve' | 'return_to_hr')}
+                    label="Action"
+                  >
+                    <MenuItem value="approve">Approve Payment</MenuItem>
+                    <MenuItem value="return_to_hr">Return to HR</MenuItem>
+                  </Select>
+                </FormControl>
+                {action === 'approve' && (
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Payment Method</InputLabel>
+                    <Select
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      label="Payment Method"
+                    >
+                      <MenuItem value="direct_deposit">Direct Deposit</MenuItem>
+                      <MenuItem value="bank_transfer">Bank Transfer</MenuItem>
+                      <MenuItem value="check">Check</MenuItem>
+                      <MenuItem value="cash">Cash</MenuItem>
+                      <MenuItem value="credit_card">Credit Card</MenuItem>
+                      <MenuItem value="other">Other</MenuItem>
+                    </Select>
+                  </FormControl>
+                )}
+              </Box>
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                size="small"
+                label={action === 'approve' ? 'Notes (Optional)' : 'Notes (Required)'}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder={
+                  action === 'approve'
+                    ? 'Add optional notes about this approval...'
+                    : 'Required: Explain why this payment request is being returned to HR...'
+                }
+                required={action === 'return_to_hr'}
+              />
+            </Box>
           )}
-        </Grid>
+        </Box>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose} disabled={processing}>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <GhostButton onClick={handleClose} disabled={processing}>
           Cancel
-        </Button>
+        </GhostButton>
         {request.status === 'pending' && (
-          <Button
+          <PrimaryButton
             onClick={handleProcessPayment}
-            variant="contained"
-            color={action === 'approve' ? 'success' : 'warning'}
             disabled={processing || (action === 'return_to_hr' && !notes.trim())}
-            startIcon={processing ? <CircularProgress size={20} /> : undefined}
+            sx={action === 'approve'
+              ? { bgcolor: '#16A34A', '&:hover': { bgcolor: '#15803D' } }
+              : { bgcolor: '#ED6C02', '&:hover': { bgcolor: '#C55A02' } }
+            }
           >
-            {processing 
-              ? 'Processing...' 
-              : action === 'approve' 
-                ? 'Approve Payment' 
+            {processing
+              ? <><CircularProgress size={16} sx={{ color: '#fff', mr: 1 }} /> Processing...</>
+              : action === 'approve'
+                ? 'Approve Payment'
                 : 'Return to HR'
             }
-          </Button>
+          </PrimaryButton>
         )}
       </DialogActions>
     </Dialog>
   );
 };
+
+/* ── Table columns ───────────────────────────────────────────── */
+
+const columns = [
+  { key: 'id',         label: 'ID',            width: '0.5fr' },
+  { key: 'instructor', label: 'Instructor',    width: '1.4fr' },
+  { key: 'amount',     label: 'Amount',        width: '0.8fr', align: 'right' as const },
+  { key: 'week',       label: 'Week Starting', width: '0.9fr' },
+  { key: 'hours',      label: 'Hours / Courses', width: '0.9fr' },
+  { key: 'status',     label: 'Status',        width: '0.8fr' },
+  { key: 'created',    label: 'Created',       width: '0.8fr' },
+  { key: 'actions',    label: 'Actions',       width: '0.5fr', align: 'center' as const },
+];
+
+/* ── Main Dashboard ──────────────────────────────────────────── */
 
 const PaymentRequestsDashboard: React.FC = () => {
   const [requests, setRequests] = useState<PaymentRequest[]>([]);
@@ -345,7 +326,6 @@ const PaymentRequestsDashboard: React.FC = () => {
   const [selectedRequest, setSelectedRequest] = useState<PaymentRequest | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
-  // Filters
   const [filters, setFilters] = useState<PaymentRequestFilters>({
     page: 1,
     limit: 10,
@@ -363,13 +343,13 @@ const PaymentRequestsDashboard: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const [statsData, requestsData] = await Promise.all([
         paymentRequestService.getStats(),
         paymentRequestService.getPaymentRequests(filters)
       ]);
-      
+
       setStats(statsData);
       setRequests(requestsData.requests);
       setPagination(requestsData.pagination);
@@ -385,265 +365,157 @@ const PaymentRequestsDashboard: React.FC = () => {
     loadData();
   }, [filters]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'warning';
-      case 'approved': return 'success';
-      case 'returned_to_hr': return 'info';
-      case 'rejected': return 'error';
-      case 'completed': return 'info';
-      default: return 'default';
-    }
-  };
-
+  /* ── Loading state ── */
   if (loading && !stats) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+        <CircularProgress size={24} />
       </Box>
     );
   }
 
   return (
-    <Box>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
       {/* Page Header */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" gutterBottom>
-          👨‍🏫 Instructor Payment Requests
+      <Box>
+        <Typography sx={{ fontSize: 22, fontWeight: 700, color: '#111827', mb: 0.5 }}>
+          Instructor Payment Requests
         </Typography>
-        <Typography variant="body1" color="textSecondary">
+        <Typography sx={{ fontSize: 14, color: '#4B5563' }}>
           Review and process payment requests from HR for instructor compensation
         </Typography>
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+        <Alert severity="error" onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
 
       {/* Statistics Cards */}
       {stats && (
-        <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center">
-                  <ScheduleIcon color="warning" sx={{ mr: 1 }} />
-                  <Box>
-                    <Typography variant="h4">{stats.pending.count}</Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Pending Requests
-                    </Typography>
-                    <Typography variant="h6" color="primary">
-                      ${stats.pending.amount.toFixed(2)}
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center">
-                  <ApproveIcon color="success" sx={{ mr: 1 }} />
-                  <Box>
-                    <Typography variant="h4">{stats.approvedThisMonth.count}</Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Approved This Month
-                    </Typography>
-                    <Typography variant="h6" color="success">
-                      ${Number(stats.approvedThisMonth.amount).toFixed(2)}
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center">
-                  <MoneyIcon color="primary" sx={{ mr: 1 }} />
-                  <Box>
-                    <Typography variant="h4">
-                      ${stats.pending.amount > 0 ? (Number(stats.pending.amount) / stats.pending.count).toFixed(2) : '0.00'}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Average Request
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center">
-                  <Cancel color="error" sx={{ mr: 1 }} />
-                  <Box>
-                    <Typography variant="h4">{stats.rejectedThisMonth}</Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Rejected This Month
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2 }}>
+          <StatCard
+            label="Pending Requests"
+            value={stats.pending.count}
+            dotColor="#ED6C02"
+          />
+          <StatCard
+            label="Approved This Month"
+            value={stats.approvedThisMonth.count}
+            dotColor="#16A34A"
+          />
+          <StatCard
+            label="Average Request"
+            value={`$${stats.pending.amount > 0 ? (Number(stats.pending.amount) / stats.pending.count).toFixed(2) : '0.00'}`}
+            dotColor="#4B5563"
+          />
+          <StatCard
+            label="Rejected This Month"
+            value={stats.rejectedThisMonth}
+            dotColor="#CC1F1F"
+          />
+        </Box>
       )}
 
-      {/* Filters and Actions */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={filters.status}
-                  onChange={(e) => setFilters({ ...filters, status: e.target.value, page: 1 })}
-                  label="Status"
-                >
-                  <MenuItem value="">All Statuses</MenuItem>
-                  <MenuItem value="pending">Pending</MenuItem>
-                  <MenuItem value="approved">Approved</MenuItem>
-                  <MenuItem value="returned_to_hr">Returned to HR</MenuItem>
-                  <MenuItem value="rejected">Rejected</MenuItem>
-                  <MenuItem value="completed">Completed</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Instructor ID"
-                type="number"
-                value={filters.instructor_id || ''}
-                onChange={(e) => setFilters({ 
-                  ...filters, 
-                  instructor_id: e.target.value ? parseInt(e.target.value) : undefined,
-                  page: 1 
-                })}
-              />
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <Button
-                variant="outlined"
-                startIcon={<RefreshIcon />}
-                onClick={loadData}
-                disabled={loading}
-              >
-                Refresh
-              </Button>
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <Box display="flex" gap={1}>
-                {/* Removed bulk action buttons */}
-              </Box>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+      {/* Filters */}
+      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2, alignItems: 'end' }}>
+          <FormControl fullWidth size="small">
+            <InputLabel>Status</InputLabel>
+            <Select
+              value={filters.status}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value, page: 1 })}
+              label="Status"
+            >
+              <MenuItem value="">All Statuses</MenuItem>
+              <MenuItem value="pending">Pending</MenuItem>
+              <MenuItem value="approved">Approved</MenuItem>
+              <MenuItem value="returned_to_hr">Returned to HR</MenuItem>
+              <MenuItem value="rejected">Rejected</MenuItem>
+              <MenuItem value="completed">Completed</MenuItem>
+            </Select>
+          </FormControl>
+
+          <TextField
+            fullWidth
+            size="small"
+            label="Instructor ID"
+            type="number"
+            value={filters.instructor_id || ''}
+            onChange={(e) => setFilters({
+              ...filters,
+              instructor_id: e.target.value ? parseInt(e.target.value) : undefined,
+              page: 1
+            })}
+          />
+
+          <GhostButton onClick={loadData} disabled={loading}>
+            Refresh
+          </GhostButton>
+        </Box>
+      </Box>
 
       {/* Payment Requests Table */}
-      <Card>
-        <CardContent>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell padding="checkbox">
-                    <Checkbox
-                      // Removed selectedRequests.length === requests.length && requests.length > 0
-                      indeterminate={false} // Always false as selectedRequests is removed
-                      onChange={(e) => {}} // No-op
-                    />
-                  </TableCell>
-                  <TableCell>ID</TableCell>
-                  <TableCell>Instructor</TableCell>
-                  <TableCell>Amount</TableCell>
-                  <TableCell>Week Starting</TableCell>
-                  <TableCell>Hours/Courses</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Created</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {requests.map((request) => (
-                  <TableRow key={request.id} hover>
-                    <TableCell padding="checkbox">
-                      <Checkbox
-                        // Removed selectedRequests.includes(request.id)
-                        onChange={(e) => {}} // No-op
-                      />
-                    </TableCell>
-                    <TableCell>{request.id}</TableCell>
-                    <TableCell>
-                      <Typography variant="body2">{request.instructorName}</Typography>
-                      <Typography variant="caption" color="textSecondary">
-                        ID: {request.instructorId}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight="bold">
-                        ${Number(request.amount).toFixed(2)}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>{request.weekStartDate}</TableCell>
-                    <TableCell>
-                      <Typography variant="body2">
-                        {request.totalHours}h / {request.coursesTaught} courses
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={request.status.toUpperCase()}
-                        color={getStatusColor(request.status) as any}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {new Date(request.createdAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <Tooltip title="View Details">
-                        <IconButton
-                          size="small"
-                          onClick={() => {
-                            setSelectedRequest(request);
-                            setDetailDialogOpen(true);
-                          }}
-                        >
-                          <VisibilityIcon />
-                        </IconButton>
-                      </Tooltip>
-                      {/* Removed approve/reject buttons */}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          {/* Pagination */}
-          {pagination.pages > 1 && (
-            <Box display="flex" justifyContent="center" mt={2}>
-              <Pagination
-                count={pagination.pages}
-                page={pagination.page}
-                onChange={(_, page) => setFilters({ ...filters, page })}
-                color="primary"
+      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff' }}>
+        <DataTable columns={columns}>
+          {requests.map((request) => (
+            <DataTableRow key={request.id} columns={columns}>
+              <Typography sx={{ fontSize: 13, color: '#111827' }}>{request.id}</Typography>
+              <Box>
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>
+                  {request.instructorName}
+                </Typography>
+                <Typography sx={{ fontSize: 11, color: '#9CA3AF' }}>
+                  ID: {request.instructorId}
+                </Typography>
+              </Box>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#111827', fontFamily: 'monospace' }}>
+                ${Number(request.amount).toFixed(2)}
+              </Typography>
+              <Typography sx={{ fontSize: 13, color: '#111827' }}>{request.weekStartDate}</Typography>
+              <Typography sx={{ fontSize: 13, color: '#111827' }}>
+                {request.totalHours}h / {request.coursesTaught} courses
+              </Typography>
+              <StatusChip
+                kind={statusToChipKind(request.status)}
+                label={request.status.toUpperCase()}
               />
-            </Box>
-          )}
-        </CardContent>
-      </Card>
+              <Typography sx={{ fontSize: 13, color: '#111827' }}>
+                {new Date(request.createdAt).toLocaleDateString()}
+              </Typography>
+              <Box
+                onClick={() => {
+                  setSelectedRequest(request);
+                  setDetailDialogOpen(true);
+                }}
+                sx={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: '#CC1F1F',
+                  cursor: 'pointer',
+                  '&:hover': { textDecoration: 'underline' },
+                }}
+              >
+                View
+              </Box>
+            </DataTableRow>
+          ))}
+        </DataTable>
+
+        {/* Pagination */}
+        {pagination.pages > 1 && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+            <Pagination
+              count={pagination.pages}
+              page={pagination.page}
+              onChange={(_, page) => setFilters({ ...filters, page })}
+              color="primary"
+            />
+          </Box>
+        )}
+      </Box>
 
       {/* Detail Dialog */}
       <PaymentRequestDetailDialog
@@ -652,10 +524,8 @@ const PaymentRequestsDashboard: React.FC = () => {
         onClose={() => setDetailDialogOpen(false)}
         onActionSuccess={loadData}
       />
-
-      {/* Removed Bulk Action Dialog */}
     </Box>
   );
 };
 
-export default PaymentRequestsDashboard; 
+export default PaymentRequestsDashboard;

@@ -1,215 +1,57 @@
 import React from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Typography,
-  Chip,
-  Box,
-  Tooltip,
-} from '@mui/material';
-import {
-  CheckCircle as CompletedIcon,
-  Person as PersonIcon,
-} from '@mui/icons-material';
+import { Box, Typography } from '@mui/material';
 import { formatDisplayDate } from '../../utils/dateUtils';
+import DataTable, { DataTableRow } from '../gtacpr/DataTable';
+import StatusChip from '../gtacpr/StatusChip';
 
 interface InstructorArchiveTableProps {
   courses: { id?: number; courseId?: number; date?: string; displayDate?: string; organizationName?: string; organizationname?: string; location?: string; courseType?: string; coursetypename?: string; status?: string; studentsregistered?: number; studentsattendance?: number; maxStudents?: number; registeredStudents?: number; studentsAttended?: number; updatedAt?: string; name?: string }[];
 }
 
-/**
- * Commercial-grade instructor archive table for displaying completed courses
- */
-const InstructorArchiveTable: React.FC<InstructorArchiveTableProps> = ({
-  courses = [],
-}) => {
-  console.log('[InstructorArchiveTable] Received courses:', courses);
-  console.log('[InstructorArchiveTable] Courses length:', courses.length);
-  
-  const formatTime = (timeString?: string): string => {
-    if (!timeString) return '';
-    return timeString.slice(0, 5); // Convert "09:00:00" to "09:00"
-  };
+const columns = [
+  { key: 'date', label: 'CLASS DATE', width: '1fr' },
+  { key: 'course', label: 'COURSE NAME', width: '1.3fr' },
+  { key: 'org', label: 'ORGANIZATION', width: '1.2fr' },
+  { key: 'location', label: 'LOCATION', width: '1fr' },
+  { key: 'registered', label: 'REGISTERED', width: '0.7fr', align: 'right' as const },
+  { key: 'attended', label: 'ATTENDED', width: '0.7fr', align: 'right' as const },
+  { key: 'completed', label: 'COMPLETED ON', width: '1fr' },
+  { key: 'status', label: 'STATUS', width: '0.7fr' },
+];
+
+const InstructorArchiveTable: React.FC<InstructorArchiveTableProps> = ({ courses = [] }) => {
+  if (courses.length === 0) {
+    return (
+      <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
+        <Typography sx={{ color: '#9CA3AF', fontSize: 14 }}>No completed classes yet.</Typography>
+        <Typography sx={{ color: '#9CA3AF', fontSize: 12.5, mt: 1 }}>Completed classes will appear here after you mark them as finished.</Typography>
+      </Box>
+    );
+  }
 
   return (
-    <Paper elevation={2}>
-      <Box sx={{ p: 2, borderBottom: '1px solid #e0e0e0' }}>
-        <Typography
-          variant='h6'
-          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-        >
-          <CompletedIcon color='success' />
-          Completed Classes Archive
-          <Chip
-            label={`${courses.length} course${courses.length !== 1 ? 's' : ''}`}
-            size='small'
-            color='success'
-            variant='outlined'
-          />
-        </Typography>
-        <Typography variant='body2' color='text.secondary' sx={{ mt: 0.5 }}>
-          View your teaching history and completed course details
-        </Typography>
-      </Box>
-
-      {courses.length === 0 ? (
-        <Box sx={{ p: 4, textAlign: 'center' }}>
-          <CompletedIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
-          <Typography variant='h6' color='text.secondary'>
-            No Completed Classes Yet
+    <DataTable columns={columns} shownCount={courses.length} totalCount={courses.length}>
+      {courses.map((course, index) => (
+        <DataTableRow key={course.courseId || index} columns={columns}>
+          <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>
+            {course.date ? formatDisplayDate(course.date) : '—'}
           </Typography>
-          <Typography variant='body2' color='text.secondary'>
-            Completed classes will appear here after you mark them as finished.
+          <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.name || 'CPR Class'}</Typography>
+          <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.organizationname || 'Unassigned'}</Typography>
+          <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.location || 'TBD'}</Typography>
+          <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'right' }}>
+            {course.maxStudents || course.registeredStudents || 0}
           </Typography>
-        </Box>
-      ) : (
-        <TableContainer>
-          <Table stickyHeader size='medium'>
-            <TableHead>
-              <TableRow>
-                <TableCell
-                  sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}
-                >
-                  Class Date
-                </TableCell>
-                <TableCell
-                  sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}
-                >
-                  Course Name
-                </TableCell>
-                <TableCell
-                  sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}
-                >
-                  Organization
-                </TableCell>
-                <TableCell
-                  sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}
-                >
-                  Location
-                </TableCell>
-                <TableCell
-                  sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}
-                  align='center'
-                >
-                  Students Registered
-                </TableCell>
-                <TableCell
-                  sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}
-                  align='center'
-                >
-                  Students Attended
-                </TableCell>
-                <TableCell
-                  sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}
-                >
-                  Completed On
-                </TableCell>
-                <TableCell
-                  sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}
-                  align='center'
-                >
-                  Status
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {courses.map((course, index) => {
-                const rowColor = index % 2 === 0 ? '#ffffff' : '#fafafa';
-
-                return (
-                  <TableRow
-                    key={course.courseId || index}
-                    sx={{
-                      '&:hover': {
-                        backgroundColor: '#f0f7ff',
-                      },
-                    }}
-                  >
-                    <TableCell sx={{ backgroundColor: rowColor }}>
-                      <Typography variant='body2' fontWeight='medium'>
-                        {course.date ? formatDisplayDate(course.date) : '-'}
-                      </Typography>
-                    </TableCell>
-
-                    <TableCell sx={{ backgroundColor: rowColor }}>
-                      <Typography variant='body2'>
-                        {course.name || 'CPR Class'}
-                      </Typography>
-                    </TableCell>
-
-                    <TableCell sx={{ backgroundColor: rowColor }}>
-                      <Typography variant='body2'>
-                        {course.organizationname || 'Unassigned'}
-                      </Typography>
-                    </TableCell>
-
-                    <TableCell sx={{ backgroundColor: rowColor }}>
-                      <Typography variant='body2'>
-                        {course.location || 'TBD'}
-                      </Typography>
-                    </TableCell>
-
-                    <TableCell
-                      align='center'
-                      sx={{ backgroundColor: rowColor }}
-                    >
-                      <Typography variant='body2'>
-                        {course.maxStudents || course.registeredStudents || 0}
-                      </Typography>
-                    </TableCell>
-
-                    <TableCell
-                      align='center'
-                      sx={{ backgroundColor: rowColor }}
-                    >
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: 0.5,
-                        }}
-                      >
-                        <PersonIcon fontSize='small' color='action' />
-                        <Typography variant='body2'>
-                          {course.studentsattendance || course.studentsAttended || 0}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-
-                    <TableCell sx={{ backgroundColor: rowColor }}>
-                      <Typography variant='body2' color='text.secondary'>
-                        {(course.updatedAt || course.date) ? formatDisplayDate(
-                          (course.updatedAt || course.date)!
-                        ) : '-'}
-                      </Typography>
-                    </TableCell>
-
-                    <TableCell
-                      align='center'
-                      sx={{ backgroundColor: rowColor }}
-                    >
-                      <Chip
-                        icon={<CompletedIcon />}
-                        label='Completed'
-                        color='success'
-                        size='small'
-                        variant='outlined'
-                      />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
-    </Paper>
+          <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'right' }}>
+            {course.studentsattendance || course.studentsAttended || 0}
+          </Typography>
+          <Typography sx={{ fontSize: 12.5, color: '#9CA3AF' }}>
+            {(course.updatedAt || course.date) ? formatDisplayDate((course.updatedAt || course.date)!) : '—'}
+          </Typography>
+          <StatusChip kind="success" label="Completed" />
+        </DataTableRow>
+      ))}
+    </DataTable>
   );
 };
 

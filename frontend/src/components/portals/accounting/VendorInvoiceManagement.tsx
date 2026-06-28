@@ -2,16 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Button,
-  Chip,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -24,23 +14,12 @@ import {
   Grid,
   Alert,
   CircularProgress,
-  Tooltip,
-  Divider
+  Tooltip
 } from '@mui/material';
-import {
-  Visibility as ViewIcon,
-  Payment as PaymentIcon,
-  Receipt as InvoiceIcon,
-  Business as VendorIcon,
-  Person as PersonIcon,
-  Email as EmailIcon,
-  Phone as PhoneIcon,
-  LocationOn as LocationIcon,
-  AccountBalance as BankIcon,
-  CheckCircle as ApprovedIcon,
-  Schedule as PendingIcon,
-  AttachMoney as MoneyIcon
-} from '@mui/icons-material';
+import DataTable, { DataTableRow } from '../../gtacpr/DataTable';
+import StatusChip from '../../gtacpr/StatusChip';
+import StatCard from '../../gtacpr/StatCard';
+import { PrimaryButton, GhostButton } from '../../gtacpr/Buttons';
 import { adminApi } from '../../../services/api';
 import { useSnackbar } from '../../../contexts/SnackbarContext';
 import { useVendorInvoiceUpdates } from '../../../hooks/useVendorInvoiceUpdates';
@@ -100,7 +79,75 @@ interface PaymentHistory {
   processedByName: string;
 }
 
-type ChipColor = 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning';
+const TABLE_COLUMNS = [
+  { key: 'date', label: 'Date', width: '90px' },
+  { key: 'billingCompany', label: 'Billing Company', width: '140px' },
+  { key: 'invoiceNumber', label: 'Invoice #', width: '110px' },
+  { key: 'quantity', label: 'Qty', width: '50px', align: 'right' as const },
+  { key: 'item', label: 'Item', width: '110px' },
+  { key: 'description', label: 'Description', width: '200px' },
+  { key: 'rate', label: 'Rate', width: '90px', align: 'right' as const },
+  { key: 'amount', label: 'Amount', width: '110px', align: 'right' as const },
+  { key: 'subtotal', label: 'Subtotal', width: '110px', align: 'right' as const },
+  { key: 'hst', label: 'HST', width: '90px', align: 'right' as const },
+  { key: 'total', label: 'Total', width: '110px', align: 'right' as const },
+  { key: 'status', label: 'Status', width: '130px' },
+  { key: 'dueDate', label: 'Due Date', width: '90px' },
+  { key: 'actions', label: 'Actions', width: '80px', align: 'center' as const },
+];
+
+const PAYMENT_HISTORY_COLUMNS = [
+  { key: 'date', label: 'Date', width: '100px' },
+  { key: 'amount', label: 'Amount', width: '110px' },
+  { key: 'method', label: 'Method', width: '130px' },
+  { key: 'reference', label: 'Reference', width: '130px' },
+  { key: 'processedBy', label: 'Processed By', width: '140px' },
+  { key: 'status', label: 'Status', width: '100px' },
+];
+
+const getStatusKind = (status: string): 'success' | 'active' | 'warning' | 'danger' | 'neutral' | 'inactive' | 'brand' | 'pending' => {
+  switch (status) {
+    case 'pending_submission': return 'neutral';
+    case 'submitted_to_admin': return 'warning';
+    case 'submitted_to_accounting': return 'active';
+    case 'rejected_by_admin': return 'danger';
+    case 'rejected_by_accountant': return 'danger';
+    case 'paid': return 'success';
+    default: return 'neutral';
+  }
+};
+
+const getStatusLabel = (status: string) => {
+  switch (status) {
+    case 'pending_submission': return 'Pending Submission';
+    case 'submitted_to_admin': return 'Submitted to Admin';
+    case 'submitted_to_accounting': return 'Submitted to Accounting';
+    case 'rejected_by_admin': return 'Rejected by Admin';
+    case 'rejected_by_accountant': return 'Rejected by Accountant';
+    case 'paid': return 'Paid';
+    default: return status.replace('_', ' ').toUpperCase();
+  }
+};
+
+const getPaymentStatusKind = (status: string): 'success' | 'active' | 'warning' | 'danger' | 'neutral' | 'inactive' | 'brand' | 'pending' => {
+  switch (status) {
+    case 'paid': return 'success';
+    case 'partially_paid': return 'warning';
+    case 'unpaid': return 'danger';
+    default: return 'neutral';
+  }
+};
+
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD'
+  }).format(amount);
+};
+
+const formatDate = (date: string) => {
+  return new Date(date).toLocaleDateString();
+};
 
 const VendorInvoiceManagement: React.FC = () => {
   const [invoices, setInvoices] = useState<VendorInvoice[]>([]);
@@ -138,10 +185,10 @@ const VendorInvoiceManagement: React.FC = () => {
   // Real-time updates
   const { isConnected } = useVendorInvoiceUpdates({
     onStatusUpdate: (update) => {
-      console.log('🔄 Real-time status update received in accounting portal:', update);
+      console.log('Real-time status update received in accounting portal:', update);
     },
     onNotesUpdate: (update) => {
-      console.log('📝 Real-time notes update received in accounting portal:', update);
+      console.log('Real-time notes update received in accounting portal:', update);
     },
     onRefresh: fetchInvoices
   });
@@ -152,7 +199,6 @@ const VendorInvoiceManagement: React.FC = () => {
 
   const handleView = async (invoice: VendorInvoice) => {
     setSelectedInvoice(invoice);
-    // Initialize payment data for this invoice
     setPaymentData({
       amount: Number(invoice.balanceDue || 0) > 0 ? String(invoice.balanceDue || 0) : '',
       paymentDate: new Date().toISOString().split('T')[0],
@@ -162,8 +208,7 @@ const VendorInvoiceManagement: React.FC = () => {
       referenceNumber: '',
       notes: ''
     });
-    
-    // Fetch payment history for this invoice
+
     try {
       const response = await adminApi.getAccountingVendorInvoiceDetails(invoice.id);
       if (response.success && response.data.payments) {
@@ -175,11 +220,9 @@ const VendorInvoiceManagement: React.FC = () => {
       console.error('Error fetching payment history:', error);
       setPaymentHistory([]);
     }
-    
+
     setViewDialog(true);
   };
-
-
 
   const handleProcessPayment = async () => {
     if (!selectedInvoice || !paymentData.amount) return;
@@ -187,10 +230,9 @@ const VendorInvoiceManagement: React.FC = () => {
     try {
       setProcessingPayment(true);
       const response = await adminApi.processVendorPayment(selectedInvoice.id, paymentData);
-      
+
       showSuccess(response.message || 'Payment processed successfully');
-      
-      // Refresh payment history
+
       try {
         const historyResponse = await adminApi.getAccountingVendorInvoiceDetails(selectedInvoice.id);
         if (historyResponse.success && historyResponse.data.payments) {
@@ -199,10 +241,10 @@ const VendorInvoiceManagement: React.FC = () => {
       } catch (error: any) {
         console.error('Error refreshing payment history:', error);
       }
-      
+
       setViewDialog(false);
       setSelectedInvoice(null);
-      fetchInvoices(); // Refresh the list
+      fetchInvoices();
     } catch (error: unknown) {
       console.error('Error processing payment:', error);
       const errObj = error as { response?: { data?: { message?: string } } };
@@ -212,63 +254,11 @@ const VendorInvoiceManagement: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: string): ChipColor => {
-    switch (status) {
-      case 'pending_submission':
-        return 'default';
-      case 'submitted_to_admin':
-        return 'warning';
-      case 'submitted_to_accounting':
-        return 'info';
-      case 'rejected_by_admin':
-        return 'error';
-      case 'rejected_by_accountant':
-        return 'error';
-      case 'paid':
-        return 'success';
-      default:
-        return 'default';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'pending_submission':
-        return 'Pending Submission';
-      case 'submitted_to_admin':
-        return 'Submitted to Admin';
-      case 'submitted_to_accounting':
-        return 'Submitted to Accounting';
-      case 'rejected_by_admin':
-        return 'Rejected by Admin';
-      case 'rejected_by_accountant':
-        return 'Rejected by Accountant';
-      case 'paid':
-        return 'Paid';
-      default:
-        return status.replace('_', ' ').toUpperCase();
-    }
-  };
-
-  const getPaymentStatusColor = (status: string): ChipColor => {
-    switch (status) {
-      case 'paid': return 'success';
-      case 'partially_paid': return 'warning';
-      case 'unpaid': return 'error';
-      default: return 'default';
-    }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
-
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString();
-  };
+  const filteredInvoices = invoices.filter(invoice => {
+    if (statusFilter === 'all') return true;
+    if (statusFilter === 'pending') return invoice.status !== 'paid';
+    return invoice.status === statusFilter;
+  });
 
   if (loading) {
     return (
@@ -286,77 +276,68 @@ const VendorInvoiceManagement: React.FC = () => {
     );
   }
 
+  const totalOutstanding = invoices.reduce((sum, inv) => {
+    const total = typeof inv.total === 'number' ? inv.total : parseFloat(String(inv.total)) || 0;
+    const totalPaid = Number(inv.totalPaid) || 0;
+    const balanceDue = total - totalPaid;
+    return sum + (isNaN(balanceDue) ? 0 : balanceDue);
+  }, 0);
+
+  const totalPaidSum = invoices.reduce((sum, inv) => {
+    const totalPaid = Number(inv.totalPaid) || 0;
+    return sum + (isNaN(totalPaid) ? 0 : totalPaid);
+  }, 0);
+
+  const partiallyPaidCount = invoices.filter(inv => inv.paymentStatus === 'partially_paid').length;
+
   return (
     <Box>
+      {/* Header */}
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4" gutterBottom>
-          <PaymentIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+        <Typography sx={{ fontSize: 22, fontWeight: 700, color: '#111827' }}>
           Vendor Invoice Management
         </Typography>
-        <Chip
-          label={isConnected ? '🟢 Live Updates' : '🔴 Offline'}
-          color={isConnected ? 'success' : 'error'}
-          size="small"
-          variant="outlined"
+        <StatusChip
+          kind={isConnected ? 'success' : 'danger'}
+          label={isConnected ? 'Live Updates' : 'Offline'}
         />
       </Box>
 
-      <Paper sx={{ mb: 3, p: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          Summary
-        </Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={3}>
-            <Box textAlign="center">
-              <Typography variant="h4" color="primary">
-                {invoices.length}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Pending Invoices (Non-Paid)
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Box textAlign="center">
-              <Typography variant="h4" color="warning.main">
-                {formatCurrency(invoices.reduce((sum, inv) => {
-                  const amount = typeof inv.amount === 'number' ? inv.amount : parseFloat(String(inv.amount)) || 0;
-                  const total = typeof inv.total === 'number' ? inv.total : parseFloat(String(inv.total)) || 0;
-                  const totalPaid = Number(inv.totalPaid) || 0;
-                  const balanceDue = total - totalPaid;
-                  return sum + (isNaN(balanceDue) ? 0 : balanceDue);
-                }, 0))}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Total Outstanding
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Box textAlign="center">
-              <Typography variant="h4" color="success.main">
-                {formatCurrency(invoices.reduce((sum, inv) => {
-                  const totalPaid = Number(inv.totalPaid) || 0;
-                  return sum + (isNaN(totalPaid) ? 0 : totalPaid);
-                }, 0))}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Total Paid
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Box textAlign="center">
-              <Typography variant="h4" color="info.main">
-                {invoices.filter(inv => inv.paymentStatus === 'partially_paid').length}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Partially Paid
-              </Typography>
-            </Box>
-          </Grid>
+      {/* Summary Cards */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={12} md={3}>
+          <StatCard
+            label="Pending Invoices"
+            value={invoices.length}
+            sub="Non-Paid"
+            dotColor="#ED6C02"
+          />
         </Grid>
-      </Paper>
+        <Grid item xs={12} md={3}>
+          <StatCard
+            label="Total Outstanding"
+            value={formatCurrency(totalOutstanding)}
+            sub="Balance due across all invoices"
+            dotColor="#CC1F1F"
+          />
+        </Grid>
+        <Grid item xs={12} md={3}>
+          <StatCard
+            label="Total Paid"
+            value={formatCurrency(totalPaidSum)}
+            sub="Payments processed"
+            dotColor="#16A34A"
+          />
+        </Grid>
+        <Grid item xs={12} md={3}>
+          <StatCard
+            label="Partially Paid"
+            value={partiallyPaidCount}
+            sub="Invoices with partial payment"
+            dotColor="#2563EB"
+          />
+        </Grid>
+      </Grid>
 
       {/* Status Filter */}
       <Box sx={{ mb: 2 }}>
@@ -379,99 +360,88 @@ const VendorInvoiceManagement: React.FC = () => {
         </FormControl>
       </Box>
 
-      <TableContainer component={Paper} sx={{ overflowX: 'auto', maxHeight: '70vh' }}>
-        <Table sx={{ minWidth: 1200 }}>
-          <TableHead sx={{ position: 'sticky', top: 0, backgroundColor: 'background.paper', zIndex: 1 }}>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 'bold', minWidth: 100, backgroundColor: 'background.paper', position: 'sticky', left: 0, zIndex: 2 }}>Date</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', minWidth: 150, backgroundColor: 'background.paper', position: 'sticky', left: 100, zIndex: 2 }}>Billing Company</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', minWidth: 120, backgroundColor: 'background.paper', position: 'sticky', left: 250, zIndex: 2 }}>Invoice #</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 'bold', minWidth: 80, backgroundColor: 'background.paper' }}>Quantity</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', minWidth: 120, backgroundColor: 'background.paper' }}>Item</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', minWidth: 200, maxWidth: 300, backgroundColor: 'background.paper' }}>Description</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 'bold', minWidth: 100, backgroundColor: 'background.paper' }}>Rate</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 'bold', minWidth: 120, backgroundColor: 'background.paper' }}>Amount</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 'bold', minWidth: 120, backgroundColor: 'background.paper' }}>Subtotal</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 'bold', minWidth: 100, backgroundColor: 'background.paper' }}>HST</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 'bold', minWidth: 120, backgroundColor: 'background.paper' }}>Total</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', minWidth: 120, backgroundColor: 'background.paper' }}>Status</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', minWidth: 100, backgroundColor: 'background.paper' }}>Due Date</TableCell>
-              <TableCell align="center" sx={{ fontWeight: 'bold', minWidth: 120, backgroundColor: 'background.paper', position: 'sticky', right: 0, zIndex: 2 }}>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {invoices
-              .filter(invoice => {
-                if (statusFilter === 'all') return true;
-                if (statusFilter === 'pending') return invoice.status !== 'paid';
-                return invoice.status === statusFilter;
-              })
-              .map((invoice) => (
-              <TableRow key={invoice.id}>
-                <TableCell sx={{ position: 'sticky', left: 0, backgroundColor: 'background.paper', zIndex: 1 }}>{new Date(invoice.createdAt || invoice.invoiceDate).toLocaleDateString()}</TableCell>
-                <TableCell sx={{ position: 'sticky', left: 100, backgroundColor: 'background.paper', zIndex: 1 }}>{invoice.billingCompany || invoice.company || invoice.vendorName || '-'}</TableCell>
-                <TableCell sx={{ position: 'sticky', left: 250, backgroundColor: 'background.paper', zIndex: 1 }}>{invoice.invoiceNumber}</TableCell>
-                <TableCell align="right">{invoice.quantity || '-'}</TableCell>
-                <TableCell>{invoice.item || '-'}</TableCell>
-                <TableCell>
-                  <Typography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={invoice.description}>
-                    {invoice.description}
-                  </Typography>
-                </TableCell>
-                <TableCell align="right">
-                  {invoice.rate && !isNaN(invoice.rate) && invoice.rate > 0 ? 
-                    `$${Number(invoice.rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
-                </TableCell>
-                <TableCell align="right">
-                  {invoice.amount && !isNaN(Number(invoice.amount)) ?
-                    `$${Number(invoice.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` :
-                    (invoice.total && !isNaN(Number(invoice.total)) ?
-                      `$${Number(invoice.total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-')}
-                </TableCell>
-                <TableCell align="right">
-                  {invoice.subtotal && !isNaN(Number(invoice.subtotal)) && Number(invoice.subtotal) > 0 ?
-                    `$${Number(invoice.subtotal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
-                </TableCell>
-                <TableCell align="right">
-                  {invoice.hst && !isNaN(Number(invoice.hst)) && Number(invoice.hst) > 0 ?
-                    `$${Number(invoice.hst).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
-                </TableCell>
-                <TableCell align="right">
-                  {invoice.total && !isNaN(Number(invoice.total)) && Number(invoice.total) > 0 ?
-                    `$${Number(invoice.total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
-                </TableCell>
-                <TableCell>
-                  <Chip label={getStatusLabel(invoice.status)} color={getStatusColor(invoice.status)} size="small" />
-                </TableCell>
-                <TableCell>{invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '-'}</TableCell>
-                <TableCell align="center" sx={{ position: 'sticky', right: 0, backgroundColor: 'background.paper', zIndex: 1 }}>
-                  <Tooltip title="View Invoice Details">
-                    <IconButton
-                      size="small"
-                      onClick={() => handleView(invoice)}
-                      color="primary"
-                    >
-                      <ViewIcon />
-                    </IconButton>
-                  </Tooltip>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      {/* Invoices Table */}
+      <DataTable
+        columns={TABLE_COLUMNS}
+        shownCount={filteredInvoices.length}
+        totalCount={invoices.length}
+      >
+        {filteredInvoices.map((invoice) => (
+          <DataTableRow key={invoice.id} columns={TABLE_COLUMNS}>
+            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+              {new Date(invoice.createdAt || invoice.invoiceDate).toLocaleDateString()}
+            </Typography>
+            <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+              {invoice.billingCompany || invoice.company || invoice.vendorName || '-'}
+            </Typography>
+            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+              {invoice.invoiceNumber}
+            </Typography>
+            <Typography sx={{ fontSize: 13, color: '#4B5563', textAlign: 'right' }}>
+              {invoice.quantity || '-'}
+            </Typography>
+            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+              {invoice.item || '-'}
+            </Typography>
+            <Tooltip title={invoice.description}>
+              <Typography sx={{ fontSize: 13, color: '#4B5563', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {invoice.description}
+              </Typography>
+            </Tooltip>
+            <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace', textAlign: 'right' }}>
+              {invoice.rate && !isNaN(invoice.rate) && invoice.rate > 0
+                ? `$${Number(invoice.rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : '-'}
+            </Typography>
+            <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace', textAlign: 'right' }}>
+              {invoice.amount && !isNaN(Number(invoice.amount))
+                ? `$${Number(invoice.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : invoice.total && !isNaN(Number(invoice.total))
+                  ? `$${Number(invoice.total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  : '-'}
+            </Typography>
+            <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace', textAlign: 'right' }}>
+              {invoice.subtotal && !isNaN(Number(invoice.subtotal)) && Number(invoice.subtotal) > 0
+                ? `$${Number(invoice.subtotal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : '-'}
+            </Typography>
+            <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace', textAlign: 'right' }}>
+              {invoice.hst && !isNaN(Number(invoice.hst)) && Number(invoice.hst) > 0
+                ? `$${Number(invoice.hst).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : '-'}
+            </Typography>
+            <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827', fontFamily: 'monospace', textAlign: 'right' }}>
+              {invoice.total && !isNaN(Number(invoice.total)) && Number(invoice.total) > 0
+                ? `$${Number(invoice.total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : '-'}
+            </Typography>
+            <StatusChip kind={getStatusKind(invoice.status)} label={getStatusLabel(invoice.status)} />
+            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+              {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '-'}
+            </Typography>
+            <Box sx={{ textAlign: 'center' }}>
+              <Box
+                onClick={() => handleView(invoice)}
+                sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+              >
+                View
+              </Box>
+            </Box>
+          </DataTableRow>
+        ))}
+      </DataTable>
 
       {/* View Invoice Dialog */}
       <Dialog open={viewDialog} onClose={() => setViewDialog(false)} maxWidth="md" fullWidth sx={{ '& .MuiDialog-paper': { maxHeight: '90vh' } }}>
         <DialogTitle>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6">
+            <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
               Invoice Details - #{selectedInvoice?.invoiceNumber}
             </Typography>
             {selectedInvoice && (
-              <Chip
+              <StatusChip
+                kind={getPaymentStatusKind(selectedInvoice.paymentStatus || 'unknown')}
                 label={(selectedInvoice.paymentStatus || 'unknown').replace('_', ' ').toUpperCase()}
-                color={getPaymentStatusColor(selectedInvoice.paymentStatus || 'unknown')}
               />
             )}
           </Box>
@@ -479,296 +449,251 @@ const VendorInvoiceManagement: React.FC = () => {
         <DialogContent>
           {selectedInvoice && (
             <Box>
-              <Paper sx={{ p: 3, mb: 3, backgroundColor: '#f8f9fa' }}>
+              {/* Vendor + Payment Summary */}
+              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#F9FAFB', p: 3, mb: 3 }}>
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={6}>
-                    <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 'bold' }}>
-                      <VendorIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                    <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>
                       Vendor Information
                     </Typography>
-                    <Box sx={{ pl: 2 }}>
-                      <Typography variant="body1" fontWeight="bold" sx={{ mb: 1 }}>
+                    <Box sx={{ pl: 0 }}>
+                      <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827', mb: 0.5 }}>
                         {selectedInvoice.vendorName}
                       </Typography>
-                      <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
-                        <PersonIcon sx={{ mr: 1, fontSize: 'small' }} />
-                        {selectedInvoice.vendorContact}
+                      <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 0.5 }}>
+                        Contact: {selectedInvoice.vendorContact}
                       </Typography>
-                      <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
-                        <EmailIcon sx={{ mr: 1, fontSize: 'small' }} />
-                        {selectedInvoice.vendorEmail}
+                      <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 0.5 }}>
+                        Email: {selectedInvoice.vendorEmail}
                       </Typography>
                       {selectedInvoice.bankName && (
-                        <Typography variant="body2" color="textSecondary">
-                          <BankIcon sx={{ mr: 1, fontSize: 'small' }} />
-                          {selectedInvoice.bankName}
+                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                          Bank: {selectedInvoice.bankName}
                         </Typography>
                       )}
                     </Box>
                   </Grid>
                   <Grid item xs={12} md={6}>
-                    <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 'bold' }}>
-                      <MoneyIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                    <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>
                       Payment Summary
                     </Typography>
-                    <Box sx={{ pl: 2 }}>
-                                       <Typography variant="h5" color="primary" fontWeight="bold" sx={{ mb: 1 }}>
-                   {formatCurrency(parseFloat(selectedInvoice.total.toString()) || 0)}
-                 </Typography>
-                 <Typography variant="body2" color="success.main" sx={{ mb: 1 }}>
-                   Paid: {formatCurrency(parseFloat(selectedInvoice.totalPaid?.toString() || '0'))}
-                 </Typography>
-                 <Typography variant="body2" color="warning.main" fontWeight="bold">
-                   Balance: {formatCurrency(parseFloat(selectedInvoice.balanceDue?.toString() || '0'))}
-                 </Typography>
-                    </Box>
+                    <Typography sx={{ fontSize: 20, fontWeight: 700, color: '#111827', fontFamily: 'monospace', mb: 0.5 }}>
+                      {formatCurrency(parseFloat(selectedInvoice.total.toString()) || 0)}
+                    </Typography>
+                    <Typography sx={{ fontSize: 13, color: '#16A34A', mb: 0.5 }}>
+                      Paid: {formatCurrency(parseFloat(selectedInvoice.totalPaid?.toString() || '0'))}
+                    </Typography>
+                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#ED6C02' }}>
+                      Balance: {formatCurrency(parseFloat(selectedInvoice.balanceDue?.toString() || '0'))}
+                    </Typography>
                   </Grid>
                 </Grid>
-              </Paper>
+              </Box>
 
-              <Paper sx={{ p: 3, mb: 3 }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 'bold' }}>
-                  <InvoiceIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+              {/* Invoice Details */}
+              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3, mb: 3 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
                   Invoice Details
                 </Typography>
                 <Grid container spacing={3}>
                   <Grid item xs={12}>
-                    <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                      Description
-                    </Typography>
-                    <Typography variant="body1" sx={{ p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
-                      {selectedInvoice.description}
-                    </Typography>
+                    <Typography sx={{ fontSize: 12, color: '#6B7280', mb: 0.5 }}>Description</Typography>
+                    <Box sx={{ p: 2, bgcolor: '#F3F4F6', borderRadius: '6px' }}>
+                      <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                        {selectedInvoice.description}
+                      </Typography>
+                    </Box>
                   </Grid>
                   <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                      Invoice Date
-                    </Typography>
-                    <Typography variant="body1">
+                    <Typography sx={{ fontSize: 12, color: '#6B7280', mb: 0.5 }}>Invoice Date</Typography>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
                       {formatDate(selectedInvoice.invoiceDate)}
                     </Typography>
                   </Grid>
                   {selectedInvoice.dueDate && (
                     <Grid item xs={12} md={6}>
-                      <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                        Due Date
-                      </Typography>
-                      <Typography variant="body1">
+                      <Typography sx={{ fontSize: 12, color: '#6B7280', mb: 0.5 }}>Due Date</Typography>
+                      <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
                         {formatDate(selectedInvoice.dueDate)}
                       </Typography>
                     </Grid>
                   )}
                 </Grid>
-              </Paper>
+              </Box>
 
-              <Paper sx={{ p: 3, backgroundColor: '#f8f9fa' }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 'bold' }}>
-                  <ApprovedIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+              {/* Approval Information */}
+              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#F9FAFB', p: 3, mb: 3 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
                   Approval Information
                 </Typography>
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                      Approved By
-                    </Typography>
-                    <Typography variant="body1" fontWeight="medium">
+                    <Typography sx={{ fontSize: 12, color: '#6B7280', mb: 0.5 }}>Approved By</Typography>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
                       {selectedInvoice.approvedByName}
                     </Typography>
                   </Grid>
                   <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                      Sent to Accounting
-                    </Typography>
-                    <Typography variant="body1">
+                    <Typography sx={{ fontSize: 12, color: '#6B7280', mb: 0.5 }}>Sent to Accounting</Typography>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
                       {formatDate(selectedInvoice.sentToAccountingAt)}
                     </Typography>
                   </Grid>
                   {selectedInvoice.adminNotes && (
                     <Grid item xs={12}>
-                      <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                        Admin Notes
-                      </Typography>
-                      <Typography variant="body1" sx={{ p: 2, backgroundColor: '#fff8e1', borderRadius: 1 }}>
-                        {selectedInvoice.adminNotes}
-                      </Typography>
+                      <Typography sx={{ fontSize: 12, color: '#6B7280', mb: 0.5 }}>Admin Notes</Typography>
+                      <Box sx={{ p: 2, bgcolor: '#FFFBEB', borderRadius: '6px', border: '1px solid #FDE68A' }}>
+                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                          {selectedInvoice.adminNotes}
+                        </Typography>
+                      </Box>
                     </Grid>
                   )}
                 </Grid>
-              </Paper>
+              </Box>
 
-                             {/* Payment History Section */}
-               <Paper sx={{ p: 3, mb: 3, backgroundColor: '#f8f9fa' }}>
-                 <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 'bold' }}>
-                   💰 Payment History
-                 </Typography>
-                 
-                 {paymentHistory.length === 0 ? (
-                   <Alert severity="info">
-                     <Typography variant="body2">
-                       No payments have been processed for this invoice yet.
-                     </Typography>
-                   </Alert>
-                 ) : (
-                   <TableContainer component={Paper} sx={{ mt: 2 }}>
-                     <Table size="small">
-                       <TableHead>
-                         <TableRow>
-                           <TableCell>Date</TableCell>
-                           <TableCell>Amount</TableCell>
-                           <TableCell>Method</TableCell>
-                           <TableCell>Reference</TableCell>
-                           <TableCell>Processed By</TableCell>
-                           <TableCell>Status</TableCell>
-                         </TableRow>
-                       </TableHead>
-                       <TableBody>
-                         {paymentHistory.map((payment) => (
-                           <TableRow key={payment.id}>
-                             <TableCell>{formatDate(payment.paymentDate)}</TableCell>
-                             <TableCell>{formatCurrency(payment.amount)}</TableCell>
-                             <TableCell>
-                               <Chip 
-                                 label={payment.paymentMethod.replace('_', ' ').toUpperCase()} 
-                                 size="small" 
-                                 color="primary" 
-                                 variant="outlined"
-                               />
-                             </TableCell>
-                             <TableCell>{payment.referenceNumber || '-'}</TableCell>
-                             <TableCell>{payment.processedByName || 'Unknown'}</TableCell>
-                             <TableCell>
-                               <Chip 
-                                 label={payment.status.toUpperCase()} 
-                                 size="small" 
-                                 color={payment.status === 'processed' ? 'success' : 'warning'} 
-                               />
-                             </TableCell>
-                           </TableRow>
-                         ))}
-                       </TableBody>
-                     </Table>
-                   </TableContainer>
-                 )}
-               </Paper>
+              {/* Payment History */}
+              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#F9FAFB', p: 3, mb: 3 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
+                  Payment History
+                </Typography>
+                {paymentHistory.length === 0 ? (
+                  <Alert severity="info">
+                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                      No payments have been processed for this invoice yet.
+                    </Typography>
+                  </Alert>
+                ) : (
+                  <DataTable columns={PAYMENT_HISTORY_COLUMNS} shownCount={paymentHistory.length} totalCount={paymentHistory.length}>
+                    {paymentHistory.map((payment) => (
+                      <DataTableRow key={payment.id} columns={PAYMENT_HISTORY_COLUMNS}>
+                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatDate(payment.paymentDate)}</Typography>
+                        <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace' }}>{formatCurrency(payment.amount)}</Typography>
+                        <StatusChip kind="brand" label={payment.paymentMethod.replace('_', ' ').toUpperCase()} />
+                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{payment.referenceNumber || '-'}</Typography>
+                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{payment.processedByName || 'Unknown'}</Typography>
+                        <StatusChip
+                          kind={payment.status === 'processed' ? 'success' : 'warning'}
+                          label={payment.status.toUpperCase()}
+                        />
+                      </DataTableRow>
+                    ))}
+                  </DataTable>
+                )}
+              </Box>
 
-                             {/* Payment Processing Section */}
-               <Paper sx={{ p: 3, backgroundColor: '#f8f9fa', border: '2px solid #e0e0e0' }}>
-                 <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 'bold', mb: 2 }}>
-                   💳 Payment Processing
-                 </Typography>
-                 
-                 {/* Debug Info */}
-                 <Alert severity="info" sx={{ mb: 2 }}>
-                   <Typography variant="body2">
-                     <strong>Debug Info:</strong><br />
-                     Balance Due: {selectedInvoice.balanceDue} (Type: {typeof selectedInvoice.balanceDue})<br />
-                     Total Paid: {selectedInvoice.totalPaid} (Type: {typeof selectedInvoice.totalPaid})<br />
-                     Total Amount: {selectedInvoice.total} (Type: {typeof selectedInvoice.total})<br />
-                     Status: {selectedInvoice.status}
-                   </Typography>
-                 </Alert>
-                 
-                                   {parseFloat(selectedInvoice.balanceDue?.toString() || '0') > 0 ? (
-                   <>
-                   <Alert severity="info" sx={{ mb: 3 }}>
-                     <Typography variant="body2">
-                       <strong>Vendor:</strong> {selectedInvoice.vendorName}<br />
-                       <strong>Balance Due:</strong> {formatCurrency(Number(selectedInvoice.balanceDue))}
-                     </Typography>
-                   </Alert>
+              {/* Payment Processing */}
+              <Box sx={{ border: '2px solid #E5E7EB', borderRadius: '10px', bgcolor: '#F9FAFB', p: 3 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
+                  Payment Processing
+                </Typography>
 
-                  <Grid container spacing={2}>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Payment Amount"
-                        type="number"
-                        value={paymentData.amount}
-                        onChange={(e) => setPaymentData({ ...paymentData, amount: e.target.value })}
-                        inputProps={{ min: 0, max: Number(selectedInvoice.balanceDue), step: 0.01 }}
-                        helperText={`Maximum: ${formatCurrency(Number(selectedInvoice.balanceDue))}`}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Payment Date"
-                        type="date"
-                        value={paymentData.paymentDate}
-                        onChange={(e) => setPaymentData({ ...paymentData, paymentDate: e.target.value })}
-                        InputLabelProps={{ shrink: true }}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <FormControl fullWidth>
-                        <InputLabel>Payment Method</InputLabel>
-                        <Select
-                          value={paymentData.paymentMethod}
-                          onChange={(e) => setPaymentData({ ...paymentData, paymentMethod: e.target.value })}
-                          label="Payment Method"
-                        >
-                          <MenuItem value="check">Check</MenuItem>
-                          <MenuItem value="direct_deposit">Direct Deposit</MenuItem>
-                          <MenuItem value="wire_transfer">Wire Transfer</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Reference Number"
-                        value={paymentData.referenceNumber}
-                        onChange={(e) => setPaymentData({ ...paymentData, referenceNumber: e.target.value })}
-                        placeholder="Check number, transaction ID, etc."
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Payment Notes"
-                        multiline
-                        rows={3}
-                        value={paymentData.notes}
-                        onChange={(e) => setPaymentData({ ...paymentData, notes: e.target.value })}
-                        placeholder="Optional payment notes"
-                      />
-                    </Grid>
-                  </Grid>
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                    <strong>Debug Info:</strong><br />
+                    Balance Due: {selectedInvoice.balanceDue} (Type: {typeof selectedInvoice.balanceDue})<br />
+                    Total Paid: {selectedInvoice.totalPaid} (Type: {typeof selectedInvoice.totalPaid})<br />
+                    Total Amount: {selectedInvoice.total} (Type: {typeof selectedInvoice.total})<br />
+                    Status: {selectedInvoice.status}
+                  </Typography>
+                </Alert>
 
-                                     <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                     <Button
-                       onClick={handleProcessPayment}
-                       variant="contained"
-                       color="success"
-                       disabled={processingPayment || !paymentData.amount || parseFloat(paymentData.amount) <= 0}
-                       startIcon={processingPayment ? <CircularProgress size={20} /> : <PaymentIcon />}
-                       sx={{ minWidth: 150, height: 48 }}
-                     >
-                       {processingPayment ? 'Processing...' : '💳 Process Payment'}
-                     </Button>
-                   </Box>
-                   </>
-                                   ) : (
-                    <Alert severity="success">
-                      <Typography variant="body2">
-                        ✅ This invoice has been fully paid. No further action required.
+                {parseFloat(selectedInvoice.balanceDue?.toString() || '0') > 0 ? (
+                  <>
+                    <Alert severity="info" sx={{ mb: 3 }}>
+                      <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                        <strong>Vendor:</strong> {selectedInvoice.vendorName}<br />
+                        <strong>Balance Due:</strong> {formatCurrency(Number(selectedInvoice.balanceDue))}
                       </Typography>
                     </Alert>
-                  )}
-               </Paper>
+
+                    <Grid container spacing={2}>
+                      <Grid item xs={12}>
+                        <TextField
+                          fullWidth
+                          label="Payment Amount"
+                          type="number"
+                          value={paymentData.amount}
+                          onChange={(e) => setPaymentData({ ...paymentData, amount: e.target.value })}
+                          inputProps={{ min: 0, max: Number(selectedInvoice.balanceDue), step: 0.01 }}
+                          helperText={`Maximum: ${formatCurrency(Number(selectedInvoice.balanceDue))}`}
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <TextField
+                          fullWidth
+                          label="Payment Date"
+                          type="date"
+                          value={paymentData.paymentDate}
+                          onChange={(e) => setPaymentData({ ...paymentData, paymentDate: e.target.value })}
+                          InputLabelProps={{ shrink: true }}
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <FormControl fullWidth>
+                          <InputLabel>Payment Method</InputLabel>
+                          <Select
+                            value={paymentData.paymentMethod}
+                            onChange={(e) => setPaymentData({ ...paymentData, paymentMethod: e.target.value })}
+                            label="Payment Method"
+                          >
+                            <MenuItem value="check">Check</MenuItem>
+                            <MenuItem value="direct_deposit">Direct Deposit</MenuItem>
+                            <MenuItem value="wire_transfer">Wire Transfer</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <TextField
+                          fullWidth
+                          label="Reference Number"
+                          value={paymentData.referenceNumber}
+                          onChange={(e) => setPaymentData({ ...paymentData, referenceNumber: e.target.value })}
+                          placeholder="Check number, transaction ID, etc."
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <TextField
+                          fullWidth
+                          label="Payment Notes"
+                          multiline
+                          rows={3}
+                          value={paymentData.notes}
+                          onChange={(e) => setPaymentData({ ...paymentData, notes: e.target.value })}
+                          placeholder="Optional payment notes"
+                        />
+                      </Grid>
+                    </Grid>
+
+                    <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                      <PrimaryButton
+                        onClick={handleProcessPayment}
+                        disabled={processingPayment || !paymentData.amount || parseFloat(paymentData.amount) <= 0}
+                        sx={{ minWidth: 150, height: 48 }}
+                      >
+                        {processingPayment ? <><CircularProgress size={18} sx={{ mr: 1 }} />Processing...</> : 'Process Payment'}
+                      </PrimaryButton>
+                    </Box>
+                  </>
+                ) : (
+                  <Alert severity="success">
+                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                      This invoice has been fully paid. No further action required.
+                    </Typography>
+                  </Alert>
+                )}
+              </Box>
             </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setViewDialog(false)} variant="outlined">
+          <GhostButton onClick={() => setViewDialog(false)}>
             Close
-          </Button>
+          </GhostButton>
         </DialogActions>
       </Dialog>
-
-
     </Box>
   );
 };
 
-export default VendorInvoiceManagement; 
+export default VendorInvoiceManagement;

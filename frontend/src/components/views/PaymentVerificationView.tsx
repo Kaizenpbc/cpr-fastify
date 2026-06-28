@@ -2,15 +2,6 @@ import React, { useState } from 'react';
 import {
   Box,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Chip,
-  Button,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -18,24 +9,19 @@ import {
   TextField,
   Grid,
   Alert,
-  IconButton,
   Tooltip,
   CircularProgress,
   Snackbar,
   Divider,
 } from '@mui/material';
-import {
-  Cancel as RejectIcon,
-  Visibility as ViewIcon,
-  HourglassEmpty as PendingIcon,
-  CheckCircle as CheckCircleIcon,
-  People as PeopleIcon,
-} from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import ServiceDetailsTable from '../common/ServiceDetailsTable';
 import PaymentHistoryTable from '../common/PaymentHistoryTable';
 import { formatDisplayDate } from '../../utils/dateUtils';
+import DataTable, { DataTableRow } from '../gtacpr/DataTable';
+import StatusChip from '../gtacpr/StatusChip';
+import { PrimaryButton, GhostButton } from '../gtacpr/Buttons';
 
 interface Payment {
   paymentId?: number;
@@ -72,6 +58,23 @@ interface Payment {
   [key: string]: unknown;
 }
 
+const PAYMENT_TABLE_COLUMNS = [
+  { key: 'organization', label: 'Organization', width: '20%' },
+  { key: 'invoice', label: 'Invoice #', width: '13%' },
+  { key: 'amount', label: 'Payment Amount', width: '13%' },
+  { key: 'method', label: 'Payment Method', width: '13%' },
+  { key: 'reference', label: 'Reference #', width: '13%' },
+  { key: 'submitted', label: 'Submitted Date', width: '13%' },
+  { key: 'status', label: 'Status', width: '10%' },
+  { key: 'actions', label: 'Actions', width: '5%', align: 'center' as const },
+];
+
+const ATTENDANCE_TABLE_COLUMNS = [
+  { key: 'name', label: 'Name', width: '40%' },
+  { key: 'email', label: 'Email', width: '40%' },
+  { key: 'status', label: 'Status', width: '20%', align: 'center' as const },
+];
+
 const PaymentVerificationView = () => {
   console.log('🔍 [PAYMENT VERIFICATION] Component function called');
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
@@ -81,7 +84,7 @@ const PaymentVerificationView = () => {
   const [verificationNotes, setVerificationNotes] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  
+
   // State for attendance data
   const [attendanceData, setAttendanceData] = useState<Array<{
     firstName: string;
@@ -109,16 +112,16 @@ const PaymentVerificationView = () => {
       console.log('🔍 [PAYMENT VERIFICATION] Making API call to /accounting/payment-verifications');
       const response = await api.get('/accounting/payment-verifications');
       console.log('🔍 [PAYMENT VERIFICATION] API Response:', response.data);
-      
+
       // Filter to only show payments that are actually pending verification
       const pendingPayments = response.data.data.payments?.filter((payment: any) =>
-        payment.status === 'pending_verification' || 
+        payment.status === 'pending_verification' ||
         payment.status === 'pending' ||
         !payment.verifiedByAccountingAt
       ) || [];
-      
+
       console.log('🔍 [PAYMENT VERIFICATION] Filtered payments:', pendingPayments);
-      
+
       return {
         ...response.data.data,
         payments: pendingPayments
@@ -129,13 +132,13 @@ const PaymentVerificationView = () => {
   // Load attendance data for a payment
   const loadAttendanceData = async (courseRequestId: number) => {
     if (!courseRequestId) return;
-    
+
     setLoadingAttendance(true);
     try {
       console.log('Loading attendance data for course request:', courseRequestId);
       const response = await api.get(`/accounting/courses/${courseRequestId}/students`);
       console.log('Attendance data response:', response);
-      
+
       if (response.data && response.data.data) {
         const students = Array.isArray(response.data.data) ? response.data.data : [];
         setAttendanceData(students);
@@ -153,13 +156,13 @@ const PaymentVerificationView = () => {
   // Load payment history for an invoice
   const loadPaymentHistory = async (invoiceId: number) => {
     if (!invoiceId) return;
-    
+
     setLoadingPaymentHistory(true);
     try {
       console.log('Loading payment history for invoice:', invoiceId);
       const response = await api.get(`/accounting/invoices/${invoiceId}/payments`);
       console.log('Payment history response:', response);
-      
+
       if (response.data && response.data.success && Array.isArray(response.data.data)) {
         setPaymentHistory(response.data.data);
       } else if (response.data && Array.isArray(response.data)) {
@@ -197,7 +200,7 @@ const PaymentVerificationView = () => {
       setVerificationNotes('');
       setSuccessMessage(`Payment ${verificationAction === 'approve' ? 'approved' : 'rejected'} successfully!`);
       setErrorMessage('');
-      
+
       // Delay closing the dialog so user can see the success message
       setTimeout(() => {
         setPaymentDialogOpen(false);
@@ -232,7 +235,7 @@ const PaymentVerificationView = () => {
     setVerificationAction(action);
     setDialogMode('action');
     setPaymentDialogOpen(true);
-    
+
     // Load attendance data for this payment's course
     if (payment.courseRequestId) {
       loadAttendanceData(payment.courseRequestId);
@@ -245,7 +248,7 @@ const PaymentVerificationView = () => {
       verificationAction,
       verificationNotes
     });
-    
+
     if (!selectedPayment) {
       console.log('🔍 [HANDLE VERIFY SUBMIT] No selected payment, returning');
       return;
@@ -340,52 +343,28 @@ const PaymentVerificationView = () => {
             !payment.status);
   };
 
-  // Get payment status for display
-  const getPaymentStatus = (payment: Payment | null) => {
+  // Get payment status for display as a StatusChip kind
+  const getPaymentStatusKind = (payment: Payment | null): { kind: 'success' | 'warning' | 'danger' | 'neutral'; label: string } => {
     if (!payment) {
-      return {
-        label: 'UNKNOWN',
-        color: 'default' as const,
-        icon: <PendingIcon />
-      };
+      return { kind: 'neutral', label: 'UNKNOWN' };
     }
-    
+
     // If we have a success message, show the updated status
     if (successMessage) {
       if (verificationAction === 'approve') {
-        return {
-          label: 'VERIFIED',
-          color: 'success' as const,
-          icon: <CheckCircleIcon />
-        };
+        return { kind: 'success', label: 'VERIFIED' };
       } else if (verificationAction === 'reject') {
-        return {
-          label: 'REJECTED',
-          color: 'error' as const,
-          icon: <RejectIcon />
-        };
+        return { kind: 'danger', label: 'REJECTED' };
       }
     }
-    
+
     if (payment.verifiedByAccountingAt) {
-      return {
-        label: 'VERIFIED',
-        color: 'success' as const,
-        icon: <CheckCircleIcon />
-      };
+      return { kind: 'success', label: 'VERIFIED' };
     }
     if (payment.status === 'rejected') {
-      return {
-        label: 'REJECTED',
-        color: 'error' as const,
-        icon: <RejectIcon />
-      };
+      return { kind: 'danger', label: 'REJECTED' };
     }
-    return {
-      label: 'PENDING VERIFICATION',
-      color: 'warning' as const,
-      icon: <PendingIcon />
-    };
+    return { kind: 'warning', label: 'PENDING VERIFICATION' };
   };
 
   // Debug logging
@@ -401,12 +380,7 @@ const PaymentVerificationView = () => {
 
   if (isLoading) {
     return (
-      <Box
-        display='flex'
-        justifyContent='center'
-        alignItems='center'
-        minHeight='400px'
-      >
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
       </Box>
     );
@@ -416,131 +390,112 @@ const PaymentVerificationView = () => {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="error">
-          <Typography variant="h6">Error loading payment verifications</Typography>
-          <Typography variant="body2">{error.message}</Typography>
+          <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>Error loading payment verifications</Typography>
+          <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{error.message}</Typography>
         </Alert>
       </Box>
     );
   }
 
+  const payments: Payment[] = paymentsData?.payments || [];
+
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant='h4' gutterBottom sx={{ mb: 3, fontWeight: 'bold' }}>
+      {/* Page header */}
+      <Typography sx={{ fontSize: 22, fontWeight: 700, color: '#111827', mb: 0.5 }}>
         Payment Verification
       </Typography>
-
-      <Typography variant='body1' color='text.secondary' paragraph>
+      <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 3 }}>
         Review and verify payment submissions from organizations.
       </Typography>
 
-      <Paper>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Organization</TableCell>
-                <TableCell>Invoice #</TableCell>
-                <TableCell>Payment Amount</TableCell>
-                <TableCell>Payment Method</TableCell>
-                <TableCell>Reference #</TableCell>
-                <TableCell>Submitted Date</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align='center'>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {!paymentsData?.payments?.length ? (
-                <TableRow>
-                  <TableCell colSpan={8} align='center'>
-                    <Box sx={{ py: 4, textAlign: 'center' }}>
-                      <CheckCircleIcon color="success" sx={{ fontSize: 48, mb: 2 }} />
-                      <Typography variant='h6' color='success.main' gutterBottom>
-                        All Payments Verified!
-                      </Typography>
-                      <Typography variant='body2' color='text.secondary'>
-                        There are no pending payment verifications at this time.
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                paymentsData.payments.map((payment: any) => {
-                  if (!payment) return null;
-                  return (
-                    <TableRow key={payment.paymentId} hover>
-                      <TableCell>
-                        <Typography variant='body2' fontWeight='medium'>
-                          {payment.organizationName}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant='body2'>
-                          {payment.invoiceNumber}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant='body2' fontWeight='medium'>
-                          {formatCurrency(payment.amount)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant='body2'>
-                          {payment.paymentMethod
-                            ?.replace('_', ' ')
-                            .toUpperCase()}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant='body2'>
-                          {payment.referenceNumber || '-'}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant='body2'>
-                          {formatDate(payment.submittedByOrgAt)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          icon={getPaymentStatus(payment).icon}
-                          label={getPaymentStatus(payment).label}
-                          color={getPaymentStatus(payment).color}
-                          size='small'
-                        />
-                      </TableCell>
-                      <TableCell align='center'>
-                        <Tooltip title='View Payment Details'>
-                          <IconButton
-                            size='small'
-                            onClick={() => handleViewPayment(payment)}
-                            color='primary'
-                          >
-                            <ViewIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  );
-                }).filter(Boolean)
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+      {/* Payments table */}
+      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', overflow: 'hidden' }}>
+        {payments.length === 0 ? (
+          <Box sx={{ py: 6, textAlign: 'center' }}>
+            <Typography sx={{ fontSize: 15, fontWeight: 600, color: '#16A34A', mb: 0.5 }}>
+              All Payments Verified!
+            </Typography>
+            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+              There are no pending payment verifications at this time.
+            </Typography>
+          </Box>
+        ) : (
+          <DataTable
+            columns={PAYMENT_TABLE_COLUMNS}
+            shownCount={payments.length}
+            totalCount={payments.length}
+          >
+            {payments.map((payment: Payment) => {
+              if (!payment) return null;
+              const statusInfo = getPaymentStatusKind(payment);
+              return (
+                <DataTableRow key={payment.paymentId} columns={PAYMENT_TABLE_COLUMNS}>
+                  {/* Organization */}
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                    {payment.organizationName}
+                  </Typography>
 
-      <Dialog
-        open={paymentDialogOpen}
-        onClose={handleCloseDialog}
-        maxWidth='md'
-        fullWidth
-      >
-        <DialogTitle>
-          {dialogMode === 'action' 
+                  {/* Invoice # */}
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                    {payment.invoiceNumber}
+                  </Typography>
+
+                  {/* Payment Amount */}
+                  <Typography sx={{ fontSize: 13, fontFamily: 'monospace', color: '#111827', fontWeight: 600 }}>
+                    {formatCurrency(payment.amount)}
+                  </Typography>
+
+                  {/* Payment Method */}
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                    {payment.paymentMethod?.replace('_', ' ').toUpperCase()}
+                  </Typography>
+
+                  {/* Reference # */}
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                    {payment.referenceNumber || '-'}
+                  </Typography>
+
+                  {/* Submitted Date */}
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                    {formatDate(payment.submittedByOrgAt)}
+                  </Typography>
+
+                  {/* Status */}
+                  <StatusChip kind={statusInfo.kind} label={statusInfo.label} />
+
+                  {/* Actions */}
+                  <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                    <Tooltip title="View Payment Details">
+                      <Box
+                        onClick={() => handleViewPayment(payment)}
+                        sx={{
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: '#CC1F1F',
+                          cursor: 'pointer',
+                          '&:hover': { textDecoration: 'underline' },
+                        }}
+                      >
+                        View
+                      </Box>
+                    </Tooltip>
+                  </Box>
+                </DataTableRow>
+              );
+            }).filter(Boolean)}
+          </DataTable>
+        )}
+      </Box>
+
+      {/* Payment Detail / Action Dialog */}
+      <Dialog open={paymentDialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
+          {dialogMode === 'action'
             ? `${verificationAction === 'approve' ? 'Approve' : 'Reject'} Payment`
-            : 'Payment Details'
-          }
+            : 'Payment Details'}
           {selectedPayment && (
-            <Typography variant='subtitle2' color='text.secondary'>
+            <Typography sx={{ fontSize: 13, color: '#4B5563', mt: 0.5 }}>
               {selectedPayment.organizationName} - {selectedPayment.invoiceNumber}
             </Typography>
           )}
@@ -549,16 +504,15 @@ const PaymentVerificationView = () => {
           {selectedPayment && (
             <Box sx={{ pt: 2 }}>
               {/* Service Details Table */}
-              <ServiceDetailsTable 
+              <ServiceDetailsTable
                 services={getServiceDetails(selectedPayment)}
                 showTotals={false}
               />
-              
+
               {/* Student Attendance Section */}
               <Divider sx={{ my: 2 }} />
-              <Typography variant='subtitle1' gutterBottom>
-                <PeopleIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                Class Attendance:
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>
+                Class Attendance
               </Typography>
               {loadingAttendance ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
@@ -566,140 +520,119 @@ const PaymentVerificationView = () => {
                 </Box>
               ) : attendanceData.length > 0 ? (
                 <Box sx={{ mb: 2 }}>
-                  <Grid container spacing={1}>
-                    <Grid xs={12}>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Total Students: {attendanceData.length} | 
-                        Present: {attendanceData.filter(s => s.attended).length} | 
-                        Absent: {attendanceData.filter(s => !s.attended).length}
-                      </Typography>
-                    </Grid>
-                  </Grid>
-                  <TableContainer component={Paper} variant="outlined" sx={{ mt: 1 }}>
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Name</TableCell>
-                          <TableCell>Email</TableCell>
-                          <TableCell align="center">Status</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {attendanceData.map((student, index) => (
-                          <TableRow key={index}>
-                            <TableCell>{student.firstName} {student.lastName}</TableCell>
-                            <TableCell>{student.email || 'N/A'}</TableCell>
-                            <TableCell align="center">
-                              <Chip
-                                label={student.attended ? 'Present' : 'Absent'}
-                                color={student.attended ? 'success' : 'error'}
-                                size="small"
-                              />
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
+                  <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
+                    Total Students: {attendanceData.length} &nbsp;|&nbsp;
+                    Present: {attendanceData.filter(s => s.attended).length} &nbsp;|&nbsp;
+                    Absent: {attendanceData.filter(s => !s.attended).length}
+                  </Typography>
+                  <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', overflow: 'hidden', mt: 1 }}>
+                    <DataTable
+                      columns={ATTENDANCE_TABLE_COLUMNS}
+                      shownCount={attendanceData.length}
+                      totalCount={attendanceData.length}
+                    >
+                      {attendanceData.map((student, index) => (
+                        <DataTableRow key={index} columns={ATTENDANCE_TABLE_COLUMNS}>
+                          {/* Name */}
+                          <Typography sx={{ fontSize: 13, color: '#111827' }}>
+                            {student.firstName} {student.lastName}
+                          </Typography>
+
+                          {/* Email */}
+                          <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                            {student.email || 'N/A'}
+                          </Typography>
+
+                          {/* Status */}
+                          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                            <StatusChip
+                              kind={student.attended ? 'success' : 'danger'}
+                              label={student.attended ? 'Present' : 'Absent'}
+                            />
+                          </Box>
+                        </DataTableRow>
+                      ))}
+                    </DataTable>
+                  </Box>
                 </Box>
               ) : (
-                <Typography variant="body2" color="text.secondary">
+                <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
                   No student attendance data available
                 </Typography>
               )}
-              
+
               {/* Payment Information */}
               <Divider sx={{ my: 2 }} />
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
                 Payment Information
               </Typography>
               <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant='body2' color='text.secondary'>
-                    Invoice Number
-                  </Typography>
-                  <Typography variant='body1' fontWeight='medium'>
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Invoice Number</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
                     {selectedPayment.invoiceNumber}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant='body2' color='text.secondary'>
-                    Payment Amount
-                  </Typography>
-                  <Typography variant='body1' fontWeight='medium' color='success.main'>
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Payment Amount</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#16A34A', fontFamily: 'monospace' }}>
                     {formatCurrency(selectedPayment.amount)}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant='body2' color='text.secondary'>
-                    Payment Method
-                  </Typography>
-                  <Typography variant='body1'>
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Payment Method</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
                     {selectedPayment.paymentMethod?.replace('_', ' ').toUpperCase()}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant='body2' color='text.secondary'>
-                    Reference Number
-                  </Typography>
-                  <Typography variant='body1'>
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Reference Number</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
                     {selectedPayment.referenceNumber || '-'}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant='body2' color='text.secondary'>
-                    Payment Date
-                  </Typography>
-                  <Typography variant='body1'>
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Payment Date</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
                     {formatDate(selectedPayment.paymentDate)}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant='body2' color='text.secondary'>
-                    Submitted Date
-                  </Typography>
-                  <Typography variant='body1'>
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Submitted Date</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
                     {formatDate(selectedPayment.submittedByOrgAt)}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant='body2' color='text.secondary'>
-                    Status
-                  </Typography>
-                  <Chip
-                    icon={getPaymentStatus(selectedPayment).icon}
-                    label={getPaymentStatus(selectedPayment).label}
-                    color={getPaymentStatus(selectedPayment).color}
-                    size='small'
+                  <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 0.5 }}>Status</Typography>
+                  <StatusChip
+                    kind={getPaymentStatusKind(selectedPayment).kind}
+                    label={getPaymentStatusKind(selectedPayment).label}
                   />
                 </Grid>
                 {selectedPayment.verifiedByAccountingAt && (
                   <Grid item xs={12} sm={6}>
-                    <Typography variant='body2' color='text.secondary'>
-                      Verified By Accounting
-                    </Typography>
-                    <Typography variant='body1'>
+                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Verified By Accounting</Typography>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
                       {formatDate(selectedPayment.verifiedByAccountingAt)}
                     </Typography>
                   </Grid>
                 )}
                 {selectedPayment.notes && (
                   <Grid item xs={12}>
-                    <Typography variant='body2' color='text.secondary'>
-                      Organization Notes
-                    </Typography>
-                    <Typography variant='body1' sx={{ fontStyle: 'italic' }}>
+                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Organization Notes</Typography>
+                    <Typography sx={{ fontSize: 13, color: '#4B5563', fontStyle: 'italic' }}>
                       {selectedPayment.notes}
                     </Typography>
                   </Grid>
                 )}
-                
+
                 {/* Action-specific content */}
                 {dialogMode === 'action' && (
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
-                      label='Verification Notes'
+                      label="Verification Notes"
                       multiline
                       rows={3}
                       value={verificationNotes}
@@ -728,11 +661,8 @@ const PaymentVerificationView = () => {
 
               {/* Payment History Section */}
               <Divider sx={{ my: 2 }} />
-              <Typography variant='subtitle1' gutterBottom sx={{ mt: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography variant="h6" component="span">💰</Typography>
-                  Payment History
-                </Box>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>
+                Payment History
               </Typography>
 
               <PaymentHistoryTable
@@ -743,21 +673,21 @@ const PaymentVerificationView = () => {
               />
 
               {dialogMode === 'view' && (
-                <Alert severity='info' sx={{ mt: 2 }}>
+                <Alert severity="info" sx={{ mt: 2 }}>
                   Review the payment details above. Use the action buttons below to approve or reject this payment.
                 </Alert>
               )}
 
               {/* Success message in dialog */}
               {successMessage && (
-                <Alert severity='success' sx={{ mt: 2 }}>
+                <Alert severity="success" sx={{ mt: 2 }}>
                   {successMessage}
                 </Alert>
               )}
 
               {/* Error message in dialog */}
               {errorMessage && (
-                <Alert severity='error' sx={{ mt: 2 }}>
+                <Alert severity="error" sx={{ mt: 2 }}>
                   {errorMessage}
                 </Alert>
               )}
@@ -765,25 +695,24 @@ const PaymentVerificationView = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>
+          <GhostButton onClick={handleCloseDialog}>
             {dialogMode === 'view' ? 'Close' : 'Cancel'}
-          </Button>
-          
+          </GhostButton>
+
           {/* Action buttons for view mode */}
           {dialogMode === 'view' && canVerifyPayment(selectedPayment) && (
             <>
-              <Button
+              <GhostButton
                 onClick={() => {
                   setVerificationAction('reject');
                   setDialogMode('action');
                 }}
-                variant='outlined'
-                color='error'
                 disabled={verifyPaymentMutation.isPending}
+                sx={{ color: '#CC1F1F', borderColor: '#CC1F1F', '&:hover': { borderColor: '#CC1F1F', bgcolor: '#FEF2F2' } }}
               >
                 Reject Payment
-              </Button>
-              <Button
+              </GhostButton>
+              <PrimaryButton
                 onClick={() => {
                   // Directly approve without going to action mode (notes are optional for approval)
                   if (selectedPayment) {
@@ -795,27 +724,23 @@ const PaymentVerificationView = () => {
                     });
                   }
                 }}
-                variant='contained'
-                color='success'
                 disabled={verifyPaymentMutation.isPending}
-                startIcon={verifyPaymentMutation.isPending ? <CircularProgress size={20} color="inherit" /> : null}
               >
                 {verifyPaymentMutation.isPending ? 'Approving...' : 'Approve Payment'}
-              </Button>
+              </PrimaryButton>
             </>
           )}
-          
+
           {/* Submit button for action mode */}
           {dialogMode === 'action' && (
-            <Button
+            <PrimaryButton
               onClick={handleVerificationSubmit}
-              variant='contained'
-              color={verificationAction === 'approve' ? 'success' : 'error'}
               disabled={
                 verifyPaymentMutation.isPending ||
                 (verificationAction === 'reject' && !verificationNotes.trim()) ||
                 !!successMessage
               }
+              sx={verificationAction === 'reject' ? { bgcolor: '#CC1F1F', '&:hover': { bgcolor: '#991B1B' } } : {}}
             >
               {verifyPaymentMutation.isPending
                 ? 'Processing...'
@@ -824,23 +749,15 @@ const PaymentVerificationView = () => {
                   : verificationAction === 'approve'
                     ? 'Approve Payment'
                     : 'Reject Payment'}
-            </Button>
+            </PrimaryButton>
           )}
         </DialogActions>
       </Dialog>
 
       {/* Invoice Detail Dialog */}
-      <Dialog
-        open={invoiceDialogOpen}
-        onClose={handleCloseInvoiceDialog}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="h6" component="span">📄</Typography>
-            Invoice Details
-          </Box>
+      <Dialog open={invoiceDialogOpen} onClose={handleCloseInvoiceDialog} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
+          Invoice Details
         </DialogTitle>
         <DialogContent>
           {loadingInvoice ? (
@@ -851,107 +768,89 @@ const PaymentVerificationView = () => {
             <Box>
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Invoice Number
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Invoice Number</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
                     {selectedInvoice.invoicenumber}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Organization
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Organization</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
                     {selectedInvoice.organizationname}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Course Type
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Course Type</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
                     {selectedInvoice.name}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Location
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Location</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
                     {selectedInvoice.location}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Course Date
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Course Date</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
                     {selectedInvoice.courseDate ? formatDisplayDate(selectedInvoice.courseDate) : 'N/A'}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Students Billed
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Students Billed</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
                     {selectedInvoice.studentsattendance}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Total Amount
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium" color="primary.main">
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Total Amount</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827', fontFamily: 'monospace' }}>
                     ${Number(selectedInvoice.amount || 0).toFixed(2)}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Amount Paid
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium" color="success.main">
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Amount Paid</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#16A34A', fontFamily: 'monospace' }}>
                     ${Number(selectedInvoice.amountPaid || 0).toFixed(2)}
                   </Typography>
                 </Grid>
                 <Grid item xs={12}>
-                  <Typography variant="body2" color="text.secondary">
-                    Balance Due
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium" color={Number(selectedInvoice.balanceDue || 0) > 0 ? 'error.main' : 'success.main'}>
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Balance Due</Typography>
+                  <Typography
+                    sx={{
+                      fontSize: 13.5,
+                      fontWeight: 600,
+                      fontFamily: 'monospace',
+                      color: Number(selectedInvoice.balanceDue || 0) > 0 ? '#CC1F1F' : '#16A34A',
+                    }}
+                  >
                     ${Number(selectedInvoice.balanceDue || 0).toFixed(2)}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Due Date
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
+                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Due Date</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
                     {selectedInvoice.duedate ? formatDisplayDate(selectedInvoice.duedate) : 'N/A'}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Status
-                  </Typography>
-                  <Chip
-                    label={selectedInvoice.paymentstatus || selectedInvoice.status}
-                    color={getPaymentStatus(selectedInvoice).color}
-                    size="small"
+                  <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 0.5 }}>Status</Typography>
+                  <StatusChip
+                    kind={getPaymentStatusKind(selectedInvoice).kind}
+                    label={String(selectedInvoice.paymentstatus || selectedInvoice.status || 'unknown').toUpperCase()}
                   />
                 </Grid>
               </Grid>
             </Box>
           ) : (
-            <Typography variant="body2" color="text.secondary">
+            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
               No invoice details available.
             </Typography>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseInvoiceDialog}>
-            Close
-          </Button>
+          <GhostButton onClick={handleCloseInvoiceDialog}>Close</GhostButton>
         </DialogActions>
       </Dialog>
 
@@ -961,7 +860,7 @@ const PaymentVerificationView = () => {
         autoHideDuration={6000}
         onClose={() => setSuccessMessage('')}
       >
-        <Alert severity='success' onClose={() => setSuccessMessage('')}>
+        <Alert severity="success" onClose={() => setSuccessMessage('')}>
           {successMessage}
         </Alert>
       </Snackbar>
@@ -972,7 +871,7 @@ const PaymentVerificationView = () => {
         autoHideDuration={6000}
         onClose={() => setErrorMessage('')}
       >
-        <Alert severity='error' onClose={() => setErrorMessage('')}>
+        <Alert severity="error" onClose={() => setErrorMessage('')}>
           {errorMessage}
         </Alert>
       </Snackbar>

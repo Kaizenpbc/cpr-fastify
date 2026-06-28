@@ -78,7 +78,7 @@ const CourseAdminPortal: React.FC<CourseAdminPortalProps> = ({
           <Route path="vendor-invoices" element={<VendorInvoiceApproval />} />
           <Route path="paid-vendor-invoices" element={<PaidVendorInvoices />} />
           <Route path="" element={<Navigate to="dashboard" replace />} />
-          <Route path="*" element={<Box sx={{ p: 3 }}><Typography variant="h6">View not found</Typography></Box>} />
+          <Route path="*" element={<Box sx={{ p: 3 }}><Typography sx={{ fontSize: 14, fontWeight: 600, color: '#9CA3AF' }}>View not found</Typography></Box>} />
         </Routes>
       </AdminShell>
     </ErrorBoundary>

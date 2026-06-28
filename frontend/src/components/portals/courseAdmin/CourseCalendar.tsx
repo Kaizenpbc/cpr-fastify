@@ -2,27 +2,19 @@ import React, { useState, useMemo } from 'react';
 import {
   Box,
   Typography,
-  Paper,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
-  Chip,
   Grid,
-  Divider,
   CircularProgress,
   FormControlLabel,
   Checkbox,
 } from '@mui/material';
-import {
-  ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon,
-  Circle as CircleIcon,
-} from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../../services/api';
+import StatusChip from '../../gtacpr/StatusChip';
+import { GhostButton } from '../../gtacpr/Buttons';
 
 interface Course {
   id: number;
@@ -52,7 +44,6 @@ const CourseCalendar: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
 
-  // Fetch pending courses
   const { data: pendingCourses = [], isLoading: loadingPending } = useQuery({
     queryKey: ['pendingCourses'],
     queryFn: async () => {
@@ -61,7 +52,6 @@ const CourseCalendar: React.FC = () => {
     },
   });
 
-  // Fetch confirmed courses
   const { data: confirmedCourses = [], isLoading: loadingConfirmed } = useQuery({
     queryKey: ['confirmedCourses'],
     queryFn: async () => {
@@ -70,7 +60,6 @@ const CourseCalendar: React.FC = () => {
     },
   });
 
-  // Fetch completed courses (only when showCompleted is true)
   const { data: completedCourses = [], isLoading: loadingCompleted } = useQuery({
     queryKey: ['completedCourses'],
     queryFn: async () => {
@@ -82,76 +71,41 @@ const CourseCalendar: React.FC = () => {
 
   const isLoading = loadingPending || loadingConfirmed || (showCompleted && loadingCompleted);
 
-  // Combine all courses
   const allCourses = useMemo(() => {
     const courses = [...pendingCourses, ...confirmedCourses];
-    if (showCompleted) {
-      courses.push(...completedCourses);
-    }
+    if (showCompleted) courses.push(...completedCourses);
     return courses;
   }, [pendingCourses, confirmedCourses, completedCourses, showCompleted]);
 
-  // Get calendar days for current month
   const calendarDays = useMemo(() => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
-
-    // First day of month
     const firstDay = new Date(year, month, 1);
-    // Last day of month
     const lastDay = new Date(year, month + 1, 0);
-
-    // Start from Sunday of the week containing the first day
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - startDate.getDay());
-
-    // End on Saturday of the week containing the last day
     const endDate = new Date(lastDay);
     endDate.setDate(endDate.getDate() + (6 - endDate.getDay()));
 
     const days: CalendarDay[] = [];
     const current = new Date(startDate);
-
     while (current <= endDate) {
       const dateStr = current.toISOString().split('T')[0];
-
-      // Find courses for this day
       const coursesForDay = allCourses.filter((course) => {
         const courseDate = course.confirmedDate || course.scheduledDate;
         if (!courseDate) return false;
-        const courseDateStr = new Date(courseDate).toISOString().split('T')[0];
-        return courseDateStr === dateStr;
+        return new Date(courseDate).toISOString().split('T')[0] === dateStr;
       });
-
-      days.push({
-        date: new Date(current),
-        isCurrentMonth: current.getMonth() === month,
-        courses: coursesForDay,
-      });
-
+      days.push({ date: new Date(current), isCurrentMonth: current.getMonth() === month, courses: coursesForDay });
       current.setDate(current.getDate() + 1);
     }
-
     return days;
   }, [currentDate, allCourses]);
 
-  const handlePrevMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-  };
-
-  const handleNextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
-  };
-
-  const handleCourseClick = (course: Course) => {
-    setSelectedCourse(course);
-    setDialogOpen(true);
-  };
-
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setSelectedCourse(null);
-  };
+  const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  const handleCourseClick = (course: Course) => { setSelectedCourse(course); setDialogOpen(true); };
+  const handleCloseDialog = () => { setDialogOpen(false); setSelectedCourse(null); };
 
   const formatTime = (time: string | undefined) => {
     if (!time) return '';
@@ -159,339 +113,160 @@ const CourseCalendar: React.FC = () => {
       const [hours, minutes] = time.split(':');
       const hour = parseInt(hours, 10);
       const ampm = hour >= 12 ? 'PM' : 'AM';
-      const hour12 = hour % 12 || 12;
-      return `${hour12}:${minutes} ${ampm}`;
-    } catch {
-      return time;
-    }
+      return `${hour % 12 || 12}:${minutes} ${ampm}`;
+    } catch { return time; }
   };
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
-      case 'confirmed':
-        return '#4caf50'; // Green
-      case 'pending':
-        return '#2196f3'; // Blue
-      case 'past_due':
-        return '#ff9800'; // Orange
-      case 'completed':
-      case 'invoiced':
-        return '#ffc107'; // Yellow
-      default:
-        return '#757575'; // Dark Grey
+      case 'confirmed': return '#16A34A';
+      case 'pending': return '#3B82F6';
+      case 'past_due': return '#ED6C02';
+      case 'completed': case 'invoiced': return '#9CA3AF';
+      default: return '#6B7280';
+    }
+  };
+
+  const getStatusKind = (status: string): 'success' | 'active' | 'warning' | 'danger' | 'neutral' | 'pending' => {
+    switch (status?.toLowerCase()) {
+      case 'confirmed': return 'success';
+      case 'pending': return 'pending';
+      case 'past_due': return 'warning';
+      case 'completed': case 'invoiced': return 'neutral';
+      default: return 'neutral';
     }
   };
 
   const getStatusLabel = (status: string) => {
     switch (status?.toLowerCase()) {
-      case 'confirmed':
-        return 'Confirmed';
-      case 'pending':
-        return 'Pending';
-      case 'past_due':
-        return 'Past Due';
-      case 'completed':
-        return 'Completed';
-      case 'invoiced':
-        return 'Invoiced';
-      default:
-        return status;
+      case 'confirmed': return 'Confirmed';
+      case 'pending': return 'Pending';
+      case 'past_due': return 'Past Due';
+      case 'completed': return 'Completed';
+      case 'invoiced': return 'Invoiced';
+      default: return status;
     }
   };
 
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   if (isLoading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
-    );
+    return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}><CircularProgress size={24} /></Box>;
   }
 
   return (
-    <Paper sx={{ p: 2 }}>
-      {/* Calendar Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <IconButton onClick={handlePrevMonth}>
-          <ChevronLeftIcon />
-        </IconButton>
-        <Typography variant="h5" fontWeight="bold">
+    <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
+      {/* Header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Box onClick={handlePrevMonth} sx={{ fontSize: 13, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', px: 1.5, py: 0.5, borderRadius: '6px', '&:hover': { bgcolor: '#FEF2F2' } }}>← Prev</Box>
+        <Typography sx={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>
           {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
         </Typography>
-        <IconButton onClick={handleNextMonth}>
-          <ChevronRightIcon />
-        </IconButton>
+        <Box onClick={handleNextMonth} sx={{ fontSize: 13, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', px: 1.5, py: 0.5, borderRadius: '6px', '&:hover': { bgcolor: '#FEF2F2' } }}>Next →</Box>
       </Box>
 
       {/* Legend */}
-      <Box display="flex" gap={3} mb={2} justifyContent="center" alignItems="center">
-        <Box display="flex" alignItems="center" gap={0.5}>
-          <CircleIcon sx={{ fontSize: 12, color: '#2196f3' }} />
-          <Typography variant="caption">Scheduled</Typography>
-        </Box>
-        <Box display="flex" alignItems="center" gap={0.5}>
-          <CircleIcon sx={{ fontSize: 12, color: '#4caf50' }} />
-          <Typography variant="caption">Confirmed</Typography>
-        </Box>
-        {showCompleted && (
-          <Box display="flex" alignItems="center" gap={0.5}>
-            <CircleIcon sx={{ fontSize: 12, color: '#ffc107' }} />
-            <Typography variant="caption">Completed</Typography>
+      <Box sx={{ display: 'flex', gap: 3, mb: 2, justifyContent: 'center', alignItems: 'center' }}>
+        {[
+          { color: '#3B82F6', label: 'Scheduled' },
+          { color: '#16A34A', label: 'Confirmed' },
+          ...(showCompleted ? [{ color: '#9CA3AF', label: 'Completed' }] : []),
+        ].map(({ color, label }) => (
+          <Box key={label} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: color }} />
+            <Typography sx={{ fontSize: 12, color: '#4B5563' }}>{label}</Typography>
           </Box>
-        )}
-        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+        ))}
+        <Box sx={{ width: 1, height: 16, bgcolor: '#E5E7EB', mx: 1 }} />
         <FormControlLabel
-          control={
-            <Checkbox
-              checked={showCompleted}
-              onChange={(e) => setShowCompleted(e.target.checked)}
-              size="small"
-            />
-          }
-          label={<Typography variant="caption">Show Completed</Typography>}
+          control={<Checkbox checked={showCompleted} onChange={(e) => setShowCompleted(e.target.checked)} size="small" sx={{ '&.Mui-checked': { color: '#CC1F1F' } }} />}
+          label={<Typography sx={{ fontSize: 12, color: '#4B5563' }}>Show Completed</Typography>}
           sx={{ m: 0 }}
         />
       </Box>
 
       {/* Day Headers */}
-      <Grid container>
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
         {dayNames.map((day) => (
-          <Grid item xs={12 / 7} key={day}>
-            <Box
-              sx={{
-                textAlign: 'center',
-                py: 1,
-                fontWeight: 'bold',
-                backgroundColor: 'grey.100',
-                borderBottom: '1px solid',
-                borderColor: 'divider',
-              }}
-            >
-              <Typography variant="body2" fontWeight="bold">
-                {day}
-              </Typography>
-            </Box>
-          </Grid>
+          <Box key={day} sx={{ textAlign: 'center', py: 1, bgcolor: '#111827', borderRight: day !== 'Sat' ? '1px solid #1F2937' : 'none', '&:first-of-type': { borderTopLeftRadius: '8px' }, '&:last-of-type': { borderTopRightRadius: '8px' } }}>
+            <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{day}</Typography>
+          </Box>
         ))}
-      </Grid>
+      </Box>
 
       {/* Calendar Grid */}
-      <Grid container>
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
         {calendarDays.map((day, index) => {
           const isToday = day.date.toDateString() === new Date().toDateString();
-
           return (
-            <Grid item xs={12 / 7} key={index}>
-              <Box
-                sx={{
-                  minHeight: 100,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  p: 0.5,
-                  backgroundColor: day.isCurrentMonth
-                    ? isToday
-                      ? 'primary.50'
-                      : 'background.paper'
-                    : 'grey.50',
-                }}
-              >
-                {/* Date Number */}
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontWeight: isToday ? 'bold' : 'normal',
-                    color: day.isCurrentMonth ? 'text.primary' : 'text.disabled',
-                    mb: 0.5,
-                  }}
-                >
-                  {day.date.getDate()}
-                </Typography>
-
-                {/* Courses for this day */}
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                  {day.courses.slice(0, 3).map((course) => (
-                    <Box
-                      key={course.id}
-                      onClick={() => handleCourseClick(course)}
-                      sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        cursor: 'pointer',
-                        p: 0.5,
-                        borderRadius: 0.5,
-                        backgroundColor: `${getStatusColor(course.status)}20`,
-                        borderLeft: `3px solid ${getStatusColor(course.status)}`,
-                        '&:hover': {
-                          backgroundColor: `${getStatusColor(course.status)}30`,
-                        },
-                        overflow: 'hidden',
-                      }}
-                    >
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          fontSize: '0.65rem',
-                          lineHeight: 1.2,
-                          fontWeight: 'bold',
-                        }}
-                      >
-                        {course.organizationName?.substring(0, 12) || 'N/A'}
-                      </Typography>
-                      {course.status?.toLowerCase() === 'confirmed' && (
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            fontSize: '0.6rem',
-                            lineHeight: 1.1,
-                            color: 'text.secondary',
-                          }}
-                        >
-                          {course.instructorName?.split(' ')[0] || 'No Instr'} • {course.registeredStudents || 0} students
-                        </Typography>
-                      )}
-                    </Box>
-                  ))}
-                  {day.courses.length > 3 && (
-                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
-                      +{day.courses.length - 3} more
+            <Box key={index} sx={{ minHeight: 90, border: '1px solid #E5E7EB', borderTop: 'none', p: 0.5, bgcolor: day.isCurrentMonth ? (isToday ? '#FEF2F2' : '#fff') : '#F9FAFB' }}>
+              <Typography sx={{ fontSize: 12, fontWeight: isToday ? 700 : 400, color: day.isCurrentMonth ? (isToday ? '#CC1F1F' : '#111827') : '#9CA3AF', mb: 0.5 }}>
+                {day.date.getDate()}
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                {day.courses.slice(0, 3).map((course) => (
+                  <Box key={course.id} onClick={() => handleCourseClick(course)} sx={{ cursor: 'pointer', p: 0.5, borderRadius: '4px', bgcolor: `${getStatusColor(course.status)}15`, borderLeft: `3px solid ${getStatusColor(course.status)}`, '&:hover': { bgcolor: `${getStatusColor(course.status)}25` }, overflow: 'hidden' }}>
+                    <Typography sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: 10, fontWeight: 600, lineHeight: 1.2, color: '#111827' }}>
+                      {course.organizationName?.substring(0, 12) || 'N/A'}
                     </Typography>
-                  )}
-                </Box>
+                    {course.status?.toLowerCase() === 'confirmed' && (
+                      <Typography sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: 9, lineHeight: 1.1, color: '#9CA3AF' }}>
+                        {course.instructorName?.split(' ')[0] || 'No Instr'} • {course.registeredStudents || 0}
+                      </Typography>
+                    )}
+                  </Box>
+                ))}
+                {day.courses.length > 3 && (
+                  <Typography sx={{ fontSize: 9, color: '#9CA3AF' }}>+{day.courses.length - 3} more</Typography>
+                )}
               </Box>
-            </Grid>
+            </Box>
           );
         })}
-      </Grid>
+      </Box>
 
       {/* Course Details Dialog */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          <Box display="flex" alignItems="center" gap={1}>
-            <CircleIcon sx={{ fontSize: 16, color: getStatusColor(selectedCourse?.status || '') }} />
-            <Typography variant="h6">Course Details</Typography>
-          </Box>
-        </DialogTitle>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>Course Details</DialogTitle>
         <DialogContent>
           {selectedCourse && (
             <Box sx={{ pt: 1 }}>
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  <Chip
-                    label={getStatusLabel(selectedCourse.status)}
-                    sx={{
-                      backgroundColor: getStatusColor(selectedCourse.status),
-                      color: 'white',
-                      fontWeight: 'bold',
-                    }}
-                  />
+              <Box sx={{ mb: 2 }}>
+                <StatusChip kind={getStatusKind(selectedCourse.status)} label={getStatusLabel(selectedCourse.status)} />
+              </Box>
+              <Box sx={{ borderTop: '1px solid #E5E7EB', pt: 2 }}>
+                <Grid container spacing={2}>
+                  {[
+                    ['Organization', selectedCourse.organizationName || 'N/A'],
+                    ['Course Type', selectedCourse.courseTypeName || 'N/A'],
+                    ['Date', selectedCourse.confirmedDate || selectedCourse.scheduledDate ? new Date(selectedCourse.confirmedDate || selectedCourse.scheduledDate || '').toLocaleDateString() : 'Not scheduled'],
+                    ['Time', selectedCourse.confirmedStartTime ? `${formatTime(selectedCourse.confirmedStartTime)} - ${formatTime(selectedCourse.confirmedEndTime)}` : 'Not set'],
+                    ...(selectedCourse.status === 'confirmed' ? [['Instructor', selectedCourse.instructorName || 'Not assigned']] : []),
+                    ['Students', `${selectedCourse.registeredStudents || 0} registered`],
+                    ...(selectedCourse.location ? [['Location', selectedCourse.location]] : []),
+                  ].map(([label, value]) => (
+                    <Grid item xs={6} key={String(label)}>
+                      <Typography sx={{ fontSize: 12, color: '#9CA3AF', mb: 0.25 }}>{label}</Typography>
+                      <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{value}</Typography>
+                    </Grid>
+                  ))}
+                  {selectedCourse.notes && (
+                    <Grid item xs={12}>
+                      <Typography sx={{ fontSize: 12, color: '#9CA3AF', mb: 0.25 }}>Notes</Typography>
+                      <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{selectedCourse.notes}</Typography>
+                    </Grid>
+                  )}
                 </Grid>
-
-                <Grid item xs={12}>
-                  <Divider />
-                </Grid>
-
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Organization
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
-                    {selectedCourse.organizationName || 'N/A'}
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Course Type
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
-                    {selectedCourse.courseTypeName || 'N/A'}
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Date
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
-                    {selectedCourse.confirmedDate || selectedCourse.scheduledDate
-                      ? new Date(selectedCourse.confirmedDate || selectedCourse.scheduledDate || '').toLocaleDateString()
-                      : 'Not scheduled'}
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Time
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
-                    {selectedCourse.confirmedStartTime
-                      ? `${formatTime(selectedCourse.confirmedStartTime)} - ${formatTime(selectedCourse.confirmedEndTime)}`
-                      : 'Not set'}
-                  </Typography>
-                </Grid>
-
-                {selectedCourse.status === 'confirmed' && (
-                  <Grid item xs={6}>
-                    <Typography variant="body2" color="text.secondary">
-                      Instructor
-                    </Typography>
-                    <Typography variant="body1" fontWeight="medium">
-                      {selectedCourse.instructorName || 'Not assigned'}
-                    </Typography>
-                  </Grid>
-                )}
-
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Students
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
-                    {selectedCourse.registeredStudents || 0} registered
-                  </Typography>
-                </Grid>
-
-                {selectedCourse.location && (
-                  <Grid item xs={12}>
-                    <Typography variant="body2" color="text.secondary">
-                      Location
-                    </Typography>
-                    <Typography variant="body1" fontWeight="medium">
-                      {selectedCourse.location}
-                    </Typography>
-                  </Grid>
-                )}
-
-                {selectedCourse.notes && (
-                  <Grid item xs={12}>
-                    <Typography variant="body2" color="text.secondary">
-                      Notes
-                    </Typography>
-                    <Typography variant="body1">
-                      {selectedCourse.notes}
-                    </Typography>
-                  </Grid>
-                )}
-              </Grid>
+              </Box>
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Close</Button>
+        <DialogActions sx={{ p: 2 }}>
+          <GhostButton onClick={handleCloseDialog}>Close</GhostButton>
         </DialogActions>
       </Dialog>
-    </Paper>
+    </Box>
   );
 };
 

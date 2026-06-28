@@ -2,47 +2,27 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
-  Paper,
-  Grid,
-  Card,
-  CardContent,
-  Chip,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
-  TextField,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   Alert,
   CircularProgress,
-  Badge,
-  Divider,
-  Tooltip,
-  Button,
+  Grid,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
+  IconButton,
 } from '@mui/material';
-import {
-  Download as DownloadIcon,
-  Visibility as ViewIcon,
-  Schedule as ScheduleIcon,
-  CheckCircle as CheckCircleIcon,
-  Warning as WarningIcon,
-  Error as ErrorIcon,
-  Payment as PaymentIcon,
-  Receipt as ReceiptIcon,
-  Close as CloseIcon,
-} from '@mui/icons-material';
+import { Close as CloseIcon } from '@mui/icons-material';
 import { vendorApi } from '../../../services/api';
 import { useLocation } from 'react-router-dom';
+import StatCard from '../../gtacpr/StatCard';
+import SearchBar from '../../gtacpr/SearchBar';
+import DataTable, { DataTableRow } from '../../gtacpr/DataTable';
+import StatusChip from '../../gtacpr/StatusChip';
+import { GhostButton, PrimaryButton } from '../../gtacpr/Buttons';
 
 interface Invoice {
   id: number;
@@ -64,8 +44,6 @@ interface LocationState {
   refresh?: boolean;
 }
 
-type ChipColor = 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning';
-
 interface StatusSummary {
   submitted: number;
   pendingReview: number;
@@ -74,6 +52,35 @@ interface StatusSummary {
   rejected: number;
   overdue: number;
 }
+
+const columns = [
+  { key: 'invoice', label: 'INVOICE #', width: '1fr' },
+  { key: 'description', label: 'DESCRIPTION', width: '1.5fr' },
+  { key: 'org', label: 'ORGANIZATION', width: '1fr' },
+  { key: 'amount', label: 'AMOUNT', width: '0.8fr', align: 'right' as const },
+  { key: 'status', label: 'STATUS', width: '0.8fr' },
+  { key: 'created', label: 'CREATED', width: '0.8fr' },
+  { key: 'due', label: 'DUE DATE', width: '0.8fr' },
+  { key: 'payment', label: 'PAYMENT DATE', width: '0.8fr' },
+  { key: 'actions', label: '', width: '0.7fr', align: 'right' as const },
+];
+
+type StatusKind = 'warning' | 'pending' | 'success' | 'active' | 'danger' | 'neutral';
+
+const getStatusKind = (status: string): StatusKind => {
+  switch (status) {
+    case 'submitted': return 'warning';
+    case 'pending_review': return 'pending';
+    case 'approved': return 'active';
+    case 'paid': return 'success';
+    case 'rejected': return 'danger';
+    default: return 'neutral';
+  }
+};
+
+const getStatusLabel = (status: string) => {
+  return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+};
 
 const InvoiceStatusView: React.FC = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -84,18 +91,11 @@ const InvoiceStatusView: React.FC = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [statusSummary, setStatusSummary] = useState<StatusSummary>({
-    submitted: 0,
-    pendingReview: 0,
-    approved: 0,
-    paid: 0,
-    rejected: 0,
-    overdue: 0
+    submitted: 0, pendingReview: 0, approved: 0, paid: 0, rejected: 0, overdue: 0,
   });
   const location = useLocation();
 
-  useEffect(() => {
-    fetchInvoices();
-  }, []);
+  useEffect(() => { fetchInvoices(); }, []);
 
   useEffect(() => {
     if (location.state && (location.state as LocationState).refresh) {
@@ -108,20 +108,16 @@ const InvoiceStatusView: React.FC = () => {
     try {
       setLoading(true);
       const response = await vendorApi.getInvoices();
-      
-      // Check if response.data exists and is an array
       if (!response.data || !Array.isArray(response.data)) {
         console.error('Invalid response format:', response);
         setError('Invalid response format from server');
         setInvoices([]);
         return;
       }
-      
       const processedInvoices = response.data.map((invoice: Invoice & { amount: string | number }) => ({
         ...invoice,
-        amount: typeof invoice.amount === 'string' ? parseFloat(invoice.amount) : invoice.amount || 0
+        amount: typeof invoice.amount === 'string' ? parseFloat(invoice.amount) : invoice.amount || 0,
       }));
-      
       setInvoices(processedInvoices);
       calculateStatusSummary(processedInvoices);
     } catch (error: any) {
@@ -134,87 +130,23 @@ const InvoiceStatusView: React.FC = () => {
   };
 
   const calculateStatusSummary = (invoiceList: Invoice[]) => {
-    const summary = {
-      submitted: 0,
-      pendingReview: 0,
-      approved: 0,
-      paid: 0,
-      rejected: 0,
-      overdue: 0
-    };
-
+    const summary: StatusSummary = { submitted: 0, pendingReview: 0, approved: 0, paid: 0, rejected: 0, overdue: 0 };
     invoiceList.forEach(invoice => {
-      summary[invoice.status as keyof StatusSummary]++;
-
-      // Check for overdue invoices
-      if (invoice.dueDate && new Date(invoice.dueDate) < new Date() && invoice.status !== 'paid') {
-        summary.overdue++;
-      }
+      if (invoice.status in summary) summary[invoice.status as keyof StatusSummary]++;
+      if (invoice.dueDate && new Date(invoice.dueDate) < new Date() && invoice.status !== 'paid') summary.overdue++;
     });
-
     setStatusSummary(summary);
   };
 
-  const getStatusColor = (status: string): ChipColor => {
-    switch (status) {
-      case 'submitted':
-        return 'warning';
-      case 'pending_review':
-        return 'info';
-      case 'approved':
-        return 'success';
-      case 'paid':
-        return 'success';
-      case 'rejected':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
+  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString();
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'submitted':
-        return <ScheduleIcon />;
-      case 'pending_review':
-        return <WarningIcon />;
-      case 'approved':
-        return <CheckCircleIcon />;
-      case 'paid':
-        return <PaymentIcon />;
-      case 'rejected':
-        return <ErrorIcon />;
-      default:
-        return <ReceiptIcon />;
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-CA', {
-      style: 'currency',
-      currency: 'CAD'
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(amount);
 
   const handleDownload = async (invoiceId: number, invoiceNumber: string) => {
     try {
-      console.log('📥 [INVOICE STATUS VIEW] Downloading invoice:', invoiceId);
-      
-      // Use the vendorApi method which handles authentication automatically
       const blob = await vendorApi.downloadInvoice(invoiceId);
-      
-      console.log('📥 [INVOICE STATUS VIEW] Blob received, size:', blob.size, 'bytes, type:', blob.type);
-
-      // Verify the blob size
-      if (blob.size === 0) {
-        throw new Error('Invoice file is empty');
-      }
-
-      // Create download link
+      if (blob.size === 0) throw new Error('Invoice file is empty');
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -223,296 +155,158 @@ const InvoiceStatusView: React.FC = () => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
-      console.log('✅ [INVOICE STATUS VIEW] Download completed successfully');
     } catch (err: unknown) {
-      const errObj = err as { message?: string; stack?: string; name?: string };
-      console.error('❌ [INVOICE STATUS VIEW] Download error:', err);
-      console.error('❌ [INVOICE STATUS VIEW] Error details:', {
-        message: errObj.message,
-        stack: errObj.stack,
-        name: errObj.name
-      });
+      const errObj = err as { message?: string };
       alert(`Failed to download invoice: ${errObj.message || 'Unknown error'}`);
     }
   };
 
   const handleView = async (invoiceId: number) => {
     try {
-      console.log('👁️ [INVOICE STATUS VIEW] Viewing invoice:', invoiceId);
       const response = await vendorApi.getInvoice(invoiceId);
       setSelectedInvoice(response.data);
       setViewDialogOpen(true);
-      console.log('✅ [INVOICE STATUS VIEW] Invoice details loaded');
-    } catch (err: unknown) {
-      console.error('❌ [INVOICE STATUS VIEW] View error:', err);
+    } catch {
       alert('Failed to load invoice details. Please try again.');
     }
   };
 
-  const handleCloseViewDialog = () => {
-    setViewDialogOpen(false);
-    setSelectedInvoice(null);
-  };
+  const handleCloseViewDialog = () => { setViewDialogOpen(false); setSelectedInvoice(null); };
 
   const filteredInvoices = invoices.filter(invoice => {
     const matchesSearch = invoice.invoiceNumber.toLowerCase().includes(search.toLowerCase()) ||
-                         invoice.description.toLowerCase().includes(search.toLowerCase()) ||
-                         (invoice.organizationName && invoice.organizationName.toLowerCase().includes(search.toLowerCase()));
+      invoice.description.toLowerCase().includes(search.toLowerCase()) ||
+      (invoice.organizationName && invoice.organizationName.toLowerCase().includes(search.toLowerCase()));
     const matchesStatus = !statusFilter || invoice.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+        <CircularProgress size={48} />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ width: '100%' }}>
-      <Typography variant="h4" gutterBottom>
-        Invoice Status Overview
-      </Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {error && <Alert severity="error" onClose={() => setError(null)}>{error}</Alert>}
 
-      {/* Status Summary Cards */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        {Object.entries(statusSummary).map(([status, count]) => (
-          <Grid item xs={12} sm={6} md={3} key={status}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center" justifyContent="space-between">
-                  <Box>
-                    <Typography variant="h4" component="div">
-                      {count}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {status.replace('_', ' ').toUpperCase()}
-                    </Typography>
-                  </Box>
-                  <Badge badgeContent={count} color="primary">
-                    {getStatusIcon(status)}
-                  </Badge>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+      {/* Status Summary */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '16px' }}>
+        <StatCard label="Submitted" value={statusSummary.submitted} sub="Awaiting review" dotColor="#ED6C02" />
+        <StatCard label="Pending Review" value={statusSummary.pendingReview} sub="Under review" dotColor="#4B5563" />
+        <StatCard label="Approved" value={statusSummary.approved} sub="Ready for payment" dotColor="#16A34A" />
+        <StatCard label="Paid" value={statusSummary.paid} sub="Payment complete" dotColor="#16A34A" />
+        <StatCard label="Rejected" value={statusSummary.rejected} sub="Needs attention" dotColor="#CC1F1F" />
+        <StatCard label="Overdue" value={statusSummary.overdue} sub="Past due date" dotColor="#CC1F1F" />
+      </Box>
 
-      {/* Search and Filter Controls */}
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label="Search invoices..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by invoice number, description, or organization"
-            />
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Status Filter</InputLabel>
-              <Select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                label="Status Filter"
-              >
-                <MenuItem value="">All Statuses</MenuItem>
-                <MenuItem value="submitted">Submitted</MenuItem>
-                <MenuItem value="pending_review">Pending Review</MenuItem>
-                <MenuItem value="approved">Approved</MenuItem>
-                <MenuItem value="paid">Paid</MenuItem>
-                <MenuItem value="rejected">Rejected</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Button
-              variant="outlined"
-              onClick={fetchInvoices}
-              fullWidth
-            >
-              Refresh
-            </Button>
-          </Grid>
-        </Grid>
-      </Paper>
-
-      {/* Error Alert */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
+      {/* Search and Filter */}
+      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+        <Box sx={{ flex: 1 }}>
+          <SearchBar value={search} onChange={setSearch} placeholder="Search by invoice #, description, or organization..." />
+        </Box>
+        <FormControl sx={{ minWidth: 180 }} size="small">
+          <InputLabel>Status</InputLabel>
+          <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} label="Status">
+            <MenuItem value="">All Statuses</MenuItem>
+            <MenuItem value="submitted">Submitted</MenuItem>
+            <MenuItem value="pending_review">Pending Review</MenuItem>
+            <MenuItem value="approved">Approved</MenuItem>
+            <MenuItem value="paid">Paid</MenuItem>
+            <MenuItem value="rejected">Rejected</MenuItem>
+          </Select>
+        </FormControl>
+        <GhostButton onClick={fetchInvoices}>Refresh</GhostButton>
+      </Box>
 
       {/* Invoices Table */}
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Invoice #</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>Organization</TableCell>
-              <TableCell align="right">Amount</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Created</TableCell>
-              <TableCell>Due Date</TableCell>
-              <TableCell>Payment Date</TableCell>
-              <TableCell align="center">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredInvoices.map((invoice) => (
-              <TableRow key={invoice.id}>
-                <TableCell>
-                  <Typography variant="body2" fontWeight="bold">
-                    {invoice.invoiceNumber}
-                  </Typography>
-                </TableCell>
-                <TableCell>{invoice.description}</TableCell>
-                <TableCell>{invoice.organizationName || 'N/A'}</TableCell>
-                <TableCell align="right">
-                  <Typography variant="body2" fontWeight="bold">
-                    {formatCurrency(invoice.amount)}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    icon={getStatusIcon(invoice.status)}
-                    label={invoice.status.replace('_', ' ').toUpperCase()}
-                    color={getStatusColor(invoice.status)}
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell>{formatDate(invoice.createdAt)}</TableCell>
-                <TableCell>
-                  {invoice.dueDate ? formatDate(invoice.dueDate) : '-'}
-                </TableCell>
-                <TableCell>
-                  {invoice.paymentDate ? formatDate(invoice.paymentDate) : '-'}
-                </TableCell>
-                <TableCell align="center">
-                  <Tooltip title="View Invoice Details">
-                    <IconButton 
-                      size="small" 
-                      onClick={() => handleView(invoice.id)}
-                      color="primary"
-                    >
-                      <ViewIcon />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Download PDF">
-                    <IconButton 
-                      size="small" 
-                      onClick={() => handleDownload(invoice.id, invoice.invoiceNumber)}
-                      color="secondary"
-                    >
-                      <DownloadIcon />
-                    </IconButton>
-                  </Tooltip>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {filteredInvoices.length === 0 && !loading && (
-        <Box textAlign="center" py={4}>
-          <Typography color="textSecondary">
-            No invoices found matching your criteria.
-          </Typography>
+      {filteredInvoices.length === 0 ? (
+        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ color: '#9CA3AF', fontSize: 14 }}>No invoices found matching your criteria.</Typography>
         </Box>
+      ) : (
+        <DataTable columns={columns} shownCount={filteredInvoices.length} totalCount={invoices.length}>
+          {filteredInvoices.map(invoice => (
+            <DataTableRow key={invoice.id} columns={columns}>
+              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827', fontFamily: 'monospace' }}>{invoice.invoiceNumber}</Typography>
+              <Typography sx={{ fontSize: 13, color: '#4B5563', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{invoice.description}</Typography>
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{invoice.organizationName || '—'}</Typography>
+              <Typography sx={{ fontSize: 14, fontWeight: 700, color: '#111827', fontFamily: 'monospace', textAlign: 'right' }}>{formatCurrency(invoice.amount)}</Typography>
+              <StatusChip kind={getStatusKind(invoice.status)} label={getStatusLabel(invoice.status)} />
+              <Typography sx={{ fontSize: 12.5, color: '#9CA3AF' }}>{formatDate(invoice.createdAt)}</Typography>
+              <Typography sx={{ fontSize: 12.5, color: '#9CA3AF' }}>{invoice.dueDate ? formatDate(invoice.dueDate) : '—'}</Typography>
+              <Typography sx={{ fontSize: 12.5, color: '#9CA3AF' }}>{invoice.paymentDate ? formatDate(invoice.paymentDate) : '—'}</Typography>
+              <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                <Box onClick={() => handleView(invoice.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>View</Box>
+                <Typography sx={{ fontSize: 12, color: '#E5E7EB' }}>|</Typography>
+                <Box onClick={() => handleDownload(invoice.id, invoice.invoiceNumber)} sx={{ fontSize: 12, fontWeight: 600, color: '#4B5563', cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' } }}>PDF</Box>
+              </Box>
+            </DataTableRow>
+          ))}
+        </DataTable>
       )}
 
       {/* Invoice Detail Dialog */}
-      <Dialog
-        open={viewDialogOpen}
-        onClose={handleCloseViewDialog}
-        maxWidth="md"
-        fullWidth
-      >
+      <Dialog open={viewDialogOpen} onClose={handleCloseViewDialog} maxWidth="md" fullWidth>
         <DialogTitle>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="h6">
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
               Invoice Details - {selectedInvoice?.invoiceNumber}
             </Typography>
-            <IconButton onClick={handleCloseViewDialog}>
-              <CloseIcon />
-            </IconButton>
+            <IconButton onClick={handleCloseViewDialog} size="small"><CloseIcon /></IconButton>
           </Box>
         </DialogTitle>
         <DialogContent>
           {selectedInvoice && (
-            <Grid container spacing={3}>
+            <Grid container spacing={3} sx={{ mt: 0 }}>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2" color="textSecondary">Invoice Number</Typography>
-                <Typography variant="body1" gutterBottom>{selectedInvoice.invoiceNumber}</Typography>
+                <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Invoice Number</Typography>
+                <Typography sx={{ fontSize: 14, color: '#111827', mt: 0.5 }}>{selectedInvoice.invoiceNumber}</Typography>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2" color="textSecondary">Status</Typography>
-                <Chip
-                  icon={getStatusIcon(selectedInvoice.status)}
-                  label={selectedInvoice.status.replace('_', ' ').toUpperCase()}
-                  color={getStatusColor(selectedInvoice.status)}
-                  size="small"
-                />
+                <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Status</Typography>
+                <Box sx={{ mt: 0.5 }}><StatusChip kind={getStatusKind(selectedInvoice.status)} label={getStatusLabel(selectedInvoice.status)} /></Box>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2" color="textSecondary">Created Date</Typography>
-                <Typography variant="body1" gutterBottom>
-                  {formatDate(selectedInvoice.createdAt)}
-                </Typography>
+                <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Created Date</Typography>
+                <Typography sx={{ fontSize: 14, color: '#111827', mt: 0.5 }}>{formatDate(selectedInvoice.createdAt)}</Typography>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2" color="textSecondary">Due Date</Typography>
-                <Typography variant="body1" gutterBottom>
-                  {selectedInvoice.dueDate ? formatDate(selectedInvoice.dueDate) : 'Not set'}
-                </Typography>
+                <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Due Date</Typography>
+                <Typography sx={{ fontSize: 14, color: '#111827', mt: 0.5 }}>{selectedInvoice.dueDate ? formatDate(selectedInvoice.dueDate) : 'Not set'}</Typography>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2" color="textSecondary">Organization</Typography>
-                <Typography variant="body1" gutterBottom>{selectedInvoice.organizationName || 'N/A'}</Typography>
+                <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Organization</Typography>
+                <Typography sx={{ fontSize: 14, color: '#111827', mt: 0.5 }}>{selectedInvoice.organizationName || '—'}</Typography>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2" color="textSecondary">Payment Date</Typography>
-                <Typography variant="body1" gutterBottom>
-                  {selectedInvoice.paymentDate ? formatDate(selectedInvoice.paymentDate) : 'Not paid'}
-                </Typography>
+                <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Payment Date</Typography>
+                <Typography sx={{ fontSize: 14, color: '#111827', mt: 0.5 }}>{selectedInvoice.paymentDate ? formatDate(selectedInvoice.paymentDate) : 'Not paid'}</Typography>
               </Grid>
               <Grid item xs={12}>
-                <Typography variant="subtitle2" color="textSecondary">Description</Typography>
-                <Typography variant="body1" gutterBottom>{selectedInvoice.description}</Typography>
+                <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Description</Typography>
+                <Typography sx={{ fontSize: 14, color: '#111827', mt: 0.5 }}>{selectedInvoice.description}</Typography>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2" color="textSecondary">Amount</Typography>
-                <Typography variant="body1" fontWeight="bold" gutterBottom>
-                  {formatCurrency(selectedInvoice.amount)}
-                </Typography>
+                <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Amount</Typography>
+                <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#111827', fontFamily: 'monospace', mt: 0.5 }}>{formatCurrency(selectedInvoice.amount)}</Typography>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2" color="textSecondary">Notes</Typography>
-                <Typography variant="body1" gutterBottom>{selectedInvoice.notes || 'No notes'}</Typography>
+                <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Notes</Typography>
+                <Typography sx={{ fontSize: 14, color: '#111827', mt: 0.5 }}>{selectedInvoice.notes || 'No notes'}</Typography>
               </Grid>
             </Grid>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseViewDialog}>Close</Button>
+        <DialogActions sx={{ p: 2 }}>
+          <GhostButton onClick={handleCloseViewDialog}>Close</GhostButton>
           {selectedInvoice && (
-            <Button
-              onClick={() => handleDownload(selectedInvoice.id, selectedInvoice.invoiceNumber)}
-              startIcon={<DownloadIcon />}
-              variant="contained"
-              color="primary"
-            >
+            <PrimaryButton onClick={() => handleDownload(selectedInvoice.id, selectedInvoice.invoiceNumber)}>
               Download PDF
-            </Button>
+            </PrimaryButton>
           )}
         </DialogActions>
       </Dialog>
@@ -520,4 +314,4 @@ const InvoiceStatusView: React.FC = () => {
   );
 };
 
-export default InvoiceStatusView; 
+export default InvoiceStatusView;

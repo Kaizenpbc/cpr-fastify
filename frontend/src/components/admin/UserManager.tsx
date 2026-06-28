@@ -1,52 +1,43 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as api from '../../services/api';
-import {
-  Box,
-  Typography,
-  Button,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  CircularProgress,
-  Alert,
-  IconButton,
-  Snackbar,
-} from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-// Import Add/Edit Dialog component
+import { Box, Typography, CircularProgress, Alert, Snackbar } from '@mui/material';
 import UserDialog from './UserDialog';
-// Phone formatting
 import { formatPhoneNumber } from 'react-phone-number-input';
 import logger from '../../utils/logger';
+import DataTable, { DataTableRow } from '../gtacpr/DataTable';
+import UserAvatar from '../gtacpr/UserAvatar';
+import RoleChip from '../gtacpr/RoleChip';
+import { PrimaryButton } from '../gtacpr/Buttons';
 
-// Helper to safely format phone numbers (copied from OrganizationManager)
 const formatPhone = (phoneString: any) => {
-  if (!phoneString) return '-';
+  if (!phoneString) return '—';
   return formatPhoneNumber(phoneString) || phoneString;
 };
+
+const columns = [
+  { key: 'user', label: 'USER', width: '1.4fr' },
+  { key: 'role', label: 'ROLE', width: '0.7fr' },
+  { key: 'email', label: 'EMAIL', width: '1.2fr' },
+  { key: 'phone', label: 'PHONE', width: '0.9fr' },
+  { key: 'org', label: 'ORGANIZATION', width: '1fr' },
+  { key: 'location', label: 'LOCATION', width: '0.9fr' },
+  { key: 'actions', label: '', width: '0.5fr', align: 'right' as const },
+];
+
+function getInitials(user: any): string {
+  const f = user.firstName || '';
+  const l = user.lastName || '';
+  if (f || l) return `${f[0] || ''}${l[0] || ''}`.toUpperCase();
+  return (user.username || '?')[0].toUpperCase();
+}
 
 function UserManager() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  // State for Add/Edit Dialog
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState(null); // null for Add, user object for Edit
-  const [snackbar, setSnackbar] = useState<{
-    open: boolean;
-    message: string;
-    severity: 'success' | 'error' | 'warning' | 'info';
-  }>({
-    open: false,
-    message: '',
-    severity: 'success',
-  }); // Add Snackbar state
+  const [editingUser, setEditingUser] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' | 'warning' | 'info' });
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -62,174 +53,87 @@ function UserManager() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
-  const handleAddOpen = () => {
-    setEditingUser(null); // Set to null for Add mode
-    setDialogOpen(true);
+  const showSnackbar = (message: string, severity: 'success' | 'error' | 'warning' | 'info' = 'success') => {
+    setSnackbar({ open: true, message, severity });
   };
 
-  const handleEditOpen = (user: any) => {
-    setEditingUser(user); // Set the user data for Edit mode
-    setDialogOpen(true);
-  };
+  const handleAddOpen = () => { setEditingUser(null); setDialogOpen(true); };
+  const handleEditOpen = (user: any) => { setEditingUser(user); setDialogOpen(true); };
 
   const handleDelete = async (userId: any) => {
     const userToDelete = users.find(u => u.userId === userId);
-    const confirmMessage = userToDelete
-      ? `Are you sure you want to delete user: ${userToDelete.username} (ID: ${userId})?`
-      : `Are you sure you want to delete user ID ${userId}?`;
-
-    if (window.confirm(confirmMessage)) {
+    const msg = userToDelete ? `Delete user: ${userToDelete.username}?` : `Delete user ID ${userId}?`;
+    if (window.confirm(msg)) {
       try {
         await api.deleteUser(userId);
-        setUsers(users.filter(user => user.userId !== userId));
-        logger.info(`User ${userId} deleted successfully`);
-        showSnackbar(`User ${userId} deleted successfully.`, 'success');
-        fetchUsers(); // Refresh the list
+        showSnackbar(`User deleted successfully.`, 'success');
+        fetchUsers();
       } catch (err: any) {
         logger.error(`Error deleting user ${userId}:`, err);
-        setError('Failed to delete user');
         showSnackbar(`Failed to delete user: ${err.message}`, 'error');
       }
     }
   };
 
-  const handleDialogClose = () => {
-    setDialogOpen(false);
-    setEditingUser(null);
-  };
+  const handleDialogClose = () => { setDialogOpen(false); setEditingUser(null); };
+  const handleDialogSave = () => { fetchUsers(); };
 
-  const handleDialogSave = () => {
-    fetchUsers(); // Refresh list after save
-    // Dialog will close itself via its own logic
-  };
-
-  // --- Define showSnackbar helper ---
-  const showSnackbar = (message: string, severity: 'success' | 'error' | 'warning' | 'info' = 'success') => {
-    setSnackbar({ open: true, message, severity });
-  };
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+        <CircularProgress size={48} />
+      </Box>
+    );
+  }
 
   return (
-    <Paper sx={{ p: 2, mt: 2 }}>
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 2,
-        }}
-      >
-        <Typography variant='h6'>Manage Users</Typography>
-        <Button
-          variant='contained'
-          startIcon={<AddIcon />}
-          onClick={handleAddOpen}
-        >
-          Add User
-        </Button>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {error && <Alert severity="error">{error}</Alert>}
+
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <PrimaryButton onClick={handleAddOpen}>+ Add User</PrimaryButton>
       </Box>
 
-      {error && (
-        <Alert severity='error' sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-          <CircularProgress />
+      {users.length === 0 ? (
+        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ color: '#9CA3AF', fontSize: 14 }}>No users found.</Typography>
         </Box>
       ) : (
-        <TableContainer>
-          <Table stickyHeader size='small'>
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 'bold' }}>ID</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Username</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Role</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>First Name</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Last Name</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Email</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Phone</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Organization</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Location</TableCell>
-                <TableCell align='center' sx={{ fontWeight: 'bold' }}>
-                  Actions
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {users.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={10} align='center'>
-                    No users found.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                users.map(user => (
-                  <TableRow key={user.userId}>
-                    <TableCell>{user.userId}</TableCell>
-                    <TableCell>{user.username}</TableCell>
-                    <TableCell>{user.role}</TableCell>
-                    <TableCell>{user.firstName}</TableCell>
-                    <TableCell>{user.lastName}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.phone}</TableCell>
-                    <TableCell>{user.organizationName || '-'}</TableCell>
-                    <TableCell>{user.locationName || '-'}</TableCell>
-                    <TableCell>
-                      <IconButton
-                        size='small'
-                        onClick={() => handleEditOpen(user)}
-                        title='Edit'
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        size='small'
-                        onClick={() => handleDelete(user.userId)}
-                        title='Delete'
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <DataTable columns={columns} shownCount={users.length} totalCount={users.length}>
+          {users.map(user => (
+            <DataTableRow key={user.userId} columns={columns}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <UserAvatar initials={getInitials(user)} />
+                <Box>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                    {`${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username}
+                  </Typography>
+                  <Typography sx={{ fontSize: 11.5, color: '#9CA3AF' }}>{user.username}</Typography>
+                </Box>
+              </Box>
+              <RoleChip role={user.role} />
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{user.email}</Typography>
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatPhone(user.phone)}</Typography>
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{user.organizationName || '—'}</Typography>
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{user.locationName || '—'}</Typography>
+              <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                <Box onClick={() => handleEditOpen(user)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Edit</Box>
+                <Typography sx={{ fontSize: 12, color: '#E5E7EB' }}>|</Typography>
+                <Box onClick={() => handleDelete(user.userId)} sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' } }}>Delete</Box>
+              </Box>
+            </DataTableRow>
+          ))}
+        </DataTable>
       )}
 
-      {/* Snackbar for feedback */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          variant='filled'
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
+      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar({ ...snackbar, open: false })} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} variant="filled" sx={{ width: '100%' }}>{snackbar.message}</Alert>
       </Snackbar>
 
-      {/* Add/Edit Dialog */}
-      <UserDialog
-        open={dialogOpen}
-        onClose={handleDialogClose}
-        onSave={handleDialogSave}
-        user={editingUser}
-        existingUsers={users}
-      />
-    </Paper>
+      <UserDialog open={dialogOpen} onClose={handleDialogClose} onSave={handleDialogSave} user={editingUser} existingUsers={users} />
+    </Box>
   );
 }
 

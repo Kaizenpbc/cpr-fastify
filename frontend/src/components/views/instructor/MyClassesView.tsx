@@ -1,35 +1,19 @@
 import React, { useState, useMemo } from 'react';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   Box,
   Typography,
-  Tooltip,
-  IconButton,
-  Chip,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
   DialogActions,
-  Button,
-  useTheme,
 } from '@mui/material';
-import {
-  EventAvailable as AvailableIcon,
-  Delete as DeleteIcon,
-  ArrowUpward as ArrowUpIcon,
-  ArrowDownward as ArrowDownIcon,
-  UnfoldMore as UnfoldMoreIcon,
-} from '@mui/icons-material';
 import { CombinedScheduleItem } from '../../../types/instructor';
 import { formatDisplayDate } from '../../../utils/dateUtils';
 import { handleError } from '../../../services/errorHandler';
+import DataTable, { DataTableRow } from '../../gtacpr/DataTable';
+import StatusChip from '../../gtacpr/StatusChip';
+import { GhostButton, PrimaryButton } from '../../gtacpr/Buttons';
 
 interface MyClassesViewProps {
   combinedSchedule?: CombinedScheduleItem[];
@@ -40,65 +24,42 @@ interface MyClassesViewProps {
 type SortField = 'date' | 'status' | null;
 type SortDirection = 'asc' | 'desc';
 
+const columns = [
+  { key: 'date', label: 'DATE', width: '0.8fr' },
+  { key: 'org', label: 'ORGANIZATION', width: '1fr' },
+  { key: 'location', label: 'LOCATION', width: '0.8fr' },
+  { key: 'courseNo', label: 'COURSE NO', width: '0.7fr' },
+  { key: 'courseName', label: 'COURSE NAME', width: '1fr' },
+  { key: 'studentsR', label: 'STUDENTS R', width: '0.6fr', align: 'right' as const },
+  { key: 'studentsA', label: 'STUDENTS A', width: '0.6fr', align: 'right' as const },
+  { key: 'notes', label: 'NOTES', width: '0.8fr' },
+  { key: 'status', label: 'STATUS', width: '0.7fr' },
+  { key: 'actions', label: '', width: '0.5fr', align: 'right' as const },
+];
+
 const MyClassesView: React.FC<MyClassesViewProps> = ({
   combinedSchedule = [],
   onCompleteClass,
   onRemoveAvailability,
 }) => {
-  console.log('🔍 [TRACE] MyClassesView rendered with combinedSchedule:', JSON.stringify(combinedSchedule, null, 2));
-  
-  // Log each class item's studentsRegistered value
-  combinedSchedule.forEach((item, index) => {
-    if (item.type === 'class') {
-      console.log(`[TRACE] Class ${index}:`, {
-        course_id: item.courseId,
-        studentsRegistered: item.studentsRegistered,
-        displayDate: item.displayDate,
-        organizationName: item.organizationName
-      });
-    }
-  });
+  const [sortField, setSortField] = useState<SortField>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; date: string }>({ open: false, date: '' });
 
-  // Sorting state
-  const [sortField, setSortField] = React.useState<SortField>(null);
-  const [sortDirection, setSortDirection] = React.useState<SortDirection>('asc');
-
-  const [deleteDialog, setDeleteDialog] = React.useState<{
-    open: boolean;
-    date: string;
-  }>({
-    open: false,
-    date: '',
-  });
-
-  // Handle sorting
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      // Toggle direction if same field
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
-      // Set new field with ascending direction
       setSortField(field);
       setSortDirection('asc');
     }
   };
 
-  // Get sort icon for a column
-  const getSortIcon = (field: SortField) => {
-    if (sortField !== field) {
-      return <UnfoldMoreIcon fontSize="small" />;
-    }
-    return sortDirection === 'asc' ? <ArrowUpIcon fontSize="small" /> : <ArrowDownIcon fontSize="small" />;
-  };
-
-  // Sort the data
-  const sortedSchedule = React.useMemo(() => {
+  const sortedSchedule = useMemo(() => {
     if (!sortField) return combinedSchedule;
-
     return [...combinedSchedule].sort((a, b) => {
       let aValue: Date | string;
       let bValue: Date | string;
-
       if (sortField === 'date') {
         aValue = new Date(a.displayDate);
         bValue = new Date(b.displayDate);
@@ -108,23 +69,13 @@ const MyClassesView: React.FC<MyClassesViewProps> = ({
       } else {
         return 0;
       }
-
-      if (aValue < bValue) {
-        return sortDirection === 'asc' ? -1 : 1;
-      }
-      if (aValue > bValue) {
-        return sortDirection === 'asc' ? 1 : -1;
-      }
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
       return 0;
     });
   }, [combinedSchedule, sortField, sortDirection]);
 
-  const handleDeleteClick = (date: string) => {
-    setDeleteDialog({
-      open: true,
-      date,
-    });
-  };
+  const handleDeleteClick = (date: string) => { setDeleteDialog({ open: true, date }); };
 
   const handleDeleteConfirm = async () => {
     if (onRemoveAvailability) {
@@ -137,279 +88,59 @@ const MyClassesView: React.FC<MyClassesViewProps> = ({
     setDeleteDialog({ open: false, date: '' });
   };
 
-  const handleDeleteCancel = () => {
-    setDeleteDialog({ open: false, date: '' });
+  const handleDeleteCancel = () => { setDeleteDialog({ open: false, date: '' }); };
+
+  const isDateTooClose = (date: string) => {
+    const today = new Date();
+    const targetDate = new Date(date);
+    const diffDays = Math.ceil((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return diffDays < 11;
   };
 
   return (
     <>
-      <TableContainer 
-        component={Paper}
-        sx={{
-          borderRadius: 2,
-          boxShadow: (theme) => theme.shadows[2],
-          overflow: 'hidden',
-        }}
-      >
-        <Typography 
-          variant='h6' 
-          sx={{ 
-            p: 2,
-            backgroundColor: 'background.paper',
-            borderBottom: 1,
-            borderColor: 'divider',
-            fontWeight: 600,
-          }}
-        >
-          My Schedule
-        </Typography>
-        <Table stickyHeader size='small'>
-          <TableHead>
-            <TableRow>
-              <TableCell 
-                sx={{ 
-                  fontWeight: 'bold', 
-                  backgroundColor: 'background.paper',
-                  borderBottom: 2,
-                  borderColor: 'divider',
-                  color: 'text.primary',
-                  cursor: 'pointer',
-                  '&:hover': {
-                    backgroundColor: 'action.hover',
-                  },
-                }}
-                onClick={() => handleSort('date')}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  Date
-                  {getSortIcon('date')}
-                </Box>
-              </TableCell>
-              <TableCell 
-                sx={{ 
-                  fontWeight: 'bold', 
-                  backgroundColor: 'background.paper',
-                  borderBottom: 2,
-                  borderColor: 'divider',
-                  color: 'text.primary',
-                }}
-              >
-                Organization
-              </TableCell>
-              <TableCell 
-                sx={{ 
-                  fontWeight: 'bold', 
-                  backgroundColor: 'background.paper',
-                  borderBottom: 2,
-                  borderColor: 'divider',
-                  color: 'text.primary',
-                }}
-              >
-                Location
-              </TableCell>
-              <TableCell 
-                sx={{ 
-                  fontWeight: 'bold', 
-                  backgroundColor: 'background.paper',
-                  borderBottom: 2,
-                  borderColor: 'divider',
-                  color: 'text.primary',
-                }}
-              >
-                Course No
-              </TableCell>
-              <TableCell 
-                sx={{ 
-                  fontWeight: 'bold', 
-                  backgroundColor: 'background.paper',
-                  borderBottom: 2,
-                  borderColor: 'divider',
-                  color: 'text.primary',
-                }}
-              >
-                Course Name
-              </TableCell>
-              <TableCell
-                sx={{ 
-                  fontWeight: 'bold', 
-                  backgroundColor: 'background.paper',
-                  borderBottom: 2,
-                  borderColor: 'divider',
-                  color: 'text.primary',
-                }}
-                align='center'
-              >
-                Students R
-              </TableCell>
-              <TableCell
-                sx={{ 
-                  fontWeight: 'bold', 
-                  backgroundColor: 'background.paper',
-                  borderBottom: 2,
-                  borderColor: 'divider',
-                  color: 'text.primary',
-                }}
-                align='center'
-              >
-                Students A
-              </TableCell>
-              <TableCell 
-                sx={{ 
-                  fontWeight: 'bold', 
-                  backgroundColor: 'background.paper',
-                  borderBottom: 2,
-                  borderColor: 'divider',
-                  color: 'text.primary',
-                }}
-              >
-                Notes
-              </TableCell>
-              <TableCell 
-                sx={{ 
-                  fontWeight: 'bold', 
-                  backgroundColor: 'background.paper',
-                  borderBottom: 2,
-                  borderColor: 'divider',
-                  color: 'text.primary',
-                  cursor: 'pointer',
-                  '&:hover': {
-                    backgroundColor: 'action.hover',
-                  },
-                }}
-                onClick={() => handleSort('status')}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  Status
-                  {getSortIcon('status')}
-                </Box>
-              </TableCell>
-              <TableCell
-                sx={{ 
-                  fontWeight: 'bold', 
-                  backgroundColor: 'background.paper',
-                  borderBottom: 2,
-                  borderColor: 'divider',
-                  color: 'text.primary',
-                }}
-                align='center'
-              >
-                Actions
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {sortedSchedule.length === 0 ? (
-              <TableRow>
-                <TableCell 
-                  colSpan={10} 
-                  align='center'
-                  sx={{ 
-                    py: 4,
-                    color: 'text.secondary',
-                    fontStyle: 'italic',
-                  }}
-                >
-                  No schedule items found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              sortedSchedule.map((item, index) => {
-                console.log(`[TRACE] Rendering item ${index}:`, {
-                  type: item.type,
-                  course_id: item.courseId,
-                  studentsRegistered: item.studentsRegistered,
-                  displayDate: item.displayDate
-                });
+      {sortedSchedule.length === 0 ? (
+        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ color: '#9CA3AF', fontSize: 14 }}>No schedule items found.</Typography>
+        </Box>
+      ) : (
+        <DataTable columns={columns} shownCount={sortedSchedule.length} totalCount={combinedSchedule.length}>
+          {sortedSchedule.map((item, index) => (
+            <DataTableRow key={`${item.type}-${item.courseId || item.originalData?.id || index}`} columns={columns}>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{item.displayDate}</Typography>
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{item.type === 'class' ? item.organizationName : ''}</Typography>
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{item.type === 'class' ? item.location : ''}</Typography>
+              <Typography sx={{ fontSize: 12.5, fontFamily: 'monospace', color: '#4B5563' }}>{item.type === 'class' ? item.courseNumber : ''}</Typography>
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{item.type === 'class' ? item.courseTypeName : ''}</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'right' }}>{item.type === 'class' ? item.studentsRegistered : ''}</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'right' }}>{item.type === 'class' ? item.studentsAttendance : ''}</Typography>
+              <Typography sx={{ fontSize: 12.5, color: '#9CA3AF' }}>{item.type === 'class' ? item.notes : ''}</Typography>
+              {item.type === 'class' ? (
+                <StatusChip kind={item.status === 'completed' ? 'success' : 'active'} label={item.status || 'Scheduled'} />
+              ) : (
+                <StatusChip kind="success" label="Available" />
+              )}
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                {item.type === 'availability' && onRemoveAvailability && (
+                  <Box onClick={() => handleDeleteClick(item.displayDate)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Remove</Box>
+                )}
+              </Box>
+            </DataTableRow>
+          ))}
+        </DataTable>
+      )}
 
-                return (
-                  <TableRow key={`${item.type}-${item.courseId || item.originalData?.id || index}`} hover>
-                    <TableCell>{item.displayDate}</TableCell>
-                    <TableCell>{item.type === 'class' ? item.organizationName : ''}</TableCell>
-                    <TableCell>{item.type === 'class' ? item.location : ''}</TableCell>
-                    <TableCell>{item.type === 'class' ? item.courseNumber : ''}</TableCell>
-                    <TableCell>{item.type === 'class' ? item.courseTypeName : ''}</TableCell>
-                    <TableCell align='center'>
-                      {item.type === 'class' ? (
-                        (() => {
-                          console.log(`[TRACE] Displaying studentsRegistered for course ${item.courseId}:`, item.studentsRegistered);
-                          return item.studentsRegistered;
-                        })()
-                      ) : ''}
-                    </TableCell>
-                    <TableCell align='center'>{item.type === 'class' ? item.studentsAttendance : ''}</TableCell>
-                    <TableCell>{item.type === 'class' ? item.notes : ''}</TableCell>
-                    <TableCell>
-                      {item.type === 'class' ? (
-                        <Chip 
-                          label={item.status} 
-                          color={item.status === 'completed' ? 'success' : 'primary'}
-                          size="small"
-                        />
-                      ) : (
-                        <Chip 
-                          label="Available" 
-                          color="success"
-                          icon={<AvailableIcon />}
-                          size="small"
-                        />
-                      )}
-                    </TableCell>
-                    <TableCell align='center'>
-                      {item.type === 'availability' && onRemoveAvailability && (
-                        <Tooltip title='Remove Availability'>
-                          <IconButton 
-                            onClick={() => handleDeleteClick(item.displayDate)}
-                            color='error'
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      <Dialog
-        open={deleteDialog.open}
-        onClose={handleDeleteCancel}
-      >
-        <DialogTitle>Remove Availability</DialogTitle>
+      <Dialog open={deleteDialog.open} onClose={handleDeleteCancel}>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>Remove Availability</DialogTitle>
         <DialogContent>
-          <DialogContentText>
+          <DialogContentText sx={{ fontSize: 14, color: '#4B5563' }}>
             Are you sure you want to remove your availability for {formatDisplayDate(deleteDialog.date)}?
-            {(() => {
-              const today = new Date();
-              const targetDate = new Date(deleteDialog.date);
-              const diffTime = targetDate.getTime() - today.getTime();
-              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-              
-              if (diffDays < 11) {
-                return ' This date is less than 11 days away and cannot be modified.';
-              }
-              return '';
-            })()}
+            {isDateTooClose(deleteDialog.date) && ' This date is less than 11 days away and cannot be modified.'}
           </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDeleteCancel}>Cancel</Button>
-          <Button 
-            onClick={handleDeleteConfirm} 
-            color="error"
-            disabled={(() => {
-              const today = new Date();
-              const targetDate = new Date(deleteDialog.date);
-              const diffTime = targetDate.getTime() - today.getTime();
-              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-              return diffDays < 11;
-            })()}
-          >
-            Remove
-          </Button>
+        <DialogActions sx={{ p: 2 }}>
+          <GhostButton onClick={handleDeleteCancel}>Cancel</GhostButton>
+          <PrimaryButton onClick={handleDeleteConfirm} disabled={isDateTooClose(deleteDialog.date)}>Remove</PrimaryButton>
         </DialogActions>
       </Dialog>
     </>

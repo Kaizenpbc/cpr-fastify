@@ -1,13 +1,10 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 import CourseCalendar from './CourseCalendar';
 
 const DashboardView: React.FC = () => {
   return (
-    <Box>
-      <Typography variant='h4' gutterBottom>
-        Course Admin Dashboard
-      </Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <CourseCalendar />
     </Box>
   );

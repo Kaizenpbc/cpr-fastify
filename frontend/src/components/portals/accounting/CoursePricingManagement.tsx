@@ -1,29 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  TextField,
-  Button,
-  Alert,
-  CircularProgress,
-  Chip,
-  IconButton,
-  InputAdornment,
-} from '@mui/material';
-import {
-  Edit as EditIcon,
-  Save as SaveIcon,
-  Cancel as CancelIcon,
-  AttachMoney as MoneyIcon,
-} from '@mui/icons-material';
+import { Box, Typography, TextField, Alert, CircularProgress, InputAdornment } from '@mui/material';
 import { api } from '../../../services/api';
+import DataTable, { DataTableRow } from '../../gtacpr/DataTable';
+import StatusChip from '../../gtacpr/StatusChip';
 
 interface CoursePricing {
   id: number;
@@ -36,6 +15,15 @@ interface CoursePricing {
   course_type_name: string;
   course_description: string;
 }
+
+const columns = [
+  { key: 'course', label: 'COURSE NAME', width: '1.2fr' },
+  { key: 'desc', label: 'DESCRIPTION', width: '1fr' },
+  { key: 'price', label: 'PRICE/STUDENT', width: '0.8fr', align: 'right' as const },
+  { key: 'date', label: 'EFFECTIVE DATE', width: '0.8fr' },
+  { key: 'status', label: 'STATUS', width: '0.5fr' },
+  { key: 'actions', label: '', width: '0.6fr', align: 'right' as const },
+];
 
 const CoursePricingManagement: React.FC = () => {
   const [coursePricing, setCoursePricing] = useState<CoursePricing[]>([]);
@@ -52,268 +40,92 @@ const CoursePricingManagement: React.FC = () => {
       setCoursePricing(response.data.data);
       setError(null);
     } catch (err: any) {
-      console.error('Error fetching course pricing:', err);
       setError('Failed to fetch course pricing data');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchCoursePricing();
-  }, []);
+  useEffect(() => { fetchCoursePricing(); }, []);
 
-  const handleEditStart = (pricing: CoursePricing) => {
-    setEditingId(pricing.id);
-    setEditPrice(pricing.price_per_student.toString());
-  };
-
-  const handleEditCancel = () => {
-    setEditingId(null);
-    setEditPrice('');
-  };
+  const handleEditStart = (pricing: CoursePricing) => { setEditingId(pricing.id); setEditPrice(pricing.price_per_student.toString()); };
+  const handleEditCancel = () => { setEditingId(null); setEditPrice(''); };
 
   const handleEditSave = async (id: number) => {
     try {
       const price = parseFloat(editPrice);
-      if (isNaN(price) || price <= 0) {
-        setError('Please enter a valid price greater than 0');
-        return;
-      }
-
-      await api.put(`/accounting/course-pricing/${id}`, {
-        price_per_student: price,
-      });
-
+      if (isNaN(price) || price <= 0) { setError('Please enter a valid price greater than 0'); return; }
+      await api.put(`/accounting/course-pricing/${id}`, { price_per_student: price });
       setSuccess('Course pricing updated successfully!');
       setEditingId(null);
       setEditPrice('');
-      fetchCoursePricing(); // Refresh the data
+      fetchCoursePricing();
     } catch (err: any) {
-      console.error('Error updating course pricing:', err);
       setError('Failed to update course pricing');
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString();
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
-  };
+  const groupedPricing = coursePricing.reduce((acc, pricing) => {
+    if (!acc[pricing.organization_name]) acc[pricing.organization_name] = [];
+    acc[pricing.organization_name].push(pricing);
+    return acc;
+  }, {} as Record<string, CoursePricing[]>);
 
-  const groupedPricing = coursePricing.reduce(
-    (acc, pricing) => {
-      if (!acc[pricing.organization_name]) {
-        acc[pricing.organization_name] = [];
-      }
-      acc[pricing.organization_name].push(pricing);
-      return acc;
-    },
-    {} as Record<string, CoursePricing[]>
-  );
-
-  if (loading) {
-    return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: 400,
-        }}
-      >
-        <CircularProgress size={60} />
-      </Box>
-    );
-  }
+  if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress size={24} /></Box>;
 
   return (
-    <Box>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant='h5' gutterBottom>
-          💰 Course Pricing Setup
-        </Typography>
-        <Typography variant='subtitle1' color='textSecondary'>
-          Set pricing per student for different course names across
-          organizations
-        </Typography>
-      </Box>
-
-      {error && (
-        <Alert severity='error' sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-
-      {success && (
-        <Alert
-          severity='success'
-          sx={{ mb: 2 }}
-          onClose={() => setSuccess(null)}
-        >
-          {success}
-        </Alert>
-      )}
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {error && <Alert severity="error" onClose={() => setError(null)}>{error}</Alert>}
+      {success && <Alert severity="success" onClose={() => setSuccess(null)}>{success}</Alert>}
 
       {Object.keys(groupedPricing).length === 0 ? (
-        <Alert severity='info'>
-          No course pricing data available. Default pricing has been set for all
-          organizations.
-        </Alert>
+        <Alert severity="info">No course pricing data available. Default pricing has been set for all organizations.</Alert>
       ) : (
-        Object.entries(groupedPricing).map(
-          ([organizationName, pricingList]) => (
-            <Paper key={organizationName} elevation={2} sx={{ mb: 4 }}>
-              <Box
-                sx={{
-                  p: 2,
-                  backgroundColor: 'primary.light',
-                  color: 'primary.contrastText',
-                }}
-              >
-                <Typography variant='h6'>🏢 {organizationName}</Typography>
-              </Box>
-
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>
-                        <strong>Course Name</strong>
-                      </TableCell>
-                      <TableCell>
-                        <strong>Description</strong>
-                      </TableCell>
-                      <TableCell>
-                        <strong>Price Per Student</strong>
-                      </TableCell>
-                      <TableCell>
-                        <strong>Effective Date</strong>
-                      </TableCell>
-                      <TableCell>
-                        <strong>Status</strong>
-                      </TableCell>
-                      <TableCell>
-                        <strong>Actions</strong>
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {pricingList.map(pricing => (
-                      <TableRow key={pricing.id} hover>
-                        <TableCell>
-                          <Typography variant='body2' fontWeight='medium'>
-                            {pricing.course_type_name}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant='body2' color='textSecondary'>
-                            {pricing.course_description || 'No description'}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          {editingId === pricing.id ? (
-                            <TextField
-                              value={editPrice}
-                              onChange={e => setEditPrice(e.target.value)}
-                              type='number'
-                              size='small'
-                              InputProps={{
-                                startAdornment: (
-                                  <InputAdornment position='start'>
-                                    <MoneyIcon fontSize='small' />
-                                  </InputAdornment>
-                                ),
-                              }}
-                              inputProps={{
-                                step: '0.01',
-                                min: '0',
-                              }}
-                              sx={{ minWidth: 120 }}
-                            />
-                          ) : (
-                            <Typography
-                              variant='body1'
-                              fontWeight='bold'
-                              color='success.main'
-                            >
-                              {formatCurrency(pricing.price_per_student)}
-                            </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant='body2'>
-                            {formatDate(pricing.effective_date)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={pricing.is_active ? 'Active' : 'Inactive'}
-                            color={pricing.is_active ? 'success' : 'default'}
-                            size='small'
-                          />
-                        </TableCell>
-                        <TableCell>
-                          {editingId === pricing.id ? (
-                            <Box sx={{ display: 'flex', gap: 1 }}>
-                              <IconButton
-                                onClick={() => handleEditSave(pricing.id)}
-                                color='success'
-                                size='small'
-                              >
-                                <SaveIcon />
-                              </IconButton>
-                              <IconButton
-                                onClick={handleEditCancel}
-                                color='error'
-                                size='small'
-                              >
-                                <CancelIcon />
-                              </IconButton>
-                            </Box>
-                          ) : (
-                            <IconButton
-                              onClick={() => handleEditStart(pricing)}
-                              color='primary'
-                              size='small'
-                              disabled={!pricing.is_active}
-                            >
-                              <EditIcon />
-                            </IconButton>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Paper>
-          )
-        )
+        Object.entries(groupedPricing).map(([organizationName, pricingList]) => (
+          <Box key={organizationName}>
+            <Box sx={{ bgcolor: '#111827', color: '#fff', px: 3, py: 1.5, borderRadius: '10px 10px 0 0' }}>
+              <Typography sx={{ fontSize: 14, fontWeight: 700 }}>{organizationName}</Typography>
+            </Box>
+            <Box sx={{ border: '1px solid #E5E7EB', borderTop: 'none', borderRadius: '0 0 10px 10px', bgcolor: '#fff' }}>
+              <DataTable columns={columns} shownCount={pricingList.length} totalCount={pricingList.length}>
+                {pricingList.map(pricing => (
+                  <DataTableRow key={pricing.id} columns={columns}>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{pricing.course_type_name}</Typography>
+                    <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{pricing.course_description || 'No description'}</Typography>
+                    {editingId === pricing.id ? (
+                      <TextField value={editPrice} onChange={e => setEditPrice(e.target.value)} type="number" size="small" InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }} inputProps={{ step: '0.01', min: '0' }} sx={{ minWidth: 120 }} />
+                    ) : (
+                      <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#16A34A', fontFamily: 'monospace', textAlign: 'right' }}>{formatCurrency(pricing.price_per_student)}</Typography>
+                    )}
+                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatDate(pricing.effective_date)}</Typography>
+                    <StatusChip kind={pricing.is_active ? 'active' : 'inactive'} label={pricing.is_active ? 'Active' : 'Inactive'} />
+                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                      {editingId === pricing.id ? (
+                        <>
+                          <Box onClick={() => handleEditSave(pricing.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#16A34A', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Save</Box>
+                          <Box onClick={handleEditCancel} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Cancel</Box>
+                        </>
+                      ) : (
+                        <Box onClick={() => pricing.is_active && handleEditStart(pricing)} sx={{ fontSize: 12, fontWeight: 600, color: pricing.is_active ? '#CC1F1F' : '#9CA3AF', cursor: pricing.is_active ? 'pointer' : 'default', '&:hover': pricing.is_active ? { textDecoration: 'underline' } : {} }}>Edit</Box>
+                      )}
+                    </Box>
+                  </DataTableRow>
+                ))}
+              </DataTable>
+            </Box>
+          </Box>
+        ))
       )}
 
-      {/* Instructions */}
-      <Paper elevation={1} sx={{ p: 3, mt: 4, backgroundColor: 'grey.50' }}>
-        <Typography variant='h6' gutterBottom>
-          📋 Instructions
+      <Box sx={{ p: 2, bgcolor: '#EFF6FF', borderRadius: '8px', border: '1px solid #BFDBFE' }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#1E40AF', mb: 0.5 }}>Instructions</Typography>
+        <Typography sx={{ fontSize: 12, color: '#1E40AF' }}>
+          Click Edit to modify the price per student for any course. Pricing is organization-specific. Changes take effect immediately for future billing.
         </Typography>
-        <Typography variant='body2' sx={{ mb: 1 }}>
-          • Click the edit icon to modify the price per student for any course
-          name • Pricing is organization-specific, allowing different rates for
-          different clients • All prices are in USD and represent the cost per
-          student for that course name • Changes take effect immediately and
-          will be used for future course billing
-        </Typography>
-        <Typography variant='body2' color='primary.main' fontWeight='medium'>
-          💡 Tip: Consider factors like course complexity, duration, and
-          organizational agreements when setting prices
-        </Typography>
-      </Paper>
+      </Box>
     </Box>
   );
 };

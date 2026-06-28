@@ -2,15 +2,6 @@ import React, { useState } from 'react';
 import {
   Box,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Chip,
-  Button,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -18,8 +9,6 @@ import {
   TextField,
   Grid,
   Alert,
-  IconButton,
-  Tooltip,
   CircularProgress,
   Snackbar,
   FormControl,
@@ -27,14 +16,23 @@ import {
   Select,
   MenuItem,
 } from '@mui/material';
-import {
-  Undo as ReverseIcon,
-  Visibility as ViewIcon,
-  FilterList as FilterIcon,
-  Refresh as RefreshIcon,
-} from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
+import DataTable, { DataTableRow } from '../gtacpr/DataTable';
+import StatusChip from '../gtacpr/StatusChip';
+import { PrimaryButton, GhostButton } from '../gtacpr/Buttons';
+
+const columns = [
+  { key: 'id', label: 'PAYMENT ID', width: '0.5fr' },
+  { key: 'invoice', label: 'INVOICE', width: '0.8fr' },
+  { key: 'org', label: 'ORGANIZATION', width: '1fr' },
+  { key: 'amount', label: 'AMOUNT', width: '0.7fr', align: 'right' as const },
+  { key: 'payDate', label: 'PAYMENT DATE', width: '0.8fr' },
+  { key: 'verified', label: 'VERIFIED AT', width: '0.8fr' },
+  { key: 'remaining', label: 'TIME LEFT', width: '0.6fr' },
+  { key: 'status', label: 'STATUS', width: '0.5fr' },
+  { key: 'actions', label: '', width: '0.6fr', align: 'right' as const },
+];
 
 const PaymentReversalView = () => {
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
@@ -44,27 +42,19 @@ const PaymentReversalView = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [filterStatus, setFilterStatus] = useState('verified');
-
   const queryClient = useQueryClient();
 
-  // Fetch verified payments that can be reversed
   const { data: paymentsData, isLoading, refetch } = useQuery({
     queryKey: ['verified-payments-for-reversal', filterStatus],
     queryFn: async () => {
-      const response = await api.get('/accounting/verified-payments', {
-        params: { status: filterStatus }
-      });
+      const response = await api.get('/accounting/verified-payments', { params: { status: filterStatus } });
       return response.data.data;
     },
   });
 
-  // Reverse payment mutation
   const reversePaymentMutation = useMutation({
     mutationFn: async ({ paymentId, reason }: { paymentId: number; reason: string }) => {
-      const response = await api.post(
-        `/accounting/payments/${paymentId}/reverse`,
-        { reason }
-      );
+      const response = await api.post(`/accounting/payments/${paymentId}/reverse`, { reason });
       return response.data;
     },
     onSuccess: (data) => {
@@ -76,368 +66,153 @@ const PaymentReversalView = () => {
       setErrorMessage('');
     },
     onError: (error: Error & { response?: { data?: { message?: string } } }) => {
-      console.error('Payment reversal error:', error);
-      setErrorMessage(error.response?.data?.message || 'Failed to reverse payment. Please try again.');
+      setErrorMessage(error.response?.data?.message || 'Failed to reverse payment.');
       setSuccessMessage('');
     },
   });
 
-  const handleReversalClick = (payment: any) => {
-    setSelectedPayment(payment);
-    setReversalDialogOpen(true);
-  };
-
-  const handleViewDetails = (payment: any) => {
-    setSelectedPayment(payment);
-    setViewDetailsDialogOpen(true);
-  };
-
-  const handleReversalSubmit = () => {
-    if (!selectedPayment || !reversalReason.trim()) return;
-
-    reversePaymentMutation.mutate({
-      paymentId: selectedPayment.payment_id,
-      reason: reversalReason.trim(),
-    });
-  };
-
-  const formatCurrency = (amount: any) => {
-    return new Intl.NumberFormat('en-CA', {
-      style: 'currency',
-      currency: 'CAD',
-    }).format(amount || 0);
-  };
-
-  const formatDate = (dateString: any) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  const formatDateTime = (dateString: any) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleString();
-  };
+  const formatCurrency = (amount: any) => new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(amount || 0);
+  const formatDate = (dateString: any) => dateString ? new Date(dateString).toLocaleDateString() : '-';
+  const formatDateTime = (dateString: any) => dateString ? new Date(dateString).toLocaleString() : '-';
 
   const canReversePayment = (payment: any) => {
     if (payment.status !== 'verified') return false;
-    
-    const verificationDate = new Date(payment.verified_by_accounting_at);
-    const now = new Date();
-    const hoursSinceVerification = (now.getTime() - verificationDate.getTime()) / (1000 * 60 * 60);
-    
-    return hoursSinceVerification <= 48;
+    const hours = (Date.now() - new Date(payment.verified_by_accounting_at).getTime()) / (1000 * 60 * 60);
+    return hours <= 48;
   };
 
   const getTimeRemaining = (payment: any) => {
-    const verificationDate = new Date(payment.verified_by_accounting_at);
-    const now = new Date();
-    const hoursSinceVerification = (now.getTime() - verificationDate.getTime()) / (1000 * 60 * 60);
-    const hoursRemaining = Math.max(0, 48 - hoursSinceVerification);
-    
-    if (hoursRemaining <= 0) return 'Expired';
-    if (hoursRemaining < 1) return `${Math.round(hoursRemaining * 60)} minutes`;
-    if (hoursRemaining < 24) return `${Math.round(hoursRemaining)} hours`;
-    return `${Math.floor(hoursRemaining / 24)} days`;
+    const hours = Math.max(0, 48 - (Date.now() - new Date(payment.verified_by_accounting_at).getTime()) / (1000 * 60 * 60));
+    if (hours <= 0) return 'Expired';
+    if (hours < 1) return `${Math.round(hours * 60)} min`;
+    if (hours < 24) return `${Math.round(hours)} hrs`;
+    return `${Math.floor(hours / 24)} days`;
   };
 
-  if (isLoading) {
-    return (
-      <Box
-        display='flex'
-        justifyContent='center'
-        alignItems='center'
-        minHeight='400px'
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
+  if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress size={24} /></Box>;
 
   const payments = paymentsData?.payments || [];
 
   return (
-    <Box>
-      <Typography variant="h5" gutterBottom>
-        🔄 Payment Reversal Management
-      </Typography>
-      <Typography variant="body1" color="textSecondary" sx={{ mb: 3 }}>
-        Reverse verified payments within 48 hours of verification
-      </Typography>
-
-      {/* Filter Controls */}
-      <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
-        <FormControl sx={{ minWidth: 200 }}>
-          <InputLabel>Filter by Status</InputLabel>
-          <Select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            label="Filter by Status"
-          >
-            <MenuItem value="verified">Verified Payments</MenuItem>
-            <MenuItem value="reversed">Reversed Payments</MenuItem>
-            <MenuItem value="all">All Payments</MenuItem>
-          </Select>
-        </FormControl>
-        
-        <Button
-          variant="outlined"
-          startIcon={<RefreshIcon />}
-          onClick={() => refetch()}
-        >
-          Refresh
-        </Button>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Filter */}
+      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <FormControl sx={{ minWidth: 200 }} size="small">
+            <InputLabel>Status</InputLabel>
+            <Select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} label="Status">
+              <MenuItem value="verified">Verified Payments</MenuItem>
+              <MenuItem value="reversed">Reversed Payments</MenuItem>
+              <MenuItem value="all">All Payments</MenuItem>
+            </Select>
+          </FormControl>
+          <GhostButton onClick={() => refetch()}>Refresh</GhostButton>
+        </Box>
       </Box>
 
-      {/* Payments Table */}
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Payment ID</TableCell>
-              <TableCell>Invoice</TableCell>
-              <TableCell>Organization</TableCell>
-              <TableCell>Amount</TableCell>
-              <TableCell>Payment Date</TableCell>
-              <TableCell>Verified At</TableCell>
-              <TableCell>Time Remaining</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {payments.map((payment: any) => (
-              <TableRow key={payment.payment_id}>
-                <TableCell>{payment.payment_id}</TableCell>
-                <TableCell>{payment.invoice_number}</TableCell>
-                <TableCell>{payment.organization_name}</TableCell>
-                <TableCell>{formatCurrency(payment.amount)}</TableCell>
-                <TableCell>{formatDate(payment.payment_date)}</TableCell>
-                <TableCell>{formatDateTime(payment.verified_by_accounting_at)}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={getTimeRemaining(payment)}
-                    color={canReversePayment(payment) ? 'success' : 'error'}
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    label={payment.status}
-                    color={payment.status === 'verified' ? 'success' : 'default'}
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Tooltip title="View Details">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleViewDetails(payment)}
-                      >
-                        <ViewIcon />
-                      </IconButton>
-                    </Tooltip>
-                    
-                    {canReversePayment(payment) && (
-                      <Tooltip title="Reverse Payment">
-                        <IconButton
-                          size="small"
-                          color="warning"
-                          onClick={() => handleReversalClick(payment)}
-                        >
-                          <ReverseIcon />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                  </Box>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {payments.length === 0 && (
-        <Box sx={{ textAlign: 'center', py: 4 }}>
-          <Typography variant="body1" color="textSecondary">
-            No payments found matching the current filter.
-          </Typography>
+      {/* Table */}
+      {payments.length === 0 ? (
+        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#9CA3AF' }}>No payments found matching the current filter.</Typography>
         </Box>
+      ) : (
+        <DataTable columns={columns} shownCount={payments.length} totalCount={payments.length}>
+          {payments.map((payment: any) => (
+            <DataTableRow key={payment.payment_id} columns={columns}>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{payment.payment_id}</Typography>
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{payment.invoice_number}</Typography>
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{payment.organization_name}</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', fontFamily: 'monospace', textAlign: 'right' }}>{formatCurrency(payment.amount)}</Typography>
+              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatDate(payment.payment_date)}</Typography>
+              <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{formatDateTime(payment.verified_by_accounting_at)}</Typography>
+              <StatusChip kind={canReversePayment(payment) ? 'success' : 'danger'} label={getTimeRemaining(payment)} />
+              <StatusChip kind={payment.status === 'verified' ? 'success' : 'neutral'} label={payment.status} />
+              <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'flex-end' }}>
+                <Box onClick={() => { setSelectedPayment(payment); setViewDetailsDialogOpen(true); }} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>View</Box>
+                {canReversePayment(payment) && (
+                  <Box onClick={() => { setSelectedPayment(payment); setReversalDialogOpen(true); }} sx={{ fontSize: 12, fontWeight: 600, color: '#ED6C02', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Reverse</Box>
+                )}
+              </Box>
+            </DataTableRow>
+          ))}
+        </DataTable>
       )}
 
       {/* Reversal Dialog */}
-      <Dialog
-        open={reversalDialogOpen}
-        onClose={() => setReversalDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          Reverse Payment - {selectedPayment?.invoice_number}
-        </DialogTitle>
+      <Dialog open={reversalDialogOpen} onClose={() => setReversalDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>Reverse Payment — {selectedPayment?.invoice_number}</DialogTitle>
         <DialogContent>
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            This action will reverse the payment and recalculate the invoice balance. 
-            This action cannot be undone.
-          </Alert>
-          
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Payment Details
-              </Typography>
-              <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1, mb: 2 }}>
-                <Typography variant="body2">
-                  <strong>Payment ID:</strong> {selectedPayment?.payment_id}
-                </Typography>
-                <Typography variant="body2">
-                  <strong>Amount:</strong> {formatCurrency(selectedPayment?.amount)}
-                </Typography>
-                <Typography variant="body2">
-                  <strong>Payment Date:</strong> {formatDate(selectedPayment?.payment_date)}
-                </Typography>
-                <Typography variant="body2">
-                  <strong>Payment Method:</strong> {selectedPayment?.payment_method}
-                </Typography>
-                <Typography variant="body2">
-                  <strong>Reference:</strong> {selectedPayment?.reference_number || 'N/A'}
-                </Typography>
+          <Alert severity="warning" sx={{ mb: 2 }}>This action will reverse the payment and recalculate the invoice balance. This cannot be undone.</Alert>
+          <Box sx={{ p: 2, bgcolor: '#F9FAFB', borderRadius: '8px', border: '1px solid #E5E7EB', mb: 2 }}>
+            {[['Payment ID', selectedPayment?.payment_id], ['Amount', formatCurrency(selectedPayment?.amount)], ['Payment Date', formatDate(selectedPayment?.payment_date)], ['Method', selectedPayment?.payment_method], ['Reference', selectedPayment?.reference_number || 'N/A']].map(([l, v]) => (
+              <Box key={String(l)} sx={{ display: 'flex', py: 0.5 }}>
+                <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', width: 110 }}>{l}</Typography>
+                <Typography sx={{ fontSize: 12, color: '#111827' }}>{v}</Typography>
               </Box>
-            </Grid>
-            
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Reason for Reversal"
-                multiline
-                rows={4}
-                value={reversalReason}
-                onChange={(e) => setReversalReason(e.target.value)}
-                placeholder="Please provide a detailed reason for reversing this payment..."
-                required
-              />
-            </Grid>
-          </Grid>
+            ))}
+          </Box>
+          <TextField fullWidth label="Reason for Reversal" multiline rows={4} value={reversalReason} onChange={(e) => setReversalReason(e.target.value)} placeholder="Please provide a detailed reason..." required />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setReversalDialogOpen(false)}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            color="warning"
-            onClick={handleReversalSubmit}
-            disabled={!reversalReason.trim() || reversePaymentMutation.isPending}
-            startIcon={<ReverseIcon />}
-          >
+        <DialogActions sx={{ p: 2 }}>
+          <GhostButton onClick={() => setReversalDialogOpen(false)}>Cancel</GhostButton>
+          <PrimaryButton onClick={() => { if (selectedPayment && reversalReason.trim()) reversePaymentMutation.mutate({ paymentId: selectedPayment.payment_id, reason: reversalReason.trim() }); }} disabled={!reversalReason.trim() || reversePaymentMutation.isPending}>
             {reversePaymentMutation.isPending ? 'Reversing...' : 'Reverse Payment'}
-          </Button>
+          </PrimaryButton>
         </DialogActions>
       </Dialog>
 
-      {/* Payment Details Dialog */}
-      <Dialog
-        open={viewDetailsDialogOpen}
-        onClose={() => setViewDetailsDialogOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          Payment Details - {selectedPayment?.invoice_number}
-        </DialogTitle>
+      {/* Details Dialog */}
+      <Dialog open={viewDetailsDialogOpen} onClose={() => setViewDetailsDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>Payment Details — {selectedPayment?.invoice_number}</DialogTitle>
         <DialogContent>
           {selectedPayment && (
-            <Grid container spacing={2}>
+            <Grid container spacing={3} sx={{ pt: 1 }}>
               <Grid item xs={12} md={6}>
-                <Typography variant="h6" gutterBottom>
-                  Payment Information
-                </Typography>
-                <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-                  <Typography variant="body2">
-                    <strong>Payment ID:</strong> {selectedPayment.payment_id}
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Amount:</strong> {formatCurrency(selectedPayment.amount)}
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Payment Date:</strong> {formatDate(selectedPayment.payment_date)}
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Payment Method:</strong> {selectedPayment.payment_method}
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Reference Number:</strong> {selectedPayment.reference_number || 'N/A'}
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Status:</strong> {selectedPayment.status}
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Verified At:</strong> {formatDateTime(selectedPayment.verified_by_accounting_at)}
-                  </Typography>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Payment Information</Typography>
+                <Box sx={{ p: 2, bgcolor: '#F9FAFB', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+                  {[['Payment ID', selectedPayment.payment_id], ['Amount', formatCurrency(selectedPayment.amount)], ['Payment Date', formatDate(selectedPayment.payment_date)], ['Method', selectedPayment.payment_method], ['Reference', selectedPayment.reference_number || 'N/A'], ['Status', selectedPayment.status], ['Verified At', formatDateTime(selectedPayment.verified_by_accounting_at)]].map(([l, v]) => (
+                    <Box key={String(l)} sx={{ display: 'flex', py: 0.5 }}>
+                      <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', width: 110 }}>{l}</Typography>
+                      <Typography sx={{ fontSize: 12, color: '#111827' }}>{v}</Typography>
+                    </Box>
+                  ))}
                 </Box>
               </Grid>
-              
               <Grid item xs={12} md={6}>
-                <Typography variant="h6" gutterBottom>
-                  Invoice Information
-                </Typography>
-                <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-                  <Typography variant="body2">
-                    <strong>Invoice Number:</strong> {selectedPayment.invoice_number}
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Organization:</strong> {selectedPayment.organization_name}
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Contact Email:</strong> {selectedPayment.contact_email}
-                  </Typography>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Invoice Information</Typography>
+                <Box sx={{ p: 2, bgcolor: '#F9FAFB', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+                  {[['Invoice Number', selectedPayment.invoice_number], ['Organization', selectedPayment.organization_name], ['Contact Email', selectedPayment.contact_email]].map(([l, v]) => (
+                    <Box key={String(l)} sx={{ display: 'flex', py: 0.5 }}>
+                      <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', width: 110 }}>{l}</Typography>
+                      <Typography sx={{ fontSize: 12, color: '#111827' }}>{v}</Typography>
+                    </Box>
+                  ))}
                 </Box>
               </Grid>
-              
               {selectedPayment.notes && (
                 <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom>
-                    Notes
-                  </Typography>
-                  <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-                    <Typography variant="body2">
-                      {selectedPayment.notes}
-                    </Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Notes</Typography>
+                  <Box sx={{ p: 2, bgcolor: '#F9FAFB', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{selectedPayment.notes}</Typography>
                   </Box>
                 </Grid>
               )}
             </Grid>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setViewDetailsDialogOpen(false)}>
-            Close
-          </Button>
+        <DialogActions sx={{ p: 2 }}>
+          <GhostButton onClick={() => setViewDetailsDialogOpen(false)}>Close</GhostButton>
         </DialogActions>
       </Dialog>
 
-      {/* Success/Error Messages */}
-      <Snackbar
-        open={!!successMessage}
-        autoHideDuration={6000}
-        onClose={() => setSuccessMessage('')}
-      >
-        <Alert severity="success" onClose={() => setSuccessMessage('')}>
-          {successMessage}
-        </Alert>
+      <Snackbar open={!!successMessage} autoHideDuration={6000} onClose={() => setSuccessMessage('')}>
+        <Alert severity="success" onClose={() => setSuccessMessage('')}>{successMessage}</Alert>
       </Snackbar>
-
-      <Snackbar
-        open={!!errorMessage}
-        autoHideDuration={6000}
-        onClose={() => setErrorMessage('')}
-      >
-        <Alert severity="error" onClose={() => setErrorMessage('')}>
-          {errorMessage}
-        </Alert>
+      <Snackbar open={!!errorMessage} autoHideDuration={6000} onClose={() => setErrorMessage('')}>
+        <Alert severity="error" onClose={() => setErrorMessage('')}>{errorMessage}</Alert>
       </Snackbar>
     </Box>
   );
 };
 
-export default PaymentReversalView; 
+export default PaymentReversalView;
