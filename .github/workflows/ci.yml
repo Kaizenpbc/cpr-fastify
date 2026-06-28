@@ -95,7 +95,7 @@ jobs:
           protocol: ftps
           local-dir: frontend/dist/
           server-dir: cpr.kpbc.ca/public/
-          dangerous-clean-slate: false
+          dangerous-clean-slate: true
 
       # Restart Passenger
       - name: Restart application
