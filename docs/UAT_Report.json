@@ -1,0 +1,671 @@
+{
+  "timestamp": "2026-06-28T09:44:26",
+  "url": "https://cpr.kpbc.ca",
+  "summary": {
+    "total": 88,
+    "passed": 88,
+    "failed": 0,
+    "pass_rate": 100.0,
+    "api_calls": 121
+  },
+  "by_portal": {
+    "Auth": {
+      "pass": 18,
+      "fail": 0
+    },
+    "Instructor": {
+      "pass": 6,
+      "fail": 0
+    },
+    "Org": {
+      "pass": 10,
+      "fail": 0
+    },
+    "CourseAdmin": {
+      "pass": 7,
+      "fail": 0
+    },
+    "Accounting": {
+      "pass": 13,
+      "fail": 0
+    },
+    "SysAdmin": {
+      "pass": 11,
+      "fail": 0
+    },
+    "HR": {
+      "pass": 13,
+      "fail": 0
+    },
+    "Vendor": {
+      "pass": 5,
+      "fail": 0
+    },
+    "Cross": {
+      "pass": 3,
+      "fail": 0
+    },
+    "Assets": {
+      "pass": 2,
+      "fail": 0
+    }
+  },
+  "results": [
+    {
+      "id": "1.1-instructor",
+      "portal": "Auth",
+      "name": "Login instructor",
+      "status": "PASS",
+      "detail": "role=instructor"
+    },
+    {
+      "id": "1.1-orguser",
+      "portal": "Auth",
+      "name": "Login orguser",
+      "status": "PASS",
+      "detail": "role=organization"
+    },
+    {
+      "id": "1.1-courseadmin",
+      "portal": "Auth",
+      "name": "Login courseadmin",
+      "status": "PASS",
+      "detail": "role=admin"
+    },
+    {
+      "id": "1.1-accountant",
+      "portal": "Auth",
+      "name": "Login accountant",
+      "status": "PASS",
+      "detail": "role=accountant"
+    },
+    {
+      "id": "1.1-admin",
+      "portal": "Auth",
+      "name": "Login admin",
+      "status": "PASS",
+      "detail": "role=admin"
+    },
+    {
+      "id": "1.1-sysadmin",
+      "portal": "Auth",
+      "name": "Login sysadmin",
+      "status": "PASS",
+      "detail": "role=sysadmin"
+    },
+    {
+      "id": "1.1-hruser",
+      "portal": "Auth",
+      "name": "Login hruser",
+      "status": "PASS",
+      "detail": "role=hr"
+    },
+    {
+      "id": "1.1-vendoruser",
+      "portal": "Auth",
+      "name": "Login vendoruser",
+      "status": "PASS",
+      "detail": "role=vendor"
+    },
+    {
+      "id": "1.2",
+      "portal": "Auth",
+      "name": "Wrong password rejected",
+      "status": "PASS",
+      "detail": "http=401"
+    },
+    {
+      "id": "1.3",
+      "portal": "Auth",
+      "name": "GET /auth/me",
+      "status": "PASS",
+      "detail": "user=sysadmin"
+    },
+    {
+      "id": "1.5/instructor/dashboard",
+      "portal": "Auth",
+      "name": "SPA /instructor/dashboard",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "1.5/organization/dashboard",
+      "portal": "Auth",
+      "name": "SPA /organization/dashboard",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "1.5/admin/dashboard",
+      "portal": "Auth",
+      "name": "SPA /admin/dashboard",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "1.5/accounting/dashboard",
+      "portal": "Auth",
+      "name": "SPA /accounting/dashboard",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "1.5/superadmin/dashboard",
+      "portal": "Auth",
+      "name": "SPA /superadmin/dashboard",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "1.5/sysadmin",
+      "portal": "Auth",
+      "name": "SPA /sysadmin",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "1.5/hr",
+      "portal": "Auth",
+      "name": "SPA /hr",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "1.5/vendor/dashboard",
+      "portal": "Auth",
+      "name": "SPA /vendor/dashboard",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "2.1",
+      "portal": "Instructor",
+      "name": "Dashboard stats",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "2.3",
+      "portal": "Instructor",
+      "name": "Availability",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "2.6",
+      "portal": "Instructor",
+      "name": "My classes",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "2.8",
+      "portal": "Instructor",
+      "name": "Archive (completed)",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "2.11",
+      "portal": "Instructor",
+      "name": "Timesheet list",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "2.17",
+      "portal": "Instructor",
+      "name": "Profile",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "3.1",
+      "portal": "Org",
+      "name": "Dashboard",
+      "status": "PASS",
+      "detail": "{\"activeCourses\": 0, \"completedCourses\": 0, \"pendingInvoices\": 0, \"totalSpent\": 141.25}"
+    },
+    {
+      "id": "3.2",
+      "portal": "Org",
+      "name": "Org name in auth",
+      "status": "PASS",
+      "detail": "org=Test Organization"
+    },
+    {
+      "id": "3.3",
+      "portal": "Org",
+      "name": "Courses",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "3.6",
+      "portal": "Org",
+      "name": "Course types",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "3.9",
+      "portal": "Org",
+      "name": "Invoices",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "3.14",
+      "portal": "Org",
+      "name": "Paid invoices",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "3.15",
+      "portal": "Org",
+      "name": "Pricing",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "3.17",
+      "portal": "Org",
+      "name": "Archive",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "3.18",
+      "portal": "Org",
+      "name": "Profile",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "3.21",
+      "portal": "Org",
+      "name": "All 8 SPA routes",
+      "status": "PASS",
+      "detail": "all 200"
+    },
+    {
+      "id": "4.1",
+      "portal": "CourseAdmin",
+      "name": "Dashboard",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "4.3",
+      "portal": "CourseAdmin",
+      "name": "Instructors",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "4.4a",
+      "portal": "CourseAdmin",
+      "name": "Pending courses",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "4.4b",
+      "portal": "CourseAdmin",
+      "name": "Confirmed courses",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "4.11",
+      "portal": "CourseAdmin",
+      "name": "Email templates",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "4.18",
+      "portal": "CourseAdmin",
+      "name": "Cancelled courses",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "4.19",
+      "portal": "CourseAdmin",
+      "name": "Vendor invoices",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "5.1",
+      "portal": "Accounting",
+      "name": "Dashboard",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "5.2",
+      "portal": "Accounting",
+      "name": "Aging report",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "5.4",
+      "portal": "Accounting",
+      "name": "Revenue report",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "5.5",
+      "portal": "Accounting",
+      "name": "Billing queue",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "5.7",
+      "portal": "Accounting",
+      "name": "Pending approvals",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "5.11",
+      "portal": "Accounting",
+      "name": "Rejected invoices",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "5.13",
+      "portal": "Accounting",
+      "name": "All invoices",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "5.19",
+      "portal": "Accounting",
+      "name": "Payment verifications",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "5.22",
+      "portal": "Accounting",
+      "name": "Verified payments",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "5.25",
+      "portal": "Accounting",
+      "name": "Vendor invoices",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "5.26",
+      "portal": "Accounting",
+      "name": "Vendor payments",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "5.28",
+      "portal": "Accounting",
+      "name": "Course pricing",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "5.29",
+      "portal": "Accounting",
+      "name": "All 13 SPA routes",
+      "status": "PASS",
+      "detail": "all 200"
+    },
+    {
+      "id": "7.1",
+      "portal": "SysAdmin",
+      "name": "Dashboard",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "7.2",
+      "portal": "SysAdmin",
+      "name": "Course types",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "7.4",
+      "portal": "SysAdmin",
+      "name": "Organizations",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "7.6",
+      "portal": "SysAdmin",
+      "name": "Org pricing",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "7.8",
+      "portal": "SysAdmin",
+      "name": "Users",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "7.13",
+      "portal": "SysAdmin",
+      "name": "Vendors",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "7.15",
+      "portal": "SysAdmin",
+      "name": "Students",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "7.19",
+      "portal": "SysAdmin",
+      "name": "Cert stats",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "7.20",
+      "portal": "SysAdmin",
+      "name": "Expiring certs",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "7.22",
+      "portal": "SysAdmin",
+      "name": "System config",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "7.25",
+      "portal": "SysAdmin",
+      "name": "All 9 SPA routes",
+      "status": "PASS",
+      "detail": "all 200"
+    },
+    {
+      "id": "8.1",
+      "portal": "HR",
+      "name": "Dashboard",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "8.2",
+      "portal": "HR",
+      "name": "Instructors",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "8.3",
+      "portal": "HR",
+      "name": "Organizations",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "8.4",
+      "portal": "HR",
+      "name": "Profile changes",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "8.7",
+      "portal": "HR",
+      "name": "Timesheets",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "8.7b",
+      "portal": "HR",
+      "name": "Timesheet stats",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "8.13",
+      "portal": "HR",
+      "name": "Pay rate tiers",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "8.16",
+      "portal": "HR",
+      "name": "Instructor rates",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "8.19",
+      "portal": "HR",
+      "name": "Payroll stats",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "8.20",
+      "portal": "HR",
+      "name": "Payroll payments",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "8.24",
+      "portal": "HR",
+      "name": "Returned payments",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "8.27",
+      "portal": "HR",
+      "name": "Notifications",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "8.27b",
+      "portal": "HR",
+      "name": "Unread count",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "9.1",
+      "portal": "Vendor",
+      "name": "Dashboard",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "9.2",
+      "portal": "Vendor",
+      "name": "Vendor list",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "9.5",
+      "portal": "Vendor",
+      "name": "Invoices",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "9.11",
+      "portal": "Vendor",
+      "name": "Profile",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "9.13",
+      "portal": "Vendor",
+      "name": "All 6 SPA routes",
+      "status": "PASS",
+      "detail": "all 200"
+    },
+    {
+      "id": "10.1",
+      "portal": "Cross",
+      "name": "Health check",
+      "status": "PASS",
+      "detail": "status=UP, db=UP"
+    },
+    {
+      "id": "10.2",
+      "portal": "Assets",
+      "name": "JS bundle",
+      "status": "PASS",
+      "detail": "/assets/index-DxTUbsa3.js"
+    },
+    {
+      "id": "10.3",
+      "portal": "Assets",
+      "name": "CSS bundle",
+      "status": "PASS",
+      "detail": "/assets/index-Bp41AoY7.css"
+    },
+    {
+      "id": "10.4",
+      "portal": "Cross",
+      "name": "Shared course-types",
+      "status": "PASS",
+      "detail": "http=200"
+    },
+    {
+      "id": "10.5",
+      "portal": "Cross",
+      "name": "Login page SPA",
+      "status": "PASS",
+      "detail": "http=200"
+    }
+  ]
+}
