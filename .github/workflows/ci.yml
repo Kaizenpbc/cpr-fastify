@@ -74,32 +74,23 @@ jobs:
           name: frontend-dist
           path: frontend/dist
 
-      # Deploy via FTPS
+      # Deploy via lftp (more reliable than FTP-Deploy-Action for FTPS)
+      - name: Install lftp
+        run: sudo apt-get update && sudo apt-get install -y lftp
+
       - name: Deploy backend via FTPS
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         timeout-minutes: 10
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
-          local-dir: backend/dist/
-          server-dir: cpr.kpbc.ca/backend/dist/
-          dangerous-clean-slate: false
-          timeout: 120000
+        run: |
+          lftp -u "${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}" \
+            -e "set ftp:ssl-allow yes; set ftp:ssl-force yes; set ftp:ssl-protect-data yes; set ssl:verify-certificate no; set net:timeout 60; set net:max-retries 3; set net:reconnect-interval-base 5; mirror -R --verbose backend/dist/ cpr.kpbc.ca/backend/dist/; quit" \
+            ftps://${{ secrets.FTP_SERVER }}
 
       - name: Deploy frontend via FTPS
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         timeout-minutes: 10
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
-          local-dir: frontend/dist/
-          server-dir: cpr.kpbc.ca/public/
-          dangerous-clean-slate: false
-          timeout: 120000
+        run: |
+          lftp -u "${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}" \
+            -e "set ftp:ssl-allow yes; set ftp:ssl-force yes; set ftp:ssl-protect-data yes; set ssl:verify-certificate no; set net:timeout 60; set net:max-retries 3; set net:reconnect-interval-base 5; mirror -R --verbose --delete frontend/dist/ cpr.kpbc.ca/public/; quit" \
+            ftps://${{ secrets.FTP_SERVER }}
 
       # Restart Passenger
       - name: Restart application
