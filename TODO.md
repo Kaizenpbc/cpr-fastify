@@ -59,7 +59,7 @@
 - [ ] **Real-time dashboards**: Add live data updates using WebSockets
 - [x] **Export functionality**: CSV export for organizations, students, expiring certifications, and invoices (backend endpoints + frontend Export CSV buttons)
 - [x] **Custom date ranges**: DateRangeFilter component with presets (7/30/90 days, year, all time). Integrated into OrganizationAnalytics, OrganizationDashboard, SystemAdminDashboard. Backend date filtering on org and sysadmin endpoints.
-- [ ] **Comparative analytics**: Add year-over-year comparison features
+- [x] **Comparative analytics**: Year-over-year comparison on org and sysadmin dashboards. StatCard subColor prop for colored change indicators (+/-% vs last year). Backend YoY queries on courses, students, revenue, users, orgs.
 - [ ] **Predictive analytics**: Implement demand forecasting
 
 ### **User Experience**
@@ -75,7 +75,7 @@
 - [ ] **🟡 OCR receipt scanning (OCR-1)**: Google Cloud Vision integration existed in Express production but was not ported to Fastify. Re-implement if customers use receipt/document scanning. Requires `@google-cloud/vision` + service account key.
 - [ ] **🟡 WebSocket real-time updates (WS-1)**: socket.io existed in Express production but was not ported to Fastify. Re-implement with `@fastify/websocket` if real-time dashboard updates are needed. Low priority — polling works for current user count.
 - [x] **🟡 Sentry error monitoring (SENTRY-1)**: Ported to Fastify — dynamic import with graceful fallback. `@sentry/node` v10, DSN in production .htaccess. Captures unhandled 500 errors with request context.
-- [ ] **Email notifications**: Automated email alerts for course status changes
+- [x] **Email notifications**: Course confirmed/cancelled/completed email templates in EmailService. Fire-and-forget triggers in CourseService (assign instructor, cancel) and instructors route (complete). Notification preferences check. Org admin targeting.
 - [ ] **SMS notifications**: Text message alerts for urgent updates
 - [ ] **Calendar integration**: Sync with Google Calendar/Outlook
 - [ ] **Document management**: File upload and storage for certificates
@@ -106,7 +106,7 @@
 ## 🧪 **Testing & Quality Assurance**
 
 ### **Automated Testing**
-- [ ] **Unit tests**: Achieve 80%+ code coverage (currently: 89 backend + 84 frontend = 173 vitest tests covering AuthService, BillingService, HRService, billing lifecycle, InvoiceNumberService, StudentRepository, DataTable, DetailDrawer, PageHeader, SegmentedToggle, SearchBar, StatusChip, Buttons, UserAvatar, AdminShell, useClientPagination)
+- [ ] **Unit tests**: Achieve 80%+ code coverage (currently: 105 backend + 113 frontend = 218 vitest tests covering AuthService, BillingService, HRService, billing lifecycle, InvoiceNumberService, StudentRepository, auditLog, WSIB query builder, DataTable, DetailDrawer, PageHeader, SegmentedToggle, SearchBar, StatusChip, Buttons, UserAvatar, AdminShell, useClientPagination, DateRangeFilter, AuditLogViewer, WSIBReporting)
 - [x] **Integration tests** — 51 tests across 4 suites (auth, lockout, reset, recovery)
 - [x] **End-to-end tests** — Playwright suite on staging (2026-06-15): auth.spec.ts + portal.spec.ts cover login, role redirect, dashboard load, navigation, logout for all 8 roles. **36 passed, 0 skipped, 0 failed.** Run: `npx playwright test --project=chromium`.
 - [ ] **Performance tests**: Load testing for concurrent users
@@ -135,8 +135,8 @@
 - [ ] **Capacity planning**: Monitor and plan for scaling needs
 
 ### **Incident Response**
-- [ ] **🟡 Incident response process (OPS-2)**: No documented process for outages. Define: who gets alerted (OPS-1 uptime monitor), how to diagnose (check Sentry, health endpoint, Passenger logs via cPanel), how to restart (touch tmp/restart.txt), escalation path if unresolvable. Document in DEPLOYMENT_GUIDE.md.
-- [ ] **🟡 Offboarding runbook**: When a customer churns, document the step-by-step: disable org users, export their data, anonymise PII per PIPEDA retention schedule, notify them. Ties to BIZ-2.
+- [x] **🟡 Incident response process (OPS-2)**: `docs/Incident_Response.md` — severity levels (P1/P2/P3), diagnosis checklist (health endpoint → Sentry → Passenger logs → MySQL → LVE limits), resolution procedures (restart, rollback, redeploy, DB recovery), communication plan, post-incident RCA template, contacts & access table.
+- [x] **🟡 Offboarding runbook**: `docs/Customer_Offboarding.md` — triggers, 30-day notice, data export window (courses/roster/invoices CSV), account deactivation checklist, PIPEDA-compliant data retention & anonymization schedule, final confirmation, internal logging template.
 
 ### **Compliance & Governance**
 - [x] **PIPEDA compliance (PRIVACY-1)**:
@@ -206,10 +206,20 @@ These items are **non-technical blockers** that must be addressed before accepti
 - [ ] **R-2**: Backup strategy verification — offsite backups (S3/B2), automated restore testing, documented RTO/RPO
 
 ### **🟢 Low Priority / Future**
-- Multi-language support
-- Predictive analytics
+- Multi-language support (i18n)
+- Predictive analytics / demand forecasting
 - ~~OpenAPI/Swagger docs~~ ✅ Live at `/api/v1/docs`
 - Calendar integration (Google/Outlook)
+- SMS notifications for urgent updates
+- Document management (certificate file upload/storage)
+- Payment integration (Stripe / online payments)
+- Recurring course scheduling
+- Push notifications (browser)
+- Offline support (service workers / PWA)
+- Per-org branding / white-label (BIZ-6)
+- Demo / trial environment (BIZ-3)
+- Performance / load testing for concurrent users
+- Email delivery confirmation on production (EMAIL-1)
 
 ---
 
