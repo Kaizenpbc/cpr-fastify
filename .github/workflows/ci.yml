@@ -132,7 +132,7 @@ jobs:
           echo "Waiting 30s for Passenger to restart..."
           sleep 30
           for i in 1 2 3 4 5 6 7 8; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 -H "Accept: application/json" https://cpr.kpbc.ca/api/v1/health)
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 -H "Accept: application/json" https://cpr.kpbc.ca/api/v1/health) || STATUS="000"
             echo "Attempt $i: HTTP $STATUS"
             if [ "$STATUS" = "200" ]; then
               echo "Health check: OK"
