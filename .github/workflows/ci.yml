@@ -97,17 +97,28 @@ jobs:
           server-dir: cpr.kpbc.ca/public/
           dangerous-clean-slate: false
 
-      # Read current root .htaccess for diagnostics
-      - name: Read root .htaccess
+      # Ensure public/.htaccess exists for SPA routing (FTP action may skip dotfiles)
+      - name: Deploy .htaccess via cPanel API
         run: |
-          RESP=$(curl -sk -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
-            "https://${{ secrets.FTP_SERVER }}:2083/json-api/cpanel?cpanel_jsonapi_version=2&cpanel_jsonapi_module=Fileman&cpanel_jsonapi_func=viewfile&dir=/home/${{ secrets.FTP_USERNAME }}/cpr.kpbc.ca&file=.htaccess")
-          echo "=== Root .htaccess ==="
-          echo "$RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('cpanelresult',{}).get('data',[''])[0].get('content','(empty)'))" 2>/dev/null || echo "$RESP"
-          echo "=== End ==="
+          HTACCESS='RewriteEngine On
 
-      # Read public/.htaccess for diagnostics
-      - name: Read public .htaccess
+          # If the request is for an existing file or directory, serve it directly
+          RewriteCond %{REQUEST_FILENAME} -f [OR]
+          RewriteCond %{REQUEST_FILENAME} -d
+          RewriteRule ^ - [L]
+
+          # Otherwise, serve index.html (SPA routing)
+          RewriteRule ^ index.html [L]'
+
+          # URL-encode the content
+          ENCODED=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.stdin.read()))" <<< "$HTACCESS")
+
+          curl -sk -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
+            "https://${{ secrets.FTP_SERVER }}:2083/json-api/cpanel?cpanel_jsonapi_version=2&cpanel_jsonapi_module=Fileman&cpanel_jsonapi_func=savefile&dir=/home/${{ secrets.FTP_USERNAME }}/cpr.kpbc.ca/public&filename=.htaccess&content=${ENCODED}"
+          echo ".htaccess deployed to public/"
+
+      # Verify .htaccess was written
+      - name: Verify .htaccess
         run: |
           RESP=$(curl -sk -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
             "https://${{ secrets.FTP_SERVER }}:2083/json-api/cpanel?cpanel_jsonapi_version=2&cpanel_jsonapi_module=Fileman&cpanel_jsonapi_func=viewfile&dir=/home/${{ secrets.FTP_USERNAME }}/cpr.kpbc.ca/public&file=.htaccess")
