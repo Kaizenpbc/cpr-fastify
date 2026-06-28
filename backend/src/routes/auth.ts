@@ -21,18 +21,22 @@ const changePasswordSchema = z.object({
 
 /** Enrich a safe user object with organization_name and location_name from DB */
 async function enrichUser(safeUser: Record<string, unknown>) {
-  const pool = getPool();
-  if (safeUser.organization_id) {
-    const [orgRows] = await pool.query<any[]>(
-      'SELECT name FROM organizations WHERE id = ?', [safeUser.organization_id]
-    );
-    if (orgRows.length) safeUser.organization_name = orgRows[0].name;
-  }
-  if (safeUser.location_id) {
-    const [locRows] = await pool.query<any[]>(
-      'SELECT name FROM organization_locations WHERE id = ?', [safeUser.location_id]
-    );
-    if (locRows.length) safeUser.location_name = locRows[0].name;
+  try {
+    const pool = getPool();
+    if (safeUser.organization_id) {
+      const [orgRows] = await pool.query<any[]>(
+        'SELECT name FROM organizations WHERE id = ?', [safeUser.organization_id]
+      );
+      if (orgRows.length) safeUser.organization_name = orgRows[0].name;
+    }
+    if (safeUser.location_id) {
+      const [locRows] = await pool.query<any[]>(
+        'SELECT location_name FROM organization_locations WHERE id = ?', [safeUser.location_id]
+      );
+      if (locRows.length) safeUser.location_name = locRows[0].location_name;
+    }
+  } catch {
+    // Non-critical enrichment — don't break login if org/location lookup fails
   }
   return safeUser;
 }
