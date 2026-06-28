@@ -97,34 +97,26 @@ jobs:
           server-dir: cpr.kpbc.ca/public/
           dangerous-clean-slate: false
 
-      # Ensure public/.htaccess exists for SPA routing (FTP action may skip dotfiles)
-      - name: Deploy .htaccess via cPanel API
+      # Ensure public/.htaccess exists for SPA routing
+      - name: Deploy .htaccess via FTPS
         run: |
-          HTACCESS='RewriteEngine On
-
-          # If the request is for an existing file or directory, serve it directly
+          cat > /tmp/.htaccess << 'HTEOF'
+          RewriteEngine On
           RewriteCond %{REQUEST_FILENAME} -f [OR]
           RewriteCond %{REQUEST_FILENAME} -d
           RewriteRule ^ - [L]
-
-          # Otherwise, serve index.html (SPA routing)
-          RewriteRule ^ index.html [L]'
-
-          # URL-encode the content
-          ENCODED=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.stdin.read()))" <<< "$HTACCESS")
-
-          curl -sk -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
-            "https://${{ secrets.FTP_SERVER }}:2083/json-api/cpanel?cpanel_jsonapi_version=2&cpanel_jsonapi_module=Fileman&cpanel_jsonapi_func=savefile&dir=/home/${{ secrets.FTP_USERNAME }}/cpr.kpbc.ca/public&filename=.htaccess&content=${ENCODED}"
-          echo ".htaccess deployed to public/"
-
-      # Verify .htaccess was written
-      - name: Verify .htaccess
-        run: |
-          RESP=$(curl -sk -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
-            "https://${{ secrets.FTP_SERVER }}:2083/json-api/cpanel?cpanel_jsonapi_version=2&cpanel_jsonapi_module=Fileman&cpanel_jsonapi_func=viewfile&dir=/home/${{ secrets.FTP_USERNAME }}/cpr.kpbc.ca/public&file=.htaccess")
-          echo "=== Public .htaccess ==="
-          echo "$RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('cpanelresult',{}).get('data',[''])[0].get('content','(empty)'))" 2>/dev/null || echo "$RESP"
-          echo "=== End ==="
+          RewriteRule ^ index.html [L]
+          HTEOF
+          # Remove leading whitespace from heredoc
+          sed -i 's/^          //' /tmp/.htaccess
+          echo "=== .htaccess content ==="
+          cat /tmp/.htaccess
+          echo "=== Uploading via FTPS ==="
+          curl -T /tmp/.htaccess --ssl-reqd --insecure \
+            "ftps://${{ secrets.FTP_SERVER }}/cpr.kpbc.ca/public/.htaccess" \
+            --user "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
+            -v 2>&1 | grep -E "< |> |Upload|226|550" || true
+          echo ".htaccess uploaded"
 
       # Restart Passenger
       - name: Restart application
