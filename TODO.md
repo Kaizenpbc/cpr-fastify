@@ -109,7 +109,7 @@
 - [ ] **Unit tests**: Achieve 80%+ code coverage (currently: 105 backend + 113 frontend = 218 vitest tests covering AuthService, BillingService, HRService, billing lifecycle, InvoiceNumberService, StudentRepository, auditLog, WSIB query builder, DataTable, DetailDrawer, PageHeader, SegmentedToggle, SearchBar, StatusChip, Buttons, UserAvatar, AdminShell, useClientPagination, DateRangeFilter, AuditLogViewer, WSIBReporting)
 - [x] **Integration tests** — 51 tests across 4 suites (auth, lockout, reset, recovery)
 - [x] **End-to-end tests** — Playwright suite on staging (2026-06-15): auth.spec.ts + portal.spec.ts cover login, role redirect, dashboard load, navigation, logout for all 8 roles. **36 passed, 0 skipped, 0 failed.** Run: `npx playwright test --project=chromium`.
-- [ ] **Performance tests**: Load testing for concurrent users
+- [x] **Performance tests**: Load tested with autocannon on staging (2026-06-28). Health: 1,777 req/s at 100 connections, p99 112ms. Login: 198 req/s at 10 conn. Zero errors/timeouts. Shared hosting supports ~50-100 active users. Results in `backend/load-test-results/`. Script: `backend/load-test.sh`.
 - [ ] **🟡 Penetration test (SEC-PENTEST-1)**: Before scaling to 5+ customers, engage a freelance pentester or run Burp Suite against the production API. Focus areas: auth bypass, IDOR across org boundaries, rate limit bypass, injection, session fixation. Document findings and fixes.
 - [ ] **Security tests**: Automated vulnerability scanning
 
@@ -145,10 +145,11 @@
   - [x] Right-to-deletion: DELETE /sysadmin/users/:id/personal-data (anonymises PII)
   - [ ] Consent checkbox on signup form (if self-signup is ever added)
   - [ ] Cookie consent banner (if analytics/tracking added)
-- [ ] **Data retention enforcement** — policy is documented; automated purge of old records not yet implemented
+- [ ] **Data retention enforcement** — policy is documented; automated purge of old records not yet implemented. Build scheduled job to anonymize PII for accounts closed 2+ years ago, retain course/payment records for 7 years per PIPEDA.
 - [ ] **GDPR compliance** — covered by PIPEDA policy for now; revisit if EU customers
 - [ ] **Backup testing**: Regular backup restoration testing
-- [ ] **Disaster recovery**: Document and test DR procedures
+- [ ] **Disaster recovery**: Document and test DR procedures — RTO/RPO targets, backup restore testing, failover steps
+- [ ] **npm audit**: Run `npm audit` on both backend and frontend, address new vulnerabilities since last audit
 - [ ] **Change management**: Formal change approval process
 
 ## 🚧 **Business Blockers — Must Resolve Before First Paying Customer**
