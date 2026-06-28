@@ -59,6 +59,21 @@ export function useAuth() {
   return context;
 }
 
+/** Map snake_case DB fields to camelCase frontend fields */
+function normalizeUser(raw: Record<string, unknown>): User {
+  return {
+    ...raw,
+    id: raw.id as number,
+    username: raw.username as string,
+    role: raw.role as string,
+    email: (raw.email) as string | undefined,
+    firstName: (raw.firstName ?? raw.first_name) as string | undefined,
+    lastName: (raw.lastName ?? raw.last_name) as string | undefined,
+    organizationId: (raw.organizationId ?? raw.organization_id) as number | undefined,
+    organizationName: (raw.organizationName ?? raw.organization_name) as string | undefined,
+  };
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -113,8 +128,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Set the user data AND update local variable — setUser is async so we
         // cannot read from the `user` closure after this point
-        setUser(userData);
-        resolvedUser = userData;
+        const normalized = normalizeUser(userData as Record<string, unknown>);
+        setUser(normalized);
+        resolvedUser = normalized;
         log('[TOKEN VALIDATION] User data set from backend validation');
       } else if (justLoggedIn) {
         log('[TOKEN VALIDATION] Skipping backend validation - just logged in');
@@ -390,8 +406,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user: response.user,
         timestamp: new Date().toISOString()
       });
-      
-      setUser(response.user);
+
+      setUser(normalizeUser(response.user as Record<string, unknown>));
 
       // Mark as just logged in to skip redundant /auth/me validation
       setJustLoggedIn(true);
