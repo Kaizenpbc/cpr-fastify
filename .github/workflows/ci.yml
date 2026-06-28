@@ -74,22 +74,50 @@ jobs:
           name: frontend-dist
           path: frontend/dist
 
-      # Deploy via lftp (more reliable than FTP-Deploy-Action for FTPS)
+      # Deploy via lftp
       - name: Install lftp
         run: sudo apt-get update && sudo apt-get install -y lftp
 
       - name: Deploy backend via FTPS
-        timeout-minutes: 10
+        timeout-minutes: 15
         run: |
           lftp -u "${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}" \
-            -e "set ftp:ssl-allow yes; set ftp:ssl-force yes; set ftp:ssl-protect-data yes; set ssl:verify-certificate no; set net:timeout 60; set net:max-retries 3; set net:reconnect-interval-base 5; mirror -R --verbose backend/dist/ cpr.kpbc.ca/backend/dist/; quit" \
+            -e "
+              set ftp:ssl-allow yes;
+              set ftp:ssl-force yes;
+              set ftp:ssl-protect-data yes;
+              set ftp:passive-mode yes;
+              set ssl:verify-certificate no;
+              set net:timeout 120;
+              set net:max-retries 5;
+              set net:reconnect-interval-base 10;
+              set net:reconnect-interval-multiplier 2;
+              set ftp:ssl-protect-list yes;
+              set mirror:parallel-transfer-count 1;
+              mirror -R --verbose --no-perms backend/dist/ cpr.kpbc.ca/backend/dist/;
+              quit
+            " \
             ftps://${{ secrets.FTP_SERVER }}
 
       - name: Deploy frontend via FTPS
-        timeout-minutes: 10
+        timeout-minutes: 15
         run: |
           lftp -u "${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}" \
-            -e "set ftp:ssl-allow yes; set ftp:ssl-force yes; set ftp:ssl-protect-data yes; set ssl:verify-certificate no; set net:timeout 60; set net:max-retries 3; set net:reconnect-interval-base 5; mirror -R --verbose --delete frontend/dist/ cpr.kpbc.ca/public/; quit" \
+            -e "
+              set ftp:ssl-allow yes;
+              set ftp:ssl-force yes;
+              set ftp:ssl-protect-data yes;
+              set ftp:passive-mode yes;
+              set ssl:verify-certificate no;
+              set net:timeout 120;
+              set net:max-retries 5;
+              set net:reconnect-interval-base 10;
+              set net:reconnect-interval-multiplier 2;
+              set ftp:ssl-protect-list yes;
+              set mirror:parallel-transfer-count 1;
+              mirror -R --verbose --delete --no-perms frontend/dist/ cpr.kpbc.ca/public/;
+              quit
+            " \
             ftps://${{ secrets.FTP_SERVER }}
 
       # Restart Passenger
