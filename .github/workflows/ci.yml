@@ -105,10 +105,10 @@ jobs:
             > /dev/null 2>&1
           echo "Passenger restarted"
 
-      # Health check (non-blocking — Passenger may take time to restart)
+      # Health check
       - name: Health check
         run: |
-          for i in 1 2 3; do
+          for i in 1 2 3 4 5; do
             sleep 10
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://cpr.kpbc.ca/api/v1/health)
             echo "Attempt $i: HTTP $STATUS"
@@ -117,4 +117,54 @@ jobs:
               exit 0
             fi
           done
-          echo "Warning: health check did not return 200 after 3 attempts"
+          echo "Health check FAILED after 5 attempts"
+          exit 1
+
+  notify:
+    name: Email notification
+    needs: [backend, frontend, deploy]
+    if: always() && github.ref == 'refs/heads/master' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send success email
+        if: needs.deploy.result == 'success'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "CPR Deploy SUCCESS — ${{ github.sha }}"
+          to: ${{ secrets.NOTIFY_EMAIL }}
+          from: "CPR CI/CD <${{ secrets.SMTP_USERNAME }}>"
+          body: |
+            Deployment to cpr.kpbc.ca completed successfully.
+
+            Commit: ${{ github.sha }}
+            Message: ${{ github.event.head_commit.message }}
+            By: ${{ github.actor }}
+            Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Send failure email
+        if: needs.backend.result == 'failure' || needs.frontend.result == 'failure' || needs.deploy.result == 'failure'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "CPR Deploy FAILED — ${{ github.sha }}"
+          to: ${{ secrets.NOTIFY_EMAIL }}
+          from: "CPR CI/CD <${{ secrets.SMTP_USERNAME }}>"
+          body: |
+            Deployment to cpr.kpbc.ca FAILED.
+
+            Commit: ${{ github.sha }}
+            Message: ${{ github.event.head_commit.message }}
+            By: ${{ github.actor }}
+
+            Backend: ${{ needs.backend.result }}
+            Frontend: ${{ needs.frontend.result }}
+            Deploy: ${{ needs.deploy.result }}
+
+            Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
