@@ -71,6 +71,8 @@ function normalizeUser(raw: Record<string, unknown>): User {
     lastName: (raw.lastName ?? raw.last_name) as string | undefined,
     organizationId: (raw.organizationId ?? raw.organization_id) as number | undefined,
     organizationName: (raw.organizationName ?? raw.organization_name) as string | undefined,
+    locationId: (raw.locationId ?? raw.location_id) as number | undefined,
+    locationName: (raw.locationName ?? raw.location_name) as string | undefined,
   };
 }
 

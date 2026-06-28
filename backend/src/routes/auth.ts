@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { AuthService, AuthError } from '../services/AuthService.js';
 import { UserRepository } from '../repositories/UserRepository.js';
 import { requireAuth } from '../plugins/auth.js';
+import { getPool } from '../config/database.js';
 
 const loginSchema = z.object({
   username: z.string().min(1),
@@ -17,6 +18,24 @@ const changePasswordSchema = z.object({
   currentPassword: z.string().min(1),
   newPassword: z.string().min(8),
 });
+
+/** Enrich a safe user object with organization_name and location_name from DB */
+async function enrichUser(safeUser: Record<string, unknown>) {
+  const pool = getPool();
+  if (safeUser.organization_id) {
+    const [orgRows] = await pool.query<any[]>(
+      'SELECT name FROM organizations WHERE id = ?', [safeUser.organization_id]
+    );
+    if (orgRows.length) safeUser.organization_name = orgRows[0].name;
+  }
+  if (safeUser.location_id) {
+    const [locRows] = await pool.query<any[]>(
+      'SELECT name FROM organization_locations WHERE id = ?', [safeUser.location_id]
+    );
+    if (locRows.length) safeUser.location_name = locRows[0].name;
+  }
+  return safeUser;
+}
 
 export async function authRoutes(app: FastifyInstance) {
   const userRepo = new UserRepository();
@@ -42,7 +61,8 @@ export async function authRoutes(app: FastifyInstance) {
         maxAge: 7 * 24 * 60 * 60,
       });
 
-      return { success: true, data: { user: result.user, accessToken: result.tokens.accessToken } };
+      const enrichedUser = await enrichUser(result.user as Record<string, unknown>);
+      return { success: true, data: { user: enrichedUser, accessToken: result.tokens.accessToken } };
     } catch (err) {
       if (err instanceof AuthError) {
         return reply.status(401).send({ error: err.message });
@@ -81,7 +101,8 @@ export async function authRoutes(app: FastifyInstance) {
     const user = await userRepo.findById(request.userId!);
     if (!user) return { success: false, error: { message: 'User not found' } };
     const { password_hash, ...safeUser } = user;
-    return { success: true, data: { user: safeUser } };
+    const enrichedUser = await enrichUser(safeUser as Record<string, unknown>);
+    return { success: true, data: { user: enrichedUser } };
   });
 
   // POST /api/v1/auth/logout
