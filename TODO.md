@@ -66,8 +66,9 @@
 - [ ] **Mobile responsiveness**: Optimize for mobile devices
 - [ ] **Offline support**: Add offline capabilities with service workers
 - [ ] **Push notifications**: Implement browser push notifications
-- [ ] **Dark mode**: Add dark theme option
-- [ ] **Accessibility**: Ensure WCAG 2.1 AA compliance
+- [x] **Dark mode**: Dark theme toggle in sidebar (ThemeContext + ThemeToggle)
+- [x] **Accessibility**: WCAG 2.1 AA pass — skip-to-content, ARIA landmarks, semantic table roles, keyboard nav, focus-visible, aria-labels on all interactive elements
+- [ ] **CI: Third-party action Node.js 20 deprecation**: `actions/upload-artifact@v5`, `actions/download-artifact@v5`, `SamKirkland/FTP-Deploy-Action@v4.3.5`, and `dawidd6/action-send-mail@v4` still target Node.js 20 internally. Monitor for new releases that target Node 22+; update when available.
 - [ ] **Multi-language support**: Add internationalization (i18n)
 
 ### **Business Features**
