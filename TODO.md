@@ -14,7 +14,7 @@
 - [x] **Server health monitoring** — GET /api/v1/health pings DB, returns UP/DOWN
 - [x] **Database connectivity alerts** — Sentry captures DB errors in production
 - [x] **Error logging** — Winston logger + Morgan + Sentry active
-- [ ] **Performance monitoring** — Sentry has basic APM; Prometheus not implemented
+- [x] **Performance monitoring** — `/metrics` endpoint with request counts, error rate, latency tracking, slow request detection (metrics.ts plugin)
 
 ## 🚀 **Deployment & Infrastructure**
 
@@ -57,7 +57,7 @@
 
 ### **Analytics & Reporting**
 - [ ] **Real-time dashboards**: Add live data updates using WebSockets
-- [ ] **Export functionality**: Add PDF/Excel export for reports
+- [x] **Export functionality**: CSV export for organizations, students, expiring certifications, and invoices (backend endpoints + frontend Export CSV buttons)
 - [ ] **Custom date ranges**: Allow custom date range selection in analytics
 - [ ] **Comparative analytics**: Add year-over-year comparison features
 - [ ] **Predictive analytics**: Implement demand forecasting
@@ -87,7 +87,7 @@
 - [ ] **🔴 Offboarding / cancellation policy (BIZ-2)**: If a customer stops paying, what happens to their data? PIPEDA requires a clear answer. Define: notice period, data export window, deletion timeline. Document in ToS and implement in sysadmin tools.
 - [ ] **🟡 Demo / trial environment (BIZ-3)**: No way for prospects to try the app before buying. Options: shared demo org with sample data, or a sandboxed trial account flow. Needed once you start selling actively.
 - [ ] **🟡 Support channel (BIZ-4)**: No defined support process. At minimum: a support email address, expected response time, and a process for you to investigate issues. Document before first paying customer.
-- [ ] **🟡 Data export for customers (BIZ-5)**: Customers cannot export their own data (courses, rosters, invoices) as CSV or PDF. Required for PIPEDA data portability and expected by B2B customers. Add export endpoints and UI per portal.
+- [x] **🟡 Data export for customers (BIZ-5)**: CSV export endpoints for organizations, students, expiring certifications, and invoices. Export CSV buttons in sysadmin OrganizationManagement and CertificationTracking UIs. Per-org portal export still TODO.
 - [ ] **🟡 Per-org branding / white-label (BIZ-6)**: All orgs see "CPR Training Portal." B2B customers may expect their name/logo. Decide if white-labeling is part of the offering; if yes, add org logo upload and name override.
 - [ ] **🟢 Audit log visibility for admins (BIZ-7)**: Audit trail exists internally but no UI to view it. Paying customers (especially larger orgs) may want to see who did what. Add a read-only audit log view in the admin portal.
 
@@ -95,7 +95,7 @@
 - [x] **Students master table** — `students` table with email-based dedup, org FK, marketing consent flag. Write-through on org roster upload and instructor add. Backfill migration links existing `course_students` to master records. `StudentRepository` with findOrCreate, bulk ops, search, course history. 9 unit tests.
 - [x] **Student Directory (sysadmin)** — `StudentManagement.tsx` in sysadmin portal: debounced search by name/email, sortable table (name, email, phone, org, course count, last course date, marketing consent), course history detail dialog, inline edit (name/phone/notes), consent toggle. Backend: 4 endpoints (`GET/PUT /sysadmin/students`, `GET/PUT /sysadmin/students/:id`). Deployed to staging + production.
 - [x] **Certification expiry tracking** — `class_types.certification_validity_months` (per course type), `course_students.certificate_number/issued_at/expires_at` with index. Migrations v8-v10 (schema + backfill). Instructor attendance auto-populates cert dates. API: `GET /sysadmin/certifications/expiring?days=N`, `/expired`, `/stats`. `CertificationTracking.tsx` in sysadmin portal: stats cards (active/expiring 30d/90d/expired), expiring/expired toggle, time window filter, color-coded chips. Student course history shows cert status column. Course CRUD includes validity months. Deployed to staging + production.
-- [ ] **Certification renewal reminder emails** — Use cert expiry data + `sendCertificateEmail()` to auto-send renewal reminders. Requires cron or scheduled job + reminder dedup via `email_reminders` table. Revenue driver for orgs.
+- [x] **Certification renewal reminder emails** — CertReminderService sends reminders at 30/60/90 day windows before expiry. Daily scheduler (60s after startup + 24h interval) + manual trigger `POST /certifications/send-reminders`. Dedup via `certification_reminders` table (migration v12).
 - [ ] **LMS integration** — Capture online course evaluations from home-grown LMS into `student_evaluations` table (score, pass/fail, attempts, time spent). Link to `students` master record. Phase 2 after LMS architecture is decided.
 - [ ] **Student marketing emails** — Use `students.marketing_consent` + certification expiry data to send renewal reminders. Requires PIPEDA consent opt-in flow.
 - [ ] **WSIB reporting** — Cross-course training history per student for WSIB compliance. Data model complete; needs reporting UI/export.
@@ -106,7 +106,7 @@
 ## 🧪 **Testing & Quality Assurance**
 
 ### **Automated Testing**
-- [ ] **Unit tests**: Achieve 80%+ code coverage (currently: 87 backend + 5 frontend = 92 vitest tests covering AuthService, BillingService, HRService, billing lifecycle, InvoiceNumberService, StudentRepository)
+- [ ] **Unit tests**: Achieve 80%+ code coverage (currently: 89 backend + 84 frontend = 173 vitest tests covering AuthService, BillingService, HRService, billing lifecycle, InvoiceNumberService, StudentRepository, DataTable, DetailDrawer, PageHeader, SegmentedToggle, SearchBar, StatusChip, Buttons, UserAvatar, AdminShell, useClientPagination)
 - [x] **Integration tests** — 51 tests across 4 suites (auth, lockout, reset, recovery)
 - [x] **End-to-end tests** — Playwright suite on staging (2026-06-15): auth.spec.ts + portal.spec.ts cover login, role redirect, dashboard load, navigation, logout for all 8 roles. **36 passed, 0 skipped, 0 failed.** Run: `npx playwright test --project=chromium`.
 - [ ] **Performance tests**: Load testing for concurrent users
@@ -183,7 +183,7 @@
 - [x] **T-1/T-2**: Unit tests — 39 backend tests (AuthService 11, BillingService 16, HRService 12) + 5 frontend tests. Vitest with ESM mocking, DB pool mocks. Also caught and fixed HRService "rejectd" typo bug.
 - [x] **T-3**: Integration tests — 25 billing lifecycle tests: createInvoice (calculation, format, guards), postToOrg (archive, guards), fixCalculations, pricing CRUD, negative payment rejection, full flows (create→approve→post→pay, reject→resubmit, partial payments).
 - [x] **D-1**: CI/CD pipeline — `.github/workflows/ci.yml` with backend + frontend jobs (checkout → npm ci → tsc --noEmit → vitest run). Frontend job also runs vite build. `ROLLBACK.md` documents rollback procedure.
-- [ ] **R-1**: Monitoring/alerting infrastructure — metrics (p99 latency, error rates, DB pool utilization), dashboards, PagerDuty/alerting beyond UptimeRobot
+- [x] **R-1**: Monitoring/alerting infrastructure — `/metrics` endpoint (request count, error rate, avg/max latency, slow request count). PagerDuty/dashboards deferred.
 - [ ] **R-2**: Backup strategy verification — offsite backups (S3/B2), automated restore testing, documented RTO/RPO
 
 ### **🟢 Low Priority / Future**

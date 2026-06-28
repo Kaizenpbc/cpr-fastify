@@ -43,7 +43,7 @@ const TodayClassesList: React.FC<TodayClassesListProps> = ({ classes = [] }) => 
           <List>
             {classes.map((cls, index) => (
               <React.Fragment key={cls.id}>
-                <ListItem>
+                <ListItem sx={{ flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'flex-start', sm: 'center' }, gap: { xs: 1, sm: 0 }, pr: { xs: 2, sm: 12 } }}>
                   <ListItemText
                     primary={
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -54,7 +54,7 @@ const TodayClassesList: React.FC<TodayClassesListProps> = ({ classes = [] }) => 
                       </span>
                     }
                     secondary={
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 8 }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 8, flexWrap: 'wrap' }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <TimeIcon fontSize="small" />
                           <Typography variant="body2" component="span">
@@ -72,7 +72,17 @@ const TodayClassesList: React.FC<TodayClassesListProps> = ({ classes = [] }) => 
                     primaryTypographyProps={{ component: 'div' }}
                     secondaryTypographyProps={{ component: 'div' }}
                   />
-                  <ListItemSecondaryAction>
+                  <Box sx={{ display: { xs: 'block', sm: 'none' }, width: '100%', mt: 1 }}>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      fullWidth
+                      onClick={() => navigate(`/instructor/attendance/${cls.id}`)}
+                    >
+                      Take Attendance
+                    </Button>
+                  </Box>
+                  <ListItemSecondaryAction sx={{ display: { xs: 'none', sm: 'block' } }}>
                     <Button
                       variant="contained"
                       size="small"

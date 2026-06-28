@@ -174,7 +174,7 @@ const InstructorDashboard: React.FC = () => {
       )}
 
       {/* Quick Stats */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', mb: 4 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: '16px', mb: 4 }}>
         <StatCard label="Total Classes" value={totalClasses} sub="All scheduled" dotColor="#CC1F1F" />
         <StatCard label="Today's Classes" value={todayClassesCount} sub="Scheduled today" dotColor="#ED6C02" />
         <StatCard label="Total Students" value={totalStudents} sub="Enrolled students" dotColor="#4B5563" />
@@ -190,7 +190,7 @@ const InstructorDashboard: React.FC = () => {
       </Box>
 
       {/* Recent Classes */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: '24px' }}>
         <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
           <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Upcoming Classes</Typography>
           {upcomingClasses.length > 0 ? (
