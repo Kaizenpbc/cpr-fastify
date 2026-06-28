@@ -78,33 +78,33 @@ const OrganizationPaymentSummary: React.FC<OrganizationPaymentSummaryProps> = ({
         <StatCard label="Pending" value={summary.pending_payments} sub="Awaiting verification" dotColor="#ED6C02" />
       </Box>
 
-      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
-        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
+      <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
           Recent Payments
         </Typography>
         {(!summary.recent_payments || summary.recent_payments.length === 0) ? (
-          <Typography sx={{ fontSize: 13, color: '#9CA3AF', fontStyle: 'italic' }}>No recent payments found</Typography>
+          <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, fontStyle: 'italic' }}>No recent payments found</Typography>
         ) : (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {(Array.isArray(summary.recent_payments) ? summary.recent_payments : []).map((payment) => (
-              <Box key={payment.id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, bgcolor: '#F9FAFB', borderRadius: '8px', border: '1px solid #F3F4F6' }}>
+              <Box key={payment.id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, bgcolor: (theme) => theme.palette.background.default, borderRadius: '8px', border: (theme) => `1px solid ${theme.palette.divider}` }}>
                 <Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827', fontFamily: 'monospace' }}>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary, fontFamily: 'monospace' }}>
                       ${Number(payment.amount_paid || 0).toFixed(2)}
                     </Typography>
                     <StatusChip kind={getStatusKind(payment.status)} label={payment.status.replace('_', ' ')} />
                   </Box>
-                  <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>
+                  <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>
                     Invoice: {payment.invoice_number}
                     {payment.course_type_name && ` • ${payment.course_type_name}`}
                   </Typography>
-                  <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>
+                  <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>
                     {formatPaymentMethod(payment.payment_method)} • {formatDisplayDate(payment.payment_date)}
                     {payment.reference_number && ` • Ref: ${payment.reference_number}`}
                   </Typography>
                 </Box>
-                <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{formatDisplayDate(payment.payment_date)}</Typography>
+                <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>{formatDisplayDate(payment.payment_date)}</Typography>
               </Box>
             ))}
           </Box>

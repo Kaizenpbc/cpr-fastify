@@ -13,7 +13,7 @@ const SegmentedToggle: React.FC<SegmentedToggleProps> = ({ value, options, onCha
     exclusive
     onChange={(_, v) => v && onChange(v)}
     sx={{
-      backgroundColor: '#F3F4F6',
+      backgroundColor: (theme) => theme.palette.divider,
       borderRadius: '8px',
       padding: '3px',
       '& .MuiToggleButton-root': {
@@ -23,7 +23,7 @@ const SegmentedToggle: React.FC<SegmentedToggleProps> = ({ value, options, onCha
         fontSize: '13px',
         fontWeight: 600,
         textTransform: 'none',
-        color: '#4B5563',
+        color: (theme) => theme.palette.text.secondary,
         '&.Mui-selected': {
           backgroundColor: '#CC1F1F',
           color: '#ffffff',

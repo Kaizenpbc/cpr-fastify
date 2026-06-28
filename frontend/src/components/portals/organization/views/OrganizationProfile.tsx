@@ -29,8 +29,8 @@ const OrganizationProfile: React.FC<OrganizationProfileProps> = ({ organizationD
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={8}>
-          <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
+          <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
               Organization Information
             </Typography>
             <Grid container spacing={2}>
@@ -55,8 +55,8 @@ const OrganizationProfile: React.FC<OrganizationProfileProps> = ({ organizationD
         </Grid>
 
         <Grid item xs={12} md={4}>
-          <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
+          <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
               Contact Information
             </Typography>
             {[
@@ -65,8 +65,8 @@ const OrganizationProfile: React.FC<OrganizationProfileProps> = ({ organizationD
               ['Address', organizationData?.address || 'N/A'],
             ].map(([label, value]) => (
               <Box key={String(label)} sx={{ mb: 2 }}>
-                <Typography sx={{ fontSize: 12, color: '#9CA3AF', mb: 0.25 }}>{label}</Typography>
-                <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{value}</Typography>
+                <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, mb: 0.25 }}>{label}</Typography>
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{value}</Typography>
               </Box>
             ))}
           </Box>

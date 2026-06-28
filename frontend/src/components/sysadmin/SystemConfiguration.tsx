@@ -128,16 +128,16 @@ const SystemConfiguration: React.FC = () => {
         <Box key={category}>
           {/* Category header */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
               {category} Settings
             </Typography>
-            <Typography sx={{ fontSize: 11, color: '#9CA3AF', bgcolor: '#F3F4F6', px: 1, py: 0.25, borderRadius: '10px', fontWeight: 600 }}>
+            <Typography sx={{ fontSize: 11, color: (theme) => theme.palette.text.secondary, bgcolor: (theme) => theme.palette.divider, px: 1, py: 0.25, borderRadius: '10px', fontWeight: 600 }}>
               {configs.length}
             </Typography>
           </Box>
 
           {/* Config cards */}
-          <Card sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', overflow: 'hidden' }}>
+          <Card sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', overflow: 'hidden' }}>
             {configs.map((config, i) => (
               <Box
                 key={config.configKey}
@@ -148,15 +148,15 @@ const SystemConfiguration: React.FC = () => {
                   gap: 3,
                   px: 3,
                   py: 2,
-                  borderBottom: i < configs.length - 1 ? '1px solid #F3F4F6' : 'none',
+                  borderBottom: i < configs.length - 1 ? (theme: any) => `1px solid ${theme.palette.divider}` : 'none',
                 }}
               >
                 {/* Label + description */}
                 <Box>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                     {config.configKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                   </Typography>
-                  <Typography sx={{ fontSize: 11.5, color: '#9CA3AF', mt: 0.25 }}>
+                  <Typography sx={{ fontSize: 11.5, color: (theme) => theme.palette.text.secondary, mt: 0.25 }}>
                     {config.description}
                   </Typography>
                 </Box>
@@ -171,8 +171,8 @@ const SystemConfiguration: React.FC = () => {
                     '& .MuiOutlinedInput-root': {
                       borderRadius: '8px',
                       fontSize: 13,
-                      '& fieldset': { borderColor: '#E5E7EB' },
-                      '&:hover fieldset': { borderColor: '#9CA3AF' },
+                      '& fieldset': { borderColor: (theme: any) => theme.palette.divider },
+                      '&:hover fieldset': { borderColor: (theme: any) => theme.palette.text.secondary },
                       '&.Mui-focused fieldset': { borderColor: '#CC1F1F' },
                     },
                   }}
@@ -191,7 +191,7 @@ const SystemConfiguration: React.FC = () => {
                     Save
                   </Box>
                   {config.updatedAt && (
-                    <Typography sx={{ fontSize: 10.5, color: '#9CA3AF' }}>
+                    <Typography sx={{ fontSize: 10.5, color: (theme) => theme.palette.text.secondary }}>
                       {new Date(config.updatedAt).toLocaleDateString()}
                     </Typography>
                   )}

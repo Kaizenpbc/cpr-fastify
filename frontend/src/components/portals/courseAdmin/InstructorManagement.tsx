@@ -407,7 +407,7 @@ const InstructorManagement: React.FC = () => {
 
     return (
       <Box sx={{ mt: 2 }}>
-        <Typography sx={{ fontSize: 15, fontWeight: 600, color: '#111827', mb: 2 }}>
+        <Typography sx={{ fontSize: 15, fontWeight: 600, color: (theme) => theme.palette.text.primary, mb: 2 }}>
           Schedule for {viewingInstructor.instructorName}
         </Typography>
         <DataTable
@@ -417,19 +417,19 @@ const InstructorManagement: React.FC = () => {
         >
           {instructorSchedule.length === 0 ? (
             <Box sx={{ py: 3, textAlign: 'center' }}>
-              <Typography sx={{ fontSize: 13, color: '#9CA3AF' }}>No schedule items found</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>No schedule items found</Typography>
             </Box>
           ) : (
             instructorSchedule.map((item) => (
               <DataTableRow key={item.key} columns={scheduleColumns}>
-                <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatDisplayDate(item.displayDate)}</Typography>
-                <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{item.type === 'class' ? 'Class' : 'Availability'}</Typography>
-                <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{item.status}</Typography>
-                <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{item.type === 'class' ? item.location : '-'}</Typography>
-                <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{item.type === 'class' ? item.organizationname : '-'}</Typography>
-                <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{item.type === 'class' ? item.name : '-'}</Typography>
-                <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{item.type === 'class' ? item.studentsregistered : '-'}</Typography>
-                <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{item.type === 'class' ? item.notes : '-'}</Typography>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{formatDisplayDate(item.displayDate)}</Typography>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{item.type === 'class' ? 'Class' : 'Availability'}</Typography>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{item.status}</Typography>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{item.type === 'class' ? item.location : '-'}</Typography>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{item.type === 'class' ? item.organizationname : '-'}</Typography>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{item.type === 'class' ? item.name : '-'}</Typography>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{item.type === 'class' ? item.studentsregistered : '-'}</Typography>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{item.type === 'class' ? item.notes : '-'}</Typography>
               </DataTableRow>
             ))
           )}
@@ -958,19 +958,19 @@ The course status has been updated to "Confirmed" and moved to the confirmed cou
         >
           {pendingCourses.map(course => (
             <DataTableRow key={course.id} columns={pendingColumns}>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                 {course.requestSubmittedDate ? formatDisplayDate(course.requestSubmittedDate) : '-'}
               </Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                 {course.scheduledDate ? formatDisplayDate(course.scheduledDate) : '-'}
               </Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.organizationName}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.location}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{course.organizationName}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{course.location}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                 {course.courseTypeName || course.courseType || '-'}
               </Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.registeredStudents || 0}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.notes}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{course.registeredStudents || 0}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{course.notes}</Typography>
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                 <GhostButton size="small" onClick={() => handleAssignOpen(course)}>
                   Assign Instructor
@@ -986,7 +986,7 @@ The course status has been updated to "Confirmed" and moved to the confirmed cou
 
       {/* Instructor Availability & Assignments Section */}
       <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography sx={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>
+        <Typography sx={{ fontSize: 16, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>
           Instructor Availability &amp; Assignments
         </Typography>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
@@ -998,7 +998,7 @@ The course status has been updated to "Confirmed" and moved to the confirmed cou
                 color="primary"
               />
             }
-            label={<Typography sx={{ fontSize: 13, color: '#4B5563' }}>Show Completed</Typography>}
+            label={<Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Show Completed</Typography>}
           />
           <GhostButton onClick={() => queryClient.invalidateQueries({ queryKey: ['instructors'] })}>
             Refresh Data
@@ -1032,34 +1032,34 @@ The course status has been updated to "Confirmed" and moved to the confirmed cou
                   size={32}
                 />
                 <Box>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                     {instructor.instructorName}
                   </Typography>
-                  <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{instructor.email}</Typography>
+                  <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>{instructor.email}</Typography>
                 </Box>
               </Box>
               <Box>
                 {instructor.availabilityDate && instructor.availabilityDate !== 'No availability set' ? (
                   <StatusChip kind="success" label={formatDisplayDate(instructor.availabilityDate)} />
                 ) : (
-                  <Typography sx={{ fontSize: 12, color: '#9CA3AF', fontStyle: 'italic' }}>
+                  <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, fontStyle: 'italic' }}>
                     No availability set
                   </Typography>
                 )}
               </Box>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                 {instructor.assignedOrganization || '-'}
               </Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                 {instructor.assignedLocation || '-'}
               </Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                 {instructor.assignedCourseType || '-'}
               </Typography>
               <Typography
                 sx={{
                   fontSize: 13,
-                  color: '#4B5563',
+                  color: (theme) => theme.palette.text.secondary,
                   maxWidth: 200,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
@@ -1165,13 +1165,13 @@ The course status has been updated to "Confirmed" and moved to the confirmed cou
         </Box>
 
         {/* Filters */}
-        <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3, mb: 3 }}>
+        <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3, mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1.5 }}>
             <Typography
               sx={{
                 fontSize: 13,
                 fontWeight: 700,
-                color: '#9CA3AF',
+                color: (theme) => theme.palette.text.secondary,
                 textTransform: 'uppercase',
                 letterSpacing: '0.07em',
               }}
@@ -1255,45 +1255,45 @@ The course status has been updated to "Confirmed" and moved to the confirmed cou
         >
           {filteredConfirmedCourses.length === 0 ? (
             <Box sx={{ py: 3, textAlign: 'center' }}>
-              <Typography sx={{ fontSize: 13, color: '#9CA3AF' }}>No confirmed courses yet</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>No confirmed courses yet</Typography>
             </Box>
           ) : (
             filteredConfirmedCourses.map(course => (
               <DataTableRow key={course.id} columns={confirmedColumns}>
-                <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                   {course.requestSubmittedDate ? formatDisplayDate(course.requestSubmittedDate) : '-'}
                 </Typography>
-                <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                   {course.scheduledDate ? formatDisplayDate(course.scheduledDate) : '-'}
                 </Typography>
                 <Box>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                     {course.confirmedDate ? formatDisplayDate(course.confirmedDate) : '-'}
                   </Typography>
                   {course.confirmedStartTime && course.confirmedEndTime && (
-                    <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>
+                    <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>
                       {course.confirmedStartTime.slice(0, 5)} -{' '}
                       {course.confirmedEndTime.slice(0, 5)}
                     </Typography>
                   )}
                 </Box>
-                <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.organizationName}</Typography>
-                <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.location}</Typography>
-                <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{course.organizationName}</Typography>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{course.location}</Typography>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                   {course.courseTypeName || course.courseType || '-'}
                 </Typography>
-                <Typography sx={{ fontSize: 13, color: '#4B5563', textAlign: 'center' }}>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, textAlign: 'center' }}>
                   {course.registeredStudents || 0}
                 </Typography>
-                <Typography sx={{ fontSize: 13, color: '#4B5563', textAlign: 'center' }}>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, textAlign: 'center' }}>
                   {course.studentsAttended || 0}
                 </Typography>
                 <Typography
-                  sx={{ fontSize: 13, color: '#4B5563', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis' }}
+                  sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis' }}
                 >
                   {course.notes || '-'}
                 </Typography>
-                <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                   {course.instructorName || 'Not Assigned'}
                 </Typography>
                 <StatusChip kind="active" label={course.status || ''} />
@@ -1366,42 +1366,42 @@ The course status has been updated to "Confirmed" and moved to the confirmed cou
         >
           {completedCourses.length === 0 ? (
             <Box sx={{ py: 3, textAlign: 'center' }}>
-              <Typography sx={{ fontSize: 13, color: '#9CA3AF' }}>No completed courses yet</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>No completed courses yet</Typography>
             </Box>
           ) : (
             completedCourses.map(course => (
               <DataTableRow key={course.id} columns={completedColumns}>
-                <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                   {course.requestSubmittedDate ? formatDisplayDate(course.requestSubmittedDate) : '-'}
                 </Typography>
                 <Box>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                     {course.confirmedDate ? formatDisplayDate(course.confirmedDate) : '-'}
                   </Typography>
                   {course.confirmedStartTime && course.confirmedEndTime && (
-                    <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>
+                    <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>
                       {course.confirmedStartTime.slice(0, 5)} -{' '}
                       {course.confirmedEndTime.slice(0, 5)}
                     </Typography>
                   )}
                 </Box>
-                <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.organizationName}</Typography>
-                <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.location}</Typography>
-                <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{course.organizationName}</Typography>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{course.location}</Typography>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                   {course.courseTypeName || course.courseType || '-'}
                 </Typography>
-                <Typography sx={{ fontSize: 13, color: '#4B5563', textAlign: 'center' }}>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, textAlign: 'center' }}>
                   {course.registeredStudents || 0}
                 </Typography>
-                <Typography sx={{ fontSize: 13, color: '#4B5563', textAlign: 'center' }}>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, textAlign: 'center' }}>
                   {course.studentsAttended || 0}
                 </Typography>
                 <Typography
-                  sx={{ fontSize: 13, color: '#4B5563', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis' }}
+                  sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis' }}
                 >
                   {course.notes || '-'}
                 </Typography>
-                <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                   {course.instructorName || 'Not Assigned'}
                 </Typography>
                 <StatusChip
@@ -1449,7 +1449,7 @@ The course status has been updated to "Confirmed" and moved to the confirmed cou
 
       {/* Instructor Form Dialog */}
       <Dialog open={open} onClose={handleClose}>
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>
           {editingInstructor ? 'Edit Instructor' : 'Add Instructor'}
         </DialogTitle>
         <DialogContent>
@@ -1492,11 +1492,11 @@ The course status has been updated to "Confirmed" and moved to the confirmed cou
 
       {/* Availability Dialog */}
       <Dialog open={availabilityOpen} onClose={handleAvailabilityClose} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>
           Manage Instructor Availability
         </DialogTitle>
         <DialogContent>
-          <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 2 }}>
+          <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 2 }}>
             Set availability slots for {editingInstructor?.instructorName}
           </Typography>
 
@@ -1554,7 +1554,7 @@ The course status has been updated to "Confirmed" and moved to the confirmed cou
 
       {/* Schedule View Dialog */}
       <Dialog open={scheduleOpen} onClose={handleScheduleClose} maxWidth="lg" fullWidth>
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>
           Instructor Schedule - {viewingInstructor?.instructorName}
         </DialogTitle>
         <DialogContent>{renderScheduleDialogContent()}</DialogContent>
@@ -1565,14 +1565,14 @@ The course status has been updated to "Confirmed" and moved to the confirmed cou
 
       {/* Assign Instructor Dialog */}
       <Dialog open={assignOpen} onClose={handleAssignClose} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>
           Assign Instructor to Course
         </DialogTitle>
         <DialogContent>
           <Box
             sx={{ p: 2, bgcolor: '#EFF6FF', borderRadius: '8px', border: '1px solid #BFDBFE', mb: 2 }}
           >
-            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
               <strong>Course Name:</strong> {selectedCourse?.courseTypeName || selectedCourse?.courseType || '-'}
               <br />
               <strong>Organization:</strong> {selectedCourse?.organizationName}
@@ -1663,14 +1663,14 @@ The course status has been updated to "Confirmed" and moved to the confirmed cou
 
       {/* Edit Schedule Dialog */}
       <Dialog open={editScheduleOpen} onClose={handleEditScheduleClose} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>
           Edit Course Schedule
         </DialogTitle>
         <DialogContent>
           <Box
             sx={{ p: 2, bgcolor: '#EFF6FF', borderRadius: '8px', border: '1px solid #BFDBFE', mb: 2 }}
           >
-            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
               <strong>Course Name:</strong> {courseToEdit?.courseTypeName || courseToEdit?.courseType || '-'}
               <br />
               <strong>Organization:</strong> {courseToEdit?.organizationName}
@@ -1764,12 +1764,12 @@ The course status has been updated to "Confirmed" and moved to the confirmed cou
 
       {/* Edit Date Dialog */}
       <Dialog open={editDialogOpen} onClose={handleEditClose} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>
           Edit Course Schedule
         </DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 2 }}>
-            <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 1 }}>
               Current Schedule:{' '}
               {selectedCourse && selectedCourse.scheduledDate
                 ? formatDisplayDate(selectedCourse.scheduledDate)

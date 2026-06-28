@@ -294,7 +294,7 @@ const VendorInvoiceManagement: React.FC = () => {
     <Box>
       {/* Header */}
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography sx={{ fontSize: 22, fontWeight: 700, color: '#111827' }}>
+        <Typography sx={{ fontSize: 22, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>
           Vendor Invoice Management
         </Typography>
         <StatusChip
@@ -368,55 +368,55 @@ const VendorInvoiceManagement: React.FC = () => {
       >
         {filteredInvoices.map((invoice) => (
           <DataTableRow key={invoice.id} columns={TABLE_COLUMNS}>
-            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
               {new Date(invoice.createdAt || invoice.invoiceDate).toLocaleDateString()}
             </Typography>
-            <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+            <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
               {invoice.billingCompany || invoice.company || invoice.vendorName || '-'}
             </Typography>
-            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
               {invoice.invoiceNumber}
             </Typography>
-            <Typography sx={{ fontSize: 13, color: '#4B5563', textAlign: 'right' }}>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, textAlign: 'right' }}>
               {invoice.quantity || '-'}
             </Typography>
-            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
               {invoice.item || '-'}
             </Typography>
             <Tooltip title={invoice.description}>
-              <Typography sx={{ fontSize: 13, color: '#4B5563', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {invoice.description}
               </Typography>
             </Tooltip>
-            <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace', textAlign: 'right' }}>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, fontFamily: 'monospace', textAlign: 'right' }}>
               {invoice.rate && !isNaN(invoice.rate) && invoice.rate > 0
                 ? `$${Number(invoice.rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                 : '-'}
             </Typography>
-            <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace', textAlign: 'right' }}>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, fontFamily: 'monospace', textAlign: 'right' }}>
               {invoice.amount && !isNaN(Number(invoice.amount))
                 ? `$${Number(invoice.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                 : invoice.total && !isNaN(Number(invoice.total))
                   ? `$${Number(invoice.total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                   : '-'}
             </Typography>
-            <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace', textAlign: 'right' }}>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, fontFamily: 'monospace', textAlign: 'right' }}>
               {invoice.subtotal && !isNaN(Number(invoice.subtotal)) && Number(invoice.subtotal) > 0
                 ? `$${Number(invoice.subtotal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                 : '-'}
             </Typography>
-            <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace', textAlign: 'right' }}>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, fontFamily: 'monospace', textAlign: 'right' }}>
               {invoice.hst && !isNaN(Number(invoice.hst)) && Number(invoice.hst) > 0
                 ? `$${Number(invoice.hst).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                 : '-'}
             </Typography>
-            <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827', fontFamily: 'monospace', textAlign: 'right' }}>
+            <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary, fontFamily: 'monospace', textAlign: 'right' }}>
               {invoice.total && !isNaN(Number(invoice.total)) && Number(invoice.total) > 0
                 ? `$${Number(invoice.total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                 : '-'}
             </Typography>
             <StatusChip kind={getStatusKind(invoice.status)} label={getStatusLabel(invoice.status)} />
-            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
               {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '-'}
             </Typography>
             <Box sx={{ textAlign: 'center' }}>
@@ -435,7 +435,7 @@ const VendorInvoiceManagement: React.FC = () => {
       <Dialog open={viewDialog} onClose={() => setViewDialog(false)} maxWidth="md" fullWidth sx={{ '& .MuiDialog-paper': { maxHeight: '90vh' } }}>
         <DialogTitle>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
+            <Typography sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>
               Invoice Details - #{selectedInvoice?.invoiceNumber}
             </Typography>
             {selectedInvoice && (
@@ -450,34 +450,34 @@ const VendorInvoiceManagement: React.FC = () => {
           {selectedInvoice && (
             <Box>
               {/* Vendor + Payment Summary */}
-              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#F9FAFB', p: 3, mb: 3 }}>
+              <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.default, p: 3, mb: 3 }}>
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={6}>
-                    <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>
+                    <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>
                       Vendor Information
                     </Typography>
                     <Box sx={{ pl: 0 }}>
-                      <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827', mb: 0.5 }}>
+                      <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary, mb: 0.5 }}>
                         {selectedInvoice.vendorName}
                       </Typography>
-                      <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 0.5 }}>
+                      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 0.5 }}>
                         Contact: {selectedInvoice.vendorContact}
                       </Typography>
-                      <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 0.5 }}>
+                      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 0.5 }}>
                         Email: {selectedInvoice.vendorEmail}
                       </Typography>
                       {selectedInvoice.bankName && (
-                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                        <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                           Bank: {selectedInvoice.bankName}
                         </Typography>
                       )}
                     </Box>
                   </Grid>
                   <Grid item xs={12} md={6}>
-                    <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>
+                    <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>
                       Payment Summary
                     </Typography>
-                    <Typography sx={{ fontSize: 20, fontWeight: 700, color: '#111827', fontFamily: 'monospace', mb: 0.5 }}>
+                    <Typography sx={{ fontSize: 20, fontWeight: 700, color: (theme) => theme.palette.text.primary, fontFamily: 'monospace', mb: 0.5 }}>
                       {formatCurrency(parseFloat(selectedInvoice.total.toString()) || 0)}
                     </Typography>
                     <Typography sx={{ fontSize: 13, color: '#16A34A', mb: 0.5 }}>
@@ -491,29 +491,29 @@ const VendorInvoiceManagement: React.FC = () => {
               </Box>
 
               {/* Invoice Details */}
-              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3, mb: 3 }}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
+              <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3, mb: 3 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
                   Invoice Details
                 </Typography>
                 <Grid container spacing={3}>
                   <Grid item xs={12}>
-                    <Typography sx={{ fontSize: 12, color: '#6B7280', mb: 0.5 }}>Description</Typography>
-                    <Box sx={{ p: 2, bgcolor: '#F3F4F6', borderRadius: '6px' }}>
-                      <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                    <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, mb: 0.5 }}>Description</Typography>
+                    <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.divider, borderRadius: '6px' }}>
+                      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                         {selectedInvoice.description}
                       </Typography>
                     </Box>
                   </Grid>
                   <Grid item xs={12} md={6}>
-                    <Typography sx={{ fontSize: 12, color: '#6B7280', mb: 0.5 }}>Invoice Date</Typography>
-                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                    <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, mb: 0.5 }}>Invoice Date</Typography>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                       {formatDate(selectedInvoice.invoiceDate)}
                     </Typography>
                   </Grid>
                   {selectedInvoice.dueDate && (
                     <Grid item xs={12} md={6}>
-                      <Typography sx={{ fontSize: 12, color: '#6B7280', mb: 0.5 }}>Due Date</Typography>
-                      <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                      <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, mb: 0.5 }}>Due Date</Typography>
+                      <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                         {formatDate(selectedInvoice.dueDate)}
                       </Typography>
                     </Grid>
@@ -522,20 +522,20 @@ const VendorInvoiceManagement: React.FC = () => {
               </Box>
 
               {/* Approval Information */}
-              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#F9FAFB', p: 3, mb: 3 }}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
+              <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.default, p: 3, mb: 3 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
                   Approval Information
                 </Typography>
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={6}>
-                    <Typography sx={{ fontSize: 12, color: '#6B7280', mb: 0.5 }}>Approved By</Typography>
-                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                    <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, mb: 0.5 }}>Approved By</Typography>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                       {selectedInvoice.approvedByName}
                     </Typography>
                   </Grid>
                   <Grid item xs={12} md={6}>
-                    <Typography sx={{ fontSize: 12, color: '#6B7280', mb: 0.5 }}>Sent to Accounting</Typography>
-                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                    <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, mb: 0.5 }}>Sent to Accounting</Typography>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                       {formatDate(selectedInvoice.sentToAccountingAt)}
                     </Typography>
                   </Grid>
@@ -543,7 +543,7 @@ const VendorInvoiceManagement: React.FC = () => {
                     <Grid item xs={12}>
                       <Typography sx={{ fontSize: 12, color: '#6B7280', mb: 0.5 }}>Admin Notes</Typography>
                       <Box sx={{ p: 2, bgcolor: '#FFFBEB', borderRadius: '6px', border: '1px solid #FDE68A' }}>
-                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                        <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                           {selectedInvoice.adminNotes}
                         </Typography>
                       </Box>
@@ -553,13 +553,13 @@ const VendorInvoiceManagement: React.FC = () => {
               </Box>
 
               {/* Payment History */}
-              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#F9FAFB', p: 3, mb: 3 }}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
+              <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.default, p: 3, mb: 3 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
                   Payment History
                 </Typography>
                 {paymentHistory.length === 0 ? (
                   <Alert severity="info">
-                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                       No payments have been processed for this invoice yet.
                     </Typography>
                   </Alert>
@@ -567,11 +567,11 @@ const VendorInvoiceManagement: React.FC = () => {
                   <DataTable columns={PAYMENT_HISTORY_COLUMNS} shownCount={paymentHistory.length} totalCount={paymentHistory.length}>
                     {paymentHistory.map((payment) => (
                       <DataTableRow key={payment.id} columns={PAYMENT_HISTORY_COLUMNS}>
-                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatDate(payment.paymentDate)}</Typography>
-                        <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace' }}>{formatCurrency(payment.amount)}</Typography>
+                        <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{formatDate(payment.paymentDate)}</Typography>
+                        <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, fontFamily: 'monospace' }}>{formatCurrency(payment.amount)}</Typography>
                         <StatusChip kind="brand" label={payment.paymentMethod.replace('_', ' ').toUpperCase()} />
-                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{payment.referenceNumber || '-'}</Typography>
-                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{payment.processedByName || 'Unknown'}</Typography>
+                        <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{payment.referenceNumber || '-'}</Typography>
+                        <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{payment.processedByName || 'Unknown'}</Typography>
                         <StatusChip
                           kind={payment.status === 'processed' ? 'success' : 'warning'}
                           label={payment.status.toUpperCase()}
@@ -583,13 +583,13 @@ const VendorInvoiceManagement: React.FC = () => {
               </Box>
 
               {/* Payment Processing */}
-              <Box sx={{ border: '2px solid #E5E7EB', borderRadius: '10px', bgcolor: '#F9FAFB', p: 3 }}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
+              <Box sx={{ border: (theme) => `2px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.default, p: 3 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
                   Payment Processing
                 </Typography>
 
                 <Alert severity="info" sx={{ mb: 2 }}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                     <strong>Debug Info:</strong><br />
                     Balance Due: {selectedInvoice.balanceDue} (Type: {typeof selectedInvoice.balanceDue})<br />
                     Total Paid: {selectedInvoice.totalPaid} (Type: {typeof selectedInvoice.totalPaid})<br />
@@ -601,7 +601,7 @@ const VendorInvoiceManagement: React.FC = () => {
                 {parseFloat(selectedInvoice.balanceDue?.toString() || '0') > 0 ? (
                   <>
                     <Alert severity="info" sx={{ mb: 3 }}>
-                      <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                         <strong>Vendor:</strong> {selectedInvoice.vendorName}<br />
                         <strong>Balance Due:</strong> {formatCurrency(Number(selectedInvoice.balanceDue))}
                       </Typography>
@@ -677,7 +677,7 @@ const VendorInvoiceManagement: React.FC = () => {
                   </>
                 ) : (
                   <Alert severity="success">
-                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                       This invoice has been fully paid. No further action required.
                     </Typography>
                   </Alert>

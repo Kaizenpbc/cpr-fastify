@@ -103,13 +103,13 @@ const PersonnelManagement: React.FC<PersonnelManagementProps> = ({ onViewChange 
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {error && <Alert severity="error" sx={{ mb: 0 }} onClose={() => setError(null)}>{error}</Alert>}
 
-      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff' }}>
-        <Box sx={{ borderBottom: 1, borderColor: '#E5E7EB', px: 3, pt: 1 }}>
+      <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper }}>
+        <Box sx={{ borderBottom: 1, borderColor: (theme) => theme.palette.divider, px: 3, pt: 1 }}>
           <Tabs
             value={tabValue}
             onChange={(_, v) => setTabValue(v)}
             sx={{
-              '& .MuiTab-root': { textTransform: 'none', fontSize: 13, fontWeight: 600, color: '#9CA3AF', minHeight: 42 },
+              '& .MuiTab-root': { textTransform: 'none', fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.secondary, minHeight: 42 },
               '& .Mui-selected': { color: '#CC1F1F !important' },
               '& .MuiTabs-indicator': { backgroundColor: '#CC1F1F' },
             }}
@@ -123,7 +123,7 @@ const PersonnelManagement: React.FC<PersonnelManagementProps> = ({ onViewChange 
         {tabValue === 0 && (
           <Box sx={{ p: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
                 Instructor Profiles ({instructorPagination.total})
               </Typography>
               <SearchBar
@@ -142,19 +142,19 @@ const PersonnelManagement: React.FC<PersonnelManagementProps> = ({ onViewChange 
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                       <UserAvatar initials={instructor.username.charAt(0).toUpperCase()} size={32} />
                       <Box>
-                        <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{instructor.username}</Typography>
-                        <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>ID: {instructor.id}</Typography>
+                        <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{instructor.username}</Typography>
+                        <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>ID: {instructor.id}</Typography>
                       </Box>
                     </Box>
                     <Box>
-                      <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{instructor.email}</Typography>
-                      {instructor.phone && <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{instructor.phone}</Typography>}
+                      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{instructor.email}</Typography>
+                      {instructor.phone && <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>{instructor.phone}</Typography>}
                     </Box>
                     <Box>
-                      <Typography sx={{ fontSize: 13, color: '#111827' }}>Total: {instructor.totalCourses}</Typography>
-                      <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>Completed: {instructor.completedCourses}</Typography>
+                      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}>Total: {instructor.totalCourses}</Typography>
+                      <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>Completed: {instructor.completedCourses}</Typography>
                     </Box>
-                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                       {instructor.lastCourseDate ? formatDate(instructor.lastCourseDate) : '—'}
                     </Typography>
                     <StatusChip kind={instructor.activeCourses > 0 ? 'active' : 'inactive'} label={instructor.activeCourses > 0 ? 'Active' : 'Inactive'} />
@@ -178,7 +178,7 @@ const PersonnelManagement: React.FC<PersonnelManagementProps> = ({ onViewChange 
         {tabValue === 1 && (
           <Box sx={{ p: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
                 Organization Profiles ({organizationPagination.total})
               </Typography>
               <SearchBar
@@ -197,20 +197,20 @@ const PersonnelManagement: React.FC<PersonnelManagementProps> = ({ onViewChange 
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                       <UserAvatar initials={org.name.charAt(0).toUpperCase()} size={32} />
                       <Box>
-                        <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{org.name}</Typography>
-                        <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>ID: {org.id}</Typography>
+                        <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{org.name}</Typography>
+                        <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>ID: {org.id}</Typography>
                       </Box>
                     </Box>
                     <Box>
-                      <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{org.contactEmail}</Typography>
-                      {org.contactPhone && <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{org.contactPhone}</Typography>}
+                      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{org.contactEmail}</Typography>
+                      {org.contactPhone && <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>{org.contactPhone}</Typography>}
                     </Box>
                     <Box>
-                      <Typography sx={{ fontSize: 13, color: '#111827' }}>Total: {org.totalCourses}</Typography>
-                      <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>Completed: {org.completedCourses}</Typography>
+                      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}>Total: {org.totalCourses}</Typography>
+                      <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>Completed: {org.completedCourses}</Typography>
                     </Box>
-                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'right' }}>{org.totalUsers}</Typography>
-                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary, textAlign: 'right' }}>{org.totalUsers}</Typography>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                       {org.lastCourseDate ? formatDate(org.lastCourseDate) : '—'}
                     </Typography>
                     <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
@@ -232,13 +232,13 @@ const PersonnelManagement: React.FC<PersonnelManagementProps> = ({ onViewChange 
 
       {/* User Details Dialog */}
       <Dialog open={userDetailsDialog} onClose={() => setUserDetailsDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>User Profile Details</DialogTitle>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>User Profile Details</DialogTitle>
         <DialogContent>
           {selectedUser && (
             <Box sx={{ pt: 1 }}>
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
-                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Basic Information</Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Basic Information</Typography>
                   {[
                     ['Username', selectedUser.user.username],
                     ['Email', selectedUser.user.email],
@@ -246,24 +246,24 @@ const PersonnelManagement: React.FC<PersonnelManagementProps> = ({ onViewChange 
                     ...(selectedUser.user.phone ? [['Phone', selectedUser.user.phone]] : []),
                     ['Created', formatDate(selectedUser.user.createdAt)],
                   ].map(([label, value]) => (
-                    <Box key={String(label)} sx={{ display: 'flex', borderBottom: '1px solid #F3F4F6', py: 0.75 }}>
-                      <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#9CA3AF', width: 100 }}>{label}</Typography>
-                      <Typography sx={{ fontSize: 13, color: '#111827' }}>{value}</Typography>
+                    <Box key={String(label)} sx={{ display: 'flex', borderBottom: (theme) => `1px solid ${theme.palette.divider}`, py: 0.75 }}>
+                      <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.secondary, width: 100 }}>{label}</Typography>
+                      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}>{value}</Typography>
                     </Box>
                   ))}
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Profile Changes History</Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Profile Changes History</Typography>
                   <Box sx={{ maxHeight: 200, overflow: 'auto' }}>
                     {selectedUser.profileChanges.length > 0 ? (
                       selectedUser.profileChanges.map((change: { id: number; fieldName: string; newValue: string; status: string; createdAt: string }) => (
-                        <Box key={change.id} sx={{ p: 1.5, bgcolor: '#F9FAFB', borderRadius: '8px', mb: 1 }}>
-                          <Typography sx={{ fontSize: 13, color: '#111827' }}><strong>{change.fieldName}:</strong> {change.newValue}</Typography>
-                          <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>Status: {change.status} — {formatDate(change.createdAt)}</Typography>
+                        <Box key={change.id} sx={{ p: 1.5, bgcolor: (theme) => theme.palette.background.default, borderRadius: '8px', mb: 1 }}>
+                          <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}><strong>{change.fieldName}:</strong> {change.newValue}</Typography>
+                          <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>Status: {change.status} — {formatDate(change.createdAt)}</Typography>
                         </Box>
                       ))
                     ) : (
-                      <Typography sx={{ fontSize: 13, color: '#9CA3AF' }}>No profile changes found</Typography>
+                      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>No profile changes found</Typography>
                     )}
                   </Box>
                 </Grid>

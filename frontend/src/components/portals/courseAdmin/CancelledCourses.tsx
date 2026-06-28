@@ -37,20 +37,20 @@ const CancelledCourses: React.FC = () => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {courses.length === 0 ? (
-        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
-          <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#9CA3AF' }}>No cancelled courses found</Typography>
+        <Box sx={{ bgcolor: (theme) => theme.palette.background.paper, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ fontSize: 14, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>No cancelled courses found</Typography>
         </Box>
       ) : (
         <DataTable columns={columns} shownCount={courses.length} totalCount={courses.length}>
           {courses.map((course: { id: number; courseTypeName: string; organizationName: string; scheduledDate: string; cancelledAt: string; cancellationReason: string; location: string; registeredStudents: number }) => (
             <DataTableRow key={course.id} columns={columns}>
-              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{course.courseTypeName}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.organizationName}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatDateWithoutTimezone(course.scheduledDate)}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatDateWithoutTimezone(course.cancelledAt)}</Typography>
-              <Typography sx={{ fontSize: 12.5, color: '#9CA3AF' }}>{course.cancellationReason}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.location}</Typography>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'right' }}>{course.registeredStudents}</Typography>
+              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{course.courseTypeName}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{course.organizationName}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{formatDateWithoutTimezone(course.scheduledDate)}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{formatDateWithoutTimezone(course.cancelledAt)}</Typography>
+              <Typography sx={{ fontSize: 12.5, color: (theme) => theme.palette.text.secondary }}>{course.cancellationReason}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{course.location}</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary, textAlign: 'right' }}>{course.registeredStudents}</Typography>
             </DataTableRow>
           ))}
         </DataTable>

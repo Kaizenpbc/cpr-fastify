@@ -47,20 +47,20 @@ const NotificationItem: React.FC<{
 }> = ({ notification, onMarkAsRead, onDelete }) => (
   <Box sx={{
     p: 2,
-    borderBottom: '1px solid #F3F4F6',
-    bgcolor: notification.isRead ? 'transparent' : '#F9FAFB',
+    borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+    bgcolor: notification.isRead ? 'transparent' : (theme) => theme.palette.background.default,
     borderLeft: notification.isRead ? 'none' : '3px solid #CC1F1F',
   }}>
     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
       <Box sx={{ flex: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-          <Typography sx={{ fontSize: 13.5, fontWeight: notification.isRead ? 400 : 700, color: '#111827' }}>{notification.title}</Typography>
+          <Typography sx={{ fontSize: 13.5, fontWeight: notification.isRead ? 400 : 700, color: (theme) => theme.palette.text.primary }}>{notification.title}</Typography>
           <StatusChip kind={getNotificationKind(notification.type)} label={notification.type.replace(/_/g, ' ').toUpperCase()} />
         </Box>
-        <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 0.5 }}>{notification.message}</Typography>
+        <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 0.5 }}>{notification.message}</Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{new Date(notification.createdAt).toLocaleString()}</Typography>
-          {notification.senderName && <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>From: {notification.senderName}</Typography>}
+          <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>{new Date(notification.createdAt).toLocaleString()}</Typography>
+          {notification.senderName && <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>From: {notification.senderName}</Typography>}
         </Box>
       </Box>
       <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
@@ -100,7 +100,7 @@ const SendNotificationDialog: React.FC<{
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>Send Notification</DialogTitle>
+      <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>Send Notification</DialogTitle>
       <DialogContent>
         <Grid container spacing={2} sx={{ mt: 0.5 }}>
           <Grid item xs={12}><TextField fullWidth label="Recipient IDs (comma-separated)" value={recipientIds} onChange={(e) => setRecipientIds(e.target.value)} placeholder="1, 2, 3" required /></Grid>
@@ -202,8 +202,8 @@ const NotificationsPanel: React.FC = () => {
 
       {/* System Overview */}
       {systemNotifications && (
-        <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
-          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>System Overview</Typography>
+        <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>System Overview</Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, mb: 2 }}>
             {[
               ['Pending Timesheets', systemNotifications.pendingTimesheets],
@@ -211,18 +211,18 @@ const NotificationsPanel: React.FC = () => {
               ['Pending Payments', systemNotifications.pendingPayments],
             ].map(([label, value]) => (
               <Box key={String(label)}>
-                <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF' }}>{label}</Typography>
+                <Typography sx={{ fontSize: 12, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>{label}</Typography>
                 <Typography sx={{ fontSize: 20, fontWeight: 700, color: '#ED6C02' }}>{value}</Typography>
               </Box>
             ))}
           </Box>
           {systemNotifications.recentActivities.length > 0 && (
             <>
-              <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', mb: 1 }}>Recent Activities</Typography>
+              <Typography sx={{ fontSize: 12, fontWeight: 600, color: (theme) => theme.palette.text.secondary, mb: 1 }}>Recent Activities</Typography>
               {systemNotifications.recentActivities.map((activity, index) => (
-                <Box key={index} sx={{ p: 1.5, bgcolor: '#F9FAFB', borderRadius: '6px', mb: 0.5 }}>
-                  <Typography sx={{ fontSize: 13, color: '#111827' }}>{activity.message}</Typography>
-                  <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{new Date(activity.timestamp).toLocaleString()}</Typography>
+                <Box key={index} sx={{ p: 1.5, bgcolor: (theme) => theme.palette.background.default, borderRadius: '6px', mb: 0.5 }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}>{activity.message}</Typography>
+                  <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>{new Date(activity.timestamp).toLocaleString()}</Typography>
                 </Box>
               ))}
             </>
@@ -242,11 +242,11 @@ const NotificationsPanel: React.FC = () => {
       </Box>
 
       {/* Notifications List */}
-      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', overflow: 'hidden' }}>
+      <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, overflow: 'hidden' }}>
         {notifications.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 4 }}>
-            <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#9CA3AF' }}>No notifications found</Typography>
-            <Typography sx={{ fontSize: 13, color: '#9CA3AF', mt: 0.5 }}>You're all caught up!</Typography>
+            <Typography sx={{ fontSize: 14, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>No notifications found</Typography>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mt: 0.5 }}>You're all caught up!</Typography>
           </Box>
         ) : (
           notifications.map((notification) => (

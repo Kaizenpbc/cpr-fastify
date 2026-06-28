@@ -125,8 +125,8 @@ const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
       {/* Charts */}
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
-          <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3, height: 380 }}>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
+          <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3, height: 380 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
               Invoice Status Distribution
             </Typography>
             <ResponsiveContainer width="100%" height={260}>
@@ -153,7 +153,7 @@ const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
                 {displayInvoiceData.map((entry) => (
                   <Box key={entry.name} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                     <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: entry.color }} />
-                    <Typography sx={{ fontSize: 11, color: '#4B5563' }}>{entry.name}: {entry.value}</Typography>
+                    <Typography sx={{ fontSize: 11, color: (theme) => theme.palette.text.secondary }}>{entry.name}: {entry.value}</Typography>
                   </Box>
                 ))}
               </Box>
@@ -162,8 +162,8 @@ const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3, height: 380 }}>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
+          <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3, height: 380 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
               Course Activity Overview
             </Typography>
             <ResponsiveContainer width="100%" height={300}>
@@ -183,17 +183,17 @@ const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
       <Grid container spacing={3}>
         <Grid item xs={12} md={8}>
           {recentCourses.length === 0 ? (
-            <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
-              <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#9CA3AF' }}>No courses found</Typography>
+            <Box sx={{ bgcolor: (theme) => theme.palette.background.paper, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 6, textAlign: 'center' }}>
+              <Typography sx={{ fontSize: 14, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>No courses found</Typography>
             </Box>
           ) : (
             <DataTable columns={recentColumns} shownCount={recentCourses.length} totalCount={courses.length}>
               {recentCourses.map((course) => (
                 <DataTableRow key={course.id} columns={recentColumns}>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{course.courseTypeName}</Typography>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatDisplayDate(course.requestSubmittedDate)}</Typography>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.location}</Typography>
-                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'right' }}>{course.registeredStudents}</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{course.courseTypeName}</Typography>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{formatDisplayDate(course.requestSubmittedDate)}</Typography>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{course.location}</Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary, textAlign: 'right' }}>{course.registeredStudents}</Typography>
                   <StatusChip kind={getStatusKind(course.status)} label={course.status} />
                 </DataTableRow>
               ))}
@@ -202,32 +202,32 @@ const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
         </Grid>
 
         <Grid item xs={12} md={4}>
-          <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
+          <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
               Billing Summary
             </Typography>
 
             {[
-              { label: 'Total Invoices', value: billingSummary?.total_invoices || 0, color: '#111827', pct: 100 },
+              { label: 'Total Invoices', value: billingSummary?.total_invoices || 0, color: 'text.primary', pct: 100 },
               { label: 'Pending Amount', value: `$${Number(billingSummary?.pending_amount || 0).toFixed(2)}`, color: '#ED6C02', pct: billingSummary?.total_amount ? (billingSummary.pending_amount / billingSummary.total_amount) * 100 : 0 },
               { label: 'Overdue Amount', value: `$${Number(billingSummary?.overdue_amount || 0).toFixed(2)}`, color: '#CC1F1F', pct: billingSummary?.total_amount ? (billingSummary.overdue_amount / billingSummary.total_amount) * 100 : 0 },
               { label: 'Paid Amount', value: `$${Number(billingSummary?.paid_amount || 0).toFixed(2)}`, color: '#16A34A', pct: billingSummary?.total_amount ? (billingSummary.paid_amount / billingSummary.total_amount) * 100 : 0 },
             ].map(({ label, value, color, pct }) => (
               <Box key={label} sx={{ mb: 2 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                  <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{label}</Typography>
+                  <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>{label}</Typography>
                   <Typography sx={{ fontSize: 14, fontWeight: 700, color }}>{value}</Typography>
                 </Box>
                 <LinearProgress
                   variant="determinate"
                   value={pct}
-                  sx={{ height: 4, borderRadius: 2, bgcolor: '#F3F4F6', '& .MuiLinearProgress-bar': { bgcolor: color, borderRadius: 2 } }}
+                  sx={{ height: 4, borderRadius: 2, bgcolor: (theme) => theme.palette.divider, '& .MuiLinearProgress-bar': { bgcolor: color, borderRadius: 2 } }}
                 />
               </Box>
             ))}
 
-            <Box sx={{ borderTop: '1px solid #E5E7EB', pt: 2, mt: 2 }}>
-              <Typography sx={{ fontSize: 12, color: '#9CA3AF', mb: 1 }}>Quick Actions</Typography>
+            <Box sx={{ borderTop: (theme) => `1px solid ${theme.palette.divider}`, pt: 2, mt: 2 }}>
+              <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, mb: 1 }}>Quick Actions</Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <GhostButton onClick={() => navigate('/organization/billing')} sx={{ fontSize: 12 }}>View Invoices</GhostButton>
                 <GhostButton onClick={() => navigate('/organization/billing')} sx={{ fontSize: 12 }}>Submit Payment</GhostButton>

@@ -201,8 +201,8 @@ const TimesheetProcessingDashboard: React.FC = () => {
       </Box>
 
       {/* Filters */}
-      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
-        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Filters</Typography>
+      <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Filters</Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
           <FormControl fullWidth>
             <InputLabel>Status</InputLabel>
@@ -219,8 +219,8 @@ const TimesheetProcessingDashboard: React.FC = () => {
       </Box>
 
       {/* Timesheets Table */}
-      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
-        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
+      <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
           Timesheets ({pagination.total} total)
         </Typography>
 
@@ -232,16 +232,16 @@ const TimesheetProcessingDashboard: React.FC = () => {
               {timesheets.map((ts) => (
                 <DataTableRow key={ts.id} columns={timesheetColumns}>
                   <Box>
-                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{ts.instructorName}</Typography>
-                    <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{ts.instructorEmail}</Typography>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{ts.instructorName}</Typography>
+                    <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>{ts.instructorEmail}</Typography>
                   </Box>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                     {format(new Date(ts.weekStartDate), 'MMM dd, yyyy')} — {format(new Date(new Date(ts.weekStartDate).getTime() + 6 * 24 * 60 * 60 * 1000), 'MMM dd, yyyy')}
                   </Typography>
-                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'right' }}>{ts.totalHours}</Typography>
-                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'right' }}>{ts.coursesTaught}</Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary, textAlign: 'right' }}>{ts.totalHours}</Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary, textAlign: 'right' }}>{ts.coursesTaught}</Typography>
                   <StatusChip kind={getStatusKind(ts.status)} label={ts.status} />
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{format(new Date(ts.createdAt), 'MMM dd, yyyy')}</Typography>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{format(new Date(ts.createdAt), 'MMM dd, yyyy')}</Typography>
                   <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <Box onClick={() => { setSelectedTimesheet(ts); setDetailDialogOpen(true); }} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>View</Box>
                   </Box>
@@ -260,7 +260,7 @@ const TimesheetProcessingDashboard: React.FC = () => {
 
       {/* Timesheet Detail Dialog */}
       <Dialog open={detailDialogOpen} onClose={() => setDetailDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827', display: 'flex', alignItems: 'center', gap: 2 }}>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary, display: 'flex', alignItems: 'center', gap: 2 }}>
           Timesheet Details
           {selectedTimesheet && <StatusChip kind={getStatusKind(selectedTimesheet.status)} label={selectedTimesheet.status} />}
         </DialogTitle>
@@ -277,25 +277,25 @@ const TimesheetProcessingDashboard: React.FC = () => {
                   ['Last Updated', format(new Date(selectedTimesheet.updatedAt), 'MMM dd, yyyy HH:mm')],
                 ].map(([label, value]) => (
                   <Box key={String(label)}>
-                    <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF' }}>{label}</Typography>
-                    <Typography sx={{ fontSize: 13, color: '#111827' }}>{value}</Typography>
+                    <Typography sx={{ fontSize: 12, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>{label}</Typography>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}>{value}</Typography>
                   </Box>
                 ))}
               </Box>
 
               {selectedTimesheet.courseDetails && selectedTimesheet.courseDetails.length > 0 && (
                 <Box sx={{ mb: 2 }}>
-                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Course Details</Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Course Details</Typography>
                   <DataTable columns={courseDetailColumns} shownCount={selectedTimesheet.courseDetails.length} totalCount={selectedTimesheet.courseDetails.length}>
                     {selectedTimesheet.courseDetails.map((course: CourseDetail, index: number) => (
                       <DataTableRow key={index} columns={courseDetailColumns}>
-                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{format(new Date(course.date), 'MMM dd, yyyy')}</Typography>
-                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.startTime && course.endTime ? `${course.startTime} - ${course.endTime}` : 'TBD'}</Typography>
-                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.organizationName || 'TBD'}</Typography>
-                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.location || 'TBD'}</Typography>
-                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.courseType}</Typography>
-                        <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'right' }}>{course.studentCount ?? '—'}</Typography>
-                        {course.status ? <StatusChip kind={course.status === 'completed' ? 'success' : 'active'} label={course.status} /> : <Typography sx={{ fontSize: 13, color: '#9CA3AF' }}>—</Typography>}
+                        <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{format(new Date(course.date), 'MMM dd, yyyy')}</Typography>
+                        <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{course.startTime && course.endTime ? `${course.startTime} - ${course.endTime}` : 'TBD'}</Typography>
+                        <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{course.organizationName || 'TBD'}</Typography>
+                        <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{course.location || 'TBD'}</Typography>
+                        <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{course.courseType}</Typography>
+                        <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary, textAlign: 'right' }}>{course.studentCount ?? '—'}</Typography>
+                        {course.status ? <StatusChip kind={course.status === 'completed' ? 'success' : 'active'} label={course.status} /> : <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>—</Typography>}
                       </DataTableRow>
                     ))}
                   </DataTable>
@@ -319,12 +319,12 @@ const TimesheetProcessingDashboard: React.FC = () => {
 
       {/* Approval Dialog */}
       <Dialog open={approvalDialogOpen} onClose={() => setApprovalDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>
           {approvalAction === 'approve' ? 'Approve' : 'Reject'} Timesheet
         </DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 1 }}>
-            <Typography sx={{ fontSize: 14, color: '#4B5563', mb: 2 }}>
+            <Typography sx={{ fontSize: 14, color: (theme) => theme.palette.text.secondary, mb: 2 }}>
               Are you sure you want to {approvalAction} this timesheet?
             </Typography>
             <TextField fullWidth multiline rows={4} label="Comment (optional)" value={approvalComment} onChange={(e) => setApprovalComment(e.target.value)} />
@@ -340,7 +340,7 @@ const TimesheetProcessingDashboard: React.FC = () => {
 
       {/* Reminder Dialog */}
       <Dialog open={reminderDialogOpen} onClose={() => setReminderDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>Send Timesheet Reminders</DialogTitle>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>Send Timesheet Reminders</DialogTitle>
         <DialogContent>
           {reminderLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={24} /></Box>
@@ -353,8 +353,8 @@ const TimesheetProcessingDashboard: React.FC = () => {
                 <DataTable columns={reminderColumns} shownCount={pendingReminders.instructorsWithoutTimesheet.length} totalCount={pendingReminders.instructorsWithoutTimesheet.length}>
                   {pendingReminders.instructorsWithoutTimesheet.map((instructor) => (
                     <DataTableRow key={instructor.id} columns={reminderColumns}>
-                      <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{instructor.username}</Typography>
-                      <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{instructor.email}</Typography>
+                      <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{instructor.username}</Typography>
+                      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{instructor.email}</Typography>
                       <Box sx={{ display: 'flex', justifyContent: 'center' }}>
                         <StatusChip kind={instructor.completed_courses > 0 ? 'active' : 'neutral'} label={String(instructor.completed_courses)} />
                       </Box>

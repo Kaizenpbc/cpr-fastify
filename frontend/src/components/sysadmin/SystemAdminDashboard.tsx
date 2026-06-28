@@ -71,70 +71,70 @@ const SystemAdminDashboard = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
       <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
         {/* Recent Users */}
         <Box>
-          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1.5 }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1.5 }}>
             Recent Users
           </Typography>
           {recentActivity?.users?.length > 0 ? (
             <DataTable columns={userColumns} shownCount={recentActivity.users.length} totalCount={recentActivity.users.length}>
               {recentActivity.users.map((user: any, i: number) => (
                 <DataTableRow key={i} columns={userColumns}>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{user.username}</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{user.username}</Typography>
                   <RoleChip role={user.role} />
-                  <Typography sx={{ fontSize: 12.5, color: '#9CA3AF', textAlign: 'right' }}>{formatDate(user.createdAt)}</Typography>
+                  <Typography sx={{ fontSize: 12.5, color: (theme) => theme.palette.text.secondary, textAlign: 'right' }}>{formatDate(user.createdAt)}</Typography>
                 </DataTableRow>
               ))}
             </DataTable>
           ) : (
-            <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 4, textAlign: 'center' }}>
-              <Typography sx={{ color: '#9CA3AF', fontSize: 13 }}>No recent user activity</Typography>
+            <Box sx={{ bgcolor: (theme) => theme.palette.background.paper, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 4, textAlign: 'center' }}>
+              <Typography sx={{ color: (theme) => theme.palette.text.secondary, fontSize: 13 }}>No recent user activity</Typography>
             </Box>
           )}
         </Box>
 
         {/* Recent Courses */}
         <Box>
-          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1.5 }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1.5 }}>
             Recent Courses
           </Typography>
           {recentActivity?.courses?.length > 0 ? (
             <DataTable columns={courseColumns} shownCount={recentActivity.courses.length} totalCount={recentActivity.courses.length}>
               {recentActivity.courses.map((course: any, i: number) => (
                 <DataTableRow key={i} columns={courseColumns}>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{course.name}</Typography>
-                  <Typography sx={{ fontSize: 12, fontFamily: 'monospace', color: '#4B5563' }}>{course.courseCode || '—'}</Typography>
-                  <Typography sx={{ fontSize: 12.5, color: '#9CA3AF', textAlign: 'right' }}>{formatDate(course.createdAt)}</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{course.name}</Typography>
+                  <Typography sx={{ fontSize: 12, fontFamily: 'monospace', color: (theme) => theme.palette.text.secondary }}>{course.courseCode || '—'}</Typography>
+                  <Typography sx={{ fontSize: 12.5, color: (theme) => theme.palette.text.secondary, textAlign: 'right' }}>{formatDate(course.createdAt)}</Typography>
                 </DataTableRow>
               ))}
             </DataTable>
           ) : (
-            <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 4, textAlign: 'center' }}>
-              <Typography sx={{ color: '#9CA3AF', fontSize: 13 }}>No recent course activity</Typography>
+            <Box sx={{ bgcolor: (theme) => theme.palette.background.paper, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 4, textAlign: 'center' }}>
+              <Typography sx={{ color: (theme) => theme.palette.text.secondary, fontSize: 13 }}>No recent course activity</Typography>
             </Box>
           )}
         </Box>
       </Box>
 
       {/* System Status */}
-      <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: '20px 24px' }}>
-        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
+      <Box sx={{ bgcolor: (theme) => theme.palette.background.paper, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: '20px 24px' }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
           System Status
         </Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Platform</Typography>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Platform</Typography>
             <StatusChip kind="active" label="Operational" />
           </Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Database</Typography>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Database</Typography>
             <StatusChip kind="active" label="Connected" />
           </Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Last Backup</Typography>
-            <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Today 02:00 AM</Typography>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Last Backup</Typography>
+            <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>Today 02:00 AM</Typography>
           </Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Version</Typography>
-            <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', fontFamily: 'monospace' }}>v1.0.0</Typography>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Version</Typography>
+            <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary, fontFamily: 'monospace' }}>v1.0.0</Typography>
           </Box>
         </Box>
       </Box>

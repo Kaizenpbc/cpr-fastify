@@ -7,6 +7,7 @@ import DataTable, { DataTableRow } from '../gtacpr/DataTable';
 import { PrimaryButton, GhostButton } from '../gtacpr/Buttons';
 import ErrorBoundary from '../common/ErrorBoundary';
 import { AdminShell } from '../gtacpr';
+import { useClientPagination } from '../../hooks/useClientPagination';
 import AccountingDashboard from './accounting/AccountingDashboard';
 import PaymentRequestsDashboard from '../accounting/PaymentRequestsDashboard';
 import VendorInvoiceManagement from './accounting/VendorInvoiceManagement';
@@ -106,6 +107,7 @@ const AccountsReceivableView: React.FC = () => {
   const [showRecordPaymentDialog, setShowRecordPaymentDialog] = useState(false);
   const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null);
   const { showSuccess, showError } = useSnackbar();
+  const { paged: pagedAR, page: arPage, hasNextPage: arHasNext, onPrevPage: onARPrev, onNextPage: onARNext, shownCount: arShown, totalCount: arTotal } = useClientPagination(invoices, 25);
 
   const fetchInvoices = useCallback(async () => {
     setIsLoading(true);
@@ -208,6 +210,7 @@ const PendingApprovalsView: React.FC = () => {
   const [showInvoiceDetailDialog, setShowInvoiceDetailDialog] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null);
   const { showSuccess, showError } = useSnackbar();
+  const { paged: pagedPending, page: pendingPage, hasNextPage: pendingHasNext, onPrevPage: onPendingPrev, onNextPage: onPendingNext } = useClientPagination(invoices, 25);
 
   const fetchPendingApprovals = useCallback(async () => {
     setIsLoading(true);
@@ -310,18 +313,18 @@ const PendingApprovalsView: React.FC = () => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {invoices.length === 0 ? (
-        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
-          <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#9CA3AF' }}>No invoices pending approval</Typography>
+        <Box sx={{ bgcolor: (theme) => theme.palette.background.paper, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ fontSize: 14, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>No invoices pending approval</Typography>
         </Box>
       ) : (
-        <DataTable columns={pendingColumns} shownCount={invoices.length} totalCount={invoices.length}>
-          {invoices.map((invoice) => (
+        <DataTable columns={pendingColumns} shownCount={pagedPending.length} totalCount={invoices.length} page={pendingPage} onPrevPage={onPendingPrev} onNextPage={onPendingNext} hasNextPage={pendingHasNext}>
+          {pagedPending.map((invoice) => (
             <DataTableRow key={invoice.id} columns={pendingColumns}>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{(invoice as Record<string, unknown>).invoice_number as string || '-'}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{(invoice as Record<string, unknown>).organization_name as string || '-'}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{(invoice as Record<string, unknown>).course_type_name as string || '-'}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatDate((invoice as Record<string, unknown>).invoice_date as string)}</Typography>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', fontFamily: 'monospace', textAlign: 'right' }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{(invoice as Record<string, unknown>).invoice_number as string || '-'}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{(invoice as Record<string, unknown>).organization_name as string || '-'}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{(invoice as Record<string, unknown>).course_type_name as string || '-'}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{formatDate((invoice as Record<string, unknown>).invoice_date as string)}</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary, fontFamily: 'monospace', textAlign: 'right' }}>
                 {formatCurrency(parseFloat(String((invoice as Record<string, unknown>).base_cost || 0)) + parseFloat(String((invoice as Record<string, unknown>).tax_amount || 0)))}
               </Typography>
               <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -355,6 +358,7 @@ const RejectedInvoicesView: React.FC = () => {
   const [showInvoiceDetailDialog, setShowInvoiceDetailDialog] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null);
   const { showSuccess, showError } = useSnackbar();
+  const { paged: pagedRejected, page: rejectedPage, hasNextPage: rejectedHasNext, onPrevPage: onRejectedPrev, onNextPage: onRejectedNext } = useClientPagination(invoices, 25);
 
   const fetchRejectedInvoices = useCallback(async () => {
     setIsLoading(true);
@@ -445,20 +449,20 @@ const RejectedInvoicesView: React.FC = () => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {invoices.length === 0 ? (
-        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
-          <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#9CA3AF' }}>No rejected invoices</Typography>
+        <Box sx={{ bgcolor: (theme) => theme.palette.background.paper, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ fontSize: 14, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>No rejected invoices</Typography>
         </Box>
       ) : (
-        <DataTable columns={rejectedColumns} shownCount={invoices.length} totalCount={invoices.length}>
-          {invoices.map((invoice) => (
+        <DataTable columns={rejectedColumns} shownCount={pagedRejected.length} totalCount={invoices.length} page={rejectedPage} onPrevPage={onRejectedPrev} onNextPage={onRejectedNext} hasNextPage={rejectedHasNext}>
+          {pagedRejected.map((invoice) => (
             <DataTableRow key={invoice.id} columns={rejectedColumns}>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{(invoice as Record<string, unknown>).invoiceNumber as string || '-'}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{(invoice as Record<string, unknown>).organizationName as string || '-'}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{(invoice as Record<string, unknown>).courseTypeName as string || '-'}</Typography>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', fontFamily: 'monospace', textAlign: 'right' }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{(invoice as Record<string, unknown>).invoiceNumber as string || '-'}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{(invoice as Record<string, unknown>).organizationName as string || '-'}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{(invoice as Record<string, unknown>).courseTypeName as string || '-'}</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary, fontFamily: 'monospace', textAlign: 'right' }}>
                 {formatCurrency(parseFloat(String((invoice as Record<string, unknown>).baseCost || 0)) + parseFloat(String((invoice as Record<string, unknown>).taxAmount || 0)))}
               </Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatDate((invoice as Record<string, unknown>).rejectedAt as string)}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{formatDate((invoice as Record<string, unknown>).rejectedAt as string)}</Typography>
               <Typography sx={{ fontSize: 12, color: '#CC1F1F', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={(invoice as Record<string, unknown>).rejectionReason as string}>
                 {(invoice as Record<string, unknown>).rejectionReason as string || '-'}
               </Typography>
@@ -575,7 +579,7 @@ const AccountingPortal: React.FC = () => {
           <Route path="vendor-invoices" element={<VendorInvoiceManagement />} />
           <Route path="paid-vendor-invoices" element={<PaidVendorInvoices />} />
           <Route path="" element={<Navigate to="dashboard" replace />} />
-          <Route path="*" element={<Box sx={{ p: 3 }}><Typography sx={{ fontSize: 14, fontWeight: 600, color: '#9CA3AF' }}>View not found</Typography></Box>} />
+          <Route path="*" element={<Box sx={{ p: 3 }}><Typography sx={{ fontSize: 14, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>View not found</Typography></Box>} />
         </Routes>
       </AdminShell>
     </ErrorBoundary>

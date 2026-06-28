@@ -37,7 +37,7 @@ const statusToChipKind = (status: string): 'success' | 'active' | 'warning' | 'd
 const sectionHeader = {
   fontSize: 13,
   fontWeight: 700,
-  color: '#9CA3AF',
+  color: (theme: any) => theme.palette.text.secondary,
   textTransform: 'uppercase' as const,
   letterSpacing: '0.07em',
   mb: 1.5,
@@ -45,17 +45,17 @@ const sectionHeader = {
 
 const detailSection = {
   p: 2,
-  bgcolor: '#F9FAFB',
+  bgcolor: (theme: any) => theme.palette.background.default,
   borderRadius: '8px',
-  border: '1px solid #E5E7EB',
+  border: (theme: any) => `1px solid ${theme.palette.divider}`,
 };
 
 const labelValue = (label: string, value: React.ReactNode) => (
   <Box sx={{ mb: 0.75 }}>
-    <Typography component="span" sx={{ fontSize: 13, fontWeight: 600, color: '#4B5563' }}>
+    <Typography component="span" sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>
       {label}:{' '}
     </Typography>
-    <Typography component="span" sx={{ fontSize: 13, color: '#111827' }}>
+    <Typography component="span" sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}>
       {value}
     </Typography>
   </Box>
@@ -127,7 +127,7 @@ const PaymentRequestDetailDialog: React.FC<PaymentRequestDetailDialogProps> = ({
     <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
       <DialogTitle sx={{ pb: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
+          <Typography sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>
             Payment Request Details
           </Typography>
           <StatusChip
@@ -187,11 +187,11 @@ const PaymentRequestDetailDialog: React.FC<PaymentRequestDetailDialogProps> = ({
               <Typography sx={sectionHeader}>Classes Covered</Typography>
               <Box sx={{ maxHeight: 200, overflow: 'auto' }}>
                 {request.classDetails.map((classDetail, index) => (
-                  <Box key={index} sx={{ mb: 1, p: 1.5, bgcolor: '#fff', borderRadius: '6px', border: '1px solid #E5E7EB' }}>
-                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>
+                  <Box key={index} sx={{ mb: 1, p: 1.5, bgcolor: (theme) => theme.palette.background.paper, borderRadius: '6px', border: (theme) => `1px solid ${theme.palette.divider}` }}>
+                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                       {classDetail.course_name}
                     </Typography>
-                    <Typography sx={{ fontSize: 12, color: '#4B5563' }}>
+                    <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>
                       Hours: {classDetail.hours} | Date: {new Date(classDetail.date).toLocaleDateString()}
                       {classDetail.location && ` | Location: ${classDetail.location}`}
                     </Typography>
@@ -216,8 +216,8 @@ const PaymentRequestDetailDialog: React.FC<PaymentRequestDetailDialogProps> = ({
             </Box>
             {request.notes && (
               <Box sx={{ mt: 1 }}>
-                <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#4B5563', mb: 0.5 }}>Notes:</Typography>
-                <Typography sx={{ fontSize: 13, color: '#111827', bgcolor: '#fff', p: 1.5, borderRadius: '6px', border: '1px solid #E5E7EB' }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.secondary, mb: 0.5 }}>Notes:</Typography>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary, bgcolor: (theme) => theme.palette.background.paper, p: 1.5, borderRadius: '6px', border: (theme) => `1px solid ${theme.palette.divider}` }}>
                   {request.notes}
                 </Typography>
               </Box>
@@ -226,7 +226,7 @@ const PaymentRequestDetailDialog: React.FC<PaymentRequestDetailDialogProps> = ({
 
           {/* Process Payment -- only for pending */}
           {request.status === 'pending' && (
-            <Box sx={{ ...detailSection, bgcolor: '#F9FAFB' }}>
+            <Box sx={{ ...detailSection, bgcolor: (theme) => theme.palette.background.default }}>
               <Typography sx={sectionHeader}>Process Payment Request</Typography>
               <Box sx={{ display: 'grid', gridTemplateColumns: action === 'approve' ? '1fr 1fr' : '1fr', gap: 2, mb: 2 }}>
                 <FormControl fullWidth size="small">
@@ -379,10 +379,10 @@ const PaymentRequestsDashboard: React.FC = () => {
 
       {/* Page Header */}
       <Box>
-        <Typography sx={{ fontSize: 22, fontWeight: 700, color: '#111827', mb: 0.5 }}>
+        <Typography sx={{ fontSize: 22, fontWeight: 700, color: (theme) => theme.palette.text.primary, mb: 0.5 }}>
           Instructor Payment Requests
         </Typography>
-        <Typography sx={{ fontSize: 14, color: '#4B5563' }}>
+        <Typography sx={{ fontSize: 14, color: (theme) => theme.palette.text.secondary }}>
           Review and process payment requests from HR for instructor compensation
         </Typography>
       </Box>
@@ -420,7 +420,7 @@ const PaymentRequestsDashboard: React.FC = () => {
       )}
 
       {/* Filters */}
-      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
+      <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2, alignItems: 'end' }}>
           <FormControl fullWidth size="small">
             <InputLabel>Status</InputLabel>
@@ -458,31 +458,31 @@ const PaymentRequestsDashboard: React.FC = () => {
       </Box>
 
       {/* Payment Requests Table */}
-      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff' }}>
+      <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper }}>
         <DataTable columns={columns}>
           {requests.map((request) => (
             <DataTableRow key={request.id} columns={columns}>
-              <Typography sx={{ fontSize: 13, color: '#111827' }}>{request.id}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}>{request.id}</Typography>
               <Box>
-                <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                   {request.instructorName}
                 </Typography>
-                <Typography sx={{ fontSize: 11, color: '#9CA3AF' }}>
+                <Typography sx={{ fontSize: 11, color: (theme) => theme.palette.text.secondary }}>
                   ID: {request.instructorId}
                 </Typography>
               </Box>
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#111827', fontFamily: 'monospace' }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.primary, fontFamily: 'monospace' }}>
                 ${Number(request.amount).toFixed(2)}
               </Typography>
-              <Typography sx={{ fontSize: 13, color: '#111827' }}>{request.weekStartDate}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#111827' }}>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}>{request.weekStartDate}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}>
                 {request.totalHours}h / {request.coursesTaught} courses
               </Typography>
               <StatusChip
                 kind={statusToChipKind(request.status)}
                 label={request.status.toUpperCase()}
               />
-              <Typography sx={{ fontSize: 13, color: '#111827' }}>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}>
                 {new Date(request.createdAt).toLocaleDateString()}
               </Typography>
               <Box

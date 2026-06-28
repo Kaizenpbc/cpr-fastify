@@ -3,8 +3,8 @@ import { Box, Typography, Tabs, Tab } from '@mui/material';
 import InstructorWorkloadReport from '../reports/InstructorWorkloadReport';
 
 const CourseSchedulingReport = () => (
-  <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3, mt: 2 }}>
-    <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#9CA3AF' }}>Course Scheduling Report Placeholder</Typography>
+  <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3, mt: 2 }}>
+    <Typography sx={{ fontSize: 14, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>Course Scheduling Report Placeholder</Typography>
   </Box>
 );
 
@@ -22,13 +22,13 @@ const AdminReportsView = () => {
       case 1:
         return <CourseSchedulingReport />;
       default:
-        return <Typography sx={{ fontSize: 13, color: '#9CA3AF' }}>Select a report type.</Typography>;
+        return <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Select a report type.</Typography>;
     }
   };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff' }}>
+      <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper }}>
         <Tabs
           value={selectedReport}
           onChange={handleTabChange}
@@ -37,7 +37,7 @@ const AdminReportsView = () => {
           aria-label='admin reports tabs'
           sx={{
             px: 2,
-            '& .MuiTab-root': { textTransform: 'none', fontSize: 13, fontWeight: 600, color: '#9CA3AF' },
+            '& .MuiTab-root': { textTransform: 'none', fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.secondary },
             '& .Mui-selected': { color: '#CC1F1F !important' },
             '& .MuiTabs-indicator': { backgroundColor: '#CC1F1F' },
           }}

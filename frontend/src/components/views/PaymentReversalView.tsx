@@ -96,7 +96,7 @@ const PaymentReversalView = () => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Filter */}
-      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
+      <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           <FormControl sx={{ minWidth: 200 }} size="small">
             <InputLabel>Status</InputLabel>
@@ -112,19 +112,19 @@ const PaymentReversalView = () => {
 
       {/* Table */}
       {payments.length === 0 ? (
-        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
-          <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#9CA3AF' }}>No payments found matching the current filter.</Typography>
+        <Box sx={{ bgcolor: (theme) => theme.palette.background.paper, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ fontSize: 14, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>No payments found matching the current filter.</Typography>
         </Box>
       ) : (
         <DataTable columns={columns} shownCount={payments.length} totalCount={payments.length}>
           {payments.map((payment: any) => (
             <DataTableRow key={payment.payment_id} columns={columns}>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{payment.payment_id}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{payment.invoice_number}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{payment.organization_name}</Typography>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', fontFamily: 'monospace', textAlign: 'right' }}>{formatCurrency(payment.amount)}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatDate(payment.payment_date)}</Typography>
-              <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{formatDateTime(payment.verified_by_accounting_at)}</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{payment.payment_id}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{payment.invoice_number}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{payment.organization_name}</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary, fontFamily: 'monospace', textAlign: 'right' }}>{formatCurrency(payment.amount)}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{formatDate(payment.payment_date)}</Typography>
+              <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>{formatDateTime(payment.verified_by_accounting_at)}</Typography>
               <StatusChip kind={canReversePayment(payment) ? 'success' : 'danger'} label={getTimeRemaining(payment)} />
               <StatusChip kind={payment.status === 'verified' ? 'success' : 'neutral'} label={payment.status} />
               <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'flex-end' }}>
@@ -140,14 +140,14 @@ const PaymentReversalView = () => {
 
       {/* Reversal Dialog */}
       <Dialog open={reversalDialogOpen} onClose={() => setReversalDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>Reverse Payment — {selectedPayment?.invoice_number}</DialogTitle>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>Reverse Payment — {selectedPayment?.invoice_number}</DialogTitle>
         <DialogContent>
           <Alert severity="warning" sx={{ mb: 2 }}>This action will reverse the payment and recalculate the invoice balance. This cannot be undone.</Alert>
-          <Box sx={{ p: 2, bgcolor: '#F9FAFB', borderRadius: '8px', border: '1px solid #E5E7EB', mb: 2 }}>
+          <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.background.default, borderRadius: '8px', border: (theme) => `1px solid ${theme.palette.divider}`, mb: 2 }}>
             {[['Payment ID', selectedPayment?.payment_id], ['Amount', formatCurrency(selectedPayment?.amount)], ['Payment Date', formatDate(selectedPayment?.payment_date)], ['Method', selectedPayment?.payment_method], ['Reference', selectedPayment?.reference_number || 'N/A']].map(([l, v]) => (
               <Box key={String(l)} sx={{ display: 'flex', py: 0.5 }}>
-                <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', width: 110 }}>{l}</Typography>
-                <Typography sx={{ fontSize: 12, color: '#111827' }}>{v}</Typography>
+                <Typography sx={{ fontSize: 12, fontWeight: 600, color: (theme) => theme.palette.text.secondary, width: 110 }}>{l}</Typography>
+                <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.primary }}>{v}</Typography>
               </Box>
             ))}
           </Box>
@@ -163,37 +163,37 @@ const PaymentReversalView = () => {
 
       {/* Details Dialog */}
       <Dialog open={viewDetailsDialogOpen} onClose={() => setViewDetailsDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>Payment Details — {selectedPayment?.invoice_number}</DialogTitle>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>Payment Details — {selectedPayment?.invoice_number}</DialogTitle>
         <DialogContent>
           {selectedPayment && (
             <Grid container spacing={3} sx={{ pt: 1 }}>
               <Grid item xs={12} md={6}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Payment Information</Typography>
-                <Box sx={{ p: 2, bgcolor: '#F9FAFB', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Payment Information</Typography>
+                <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.background.default, borderRadius: '8px', border: (theme) => `1px solid ${theme.palette.divider}` }}>
                   {[['Payment ID', selectedPayment.payment_id], ['Amount', formatCurrency(selectedPayment.amount)], ['Payment Date', formatDate(selectedPayment.payment_date)], ['Method', selectedPayment.payment_method], ['Reference', selectedPayment.reference_number || 'N/A'], ['Status', selectedPayment.status], ['Verified At', formatDateTime(selectedPayment.verified_by_accounting_at)]].map(([l, v]) => (
                     <Box key={String(l)} sx={{ display: 'flex', py: 0.5 }}>
-                      <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', width: 110 }}>{l}</Typography>
-                      <Typography sx={{ fontSize: 12, color: '#111827' }}>{v}</Typography>
+                      <Typography sx={{ fontSize: 12, fontWeight: 600, color: (theme) => theme.palette.text.secondary, width: 110 }}>{l}</Typography>
+                      <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.primary }}>{v}</Typography>
                     </Box>
                   ))}
                 </Box>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Invoice Information</Typography>
-                <Box sx={{ p: 2, bgcolor: '#F9FAFB', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Invoice Information</Typography>
+                <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.background.default, borderRadius: '8px', border: (theme) => `1px solid ${theme.palette.divider}` }}>
                   {[['Invoice Number', selectedPayment.invoice_number], ['Organization', selectedPayment.organization_name], ['Contact Email', selectedPayment.contact_email]].map(([l, v]) => (
                     <Box key={String(l)} sx={{ display: 'flex', py: 0.5 }}>
-                      <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', width: 110 }}>{l}</Typography>
-                      <Typography sx={{ fontSize: 12, color: '#111827' }}>{v}</Typography>
+                      <Typography sx={{ fontSize: 12, fontWeight: 600, color: (theme) => theme.palette.text.secondary, width: 110 }}>{l}</Typography>
+                      <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.primary }}>{v}</Typography>
                     </Box>
                   ))}
                 </Box>
               </Grid>
               {selectedPayment.notes && (
                 <Grid item xs={12}>
-                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Notes</Typography>
-                  <Box sx={{ p: 2, bgcolor: '#F9FAFB', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
-                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{selectedPayment.notes}</Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Notes</Typography>
+                  <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.background.default, borderRadius: '8px', border: (theme) => `1px solid ${theme.palette.divider}` }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{selectedPayment.notes}</Typography>
                   </Box>
                 </Grid>
               )}

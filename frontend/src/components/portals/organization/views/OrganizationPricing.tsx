@@ -80,26 +80,26 @@ const OrganizationPricing: React.FC<OrganizationPricingProps> = ({ organizationI
           displayData.map((pricing) => (
             <DataTableRow key={pricing.id} columns={columns}>
               <Box>
-                <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{pricing.classTypeName}</Typography>
-                <Typography sx={{ fontSize: 11, color: '#9CA3AF' }}>ID: {pricing.classTypeId}</Typography>
+                <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{pricing.classTypeName}</Typography>
+                <Typography sx={{ fontSize: 11, color: (theme) => theme.palette.text.secondary }}>ID: {pricing.classTypeId}</Typography>
               </Box>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', fontFamily: 'monospace', textAlign: 'right' }}>{formatCurrency(pricing.pricePerStudent)}</Typography>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#4B5563', fontFamily: 'monospace', textAlign: 'right' }}>{formatCurrency(pricing.pricePerStudent)}</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary, fontFamily: 'monospace', textAlign: 'right' }}>{formatCurrency(pricing.pricePerStudent)}</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.secondary, fontFamily: 'monospace', textAlign: 'right' }}>{formatCurrency(pricing.pricePerStudent)}</Typography>
               <StatusChip kind="active" label="Active" />
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatDate(pricing.updatedAt)}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{formatDate(pricing.updatedAt)}</Typography>
             </DataTableRow>
           ))
         ) : (
           placeholderData.map((ct) => (
             <DataTableRow key={ct.id} columns={columns}>
               <Box>
-                <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{ct.name}</Typography>
-                <Typography sx={{ fontSize: 11, color: '#9CA3AF' }}>ID: {ct.id}</Typography>
+                <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{ct.name}</Typography>
+                <Typography sx={{ fontSize: 11, color: (theme) => theme.palette.text.secondary }}>ID: {ct.id}</Typography>
               </Box>
-              <Typography sx={{ fontSize: 12, color: '#9CA3AF', fontStyle: 'italic', textAlign: 'right' }}>Not configured</Typography>
-              <Typography sx={{ fontSize: 12, color: '#9CA3AF', fontStyle: 'italic', textAlign: 'right' }}>Not configured</Typography>
+              <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, fontStyle: 'italic', textAlign: 'right' }}>Not configured</Typography>
+              <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, fontStyle: 'italic', textAlign: 'right' }}>Not configured</Typography>
               <StatusChip kind="pending" label="Pending" />
-              <Typography sx={{ fontSize: 13, color: '#9CA3AF' }}>—</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>—</Typography>
             </DataTableRow>
           ))
         )}

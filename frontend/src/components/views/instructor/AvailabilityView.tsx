@@ -342,12 +342,12 @@ const AvailabilityView: React.FC<AvailabilityViewProps> = ({
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.05)', p: 3 }}>
+      <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, boxShadow: '0 1px 3px rgba(0,0,0,.05)', p: 3 }}>
         <Box sx={{ mb: 3 }}>
-          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>
             Manage Your Availability
           </Typography>
-          <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+          <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
             Click on dates to mark them as available or unavailable for teaching.
           </Typography>
         </Box>
@@ -377,8 +377,8 @@ const AvailabilityView: React.FC<AvailabilityViewProps> = ({
             </LocalizationProvider>
           </Box>
           <Box sx={{ flex: '0 0 auto', width: { xs: '100%', md: '300px' } }}>
-            <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 2 }}>
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1.5 }}>
+            <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 2 }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1.5 }}>
                 Legend
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -443,8 +443,8 @@ const AvailabilityView: React.FC<AvailabilityViewProps> = ({
             </Box>
 
             {/* Additional Info Panel */}
-            <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 2, mt: 2 }}>
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1.5 }}>
+            <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 2, mt: 2 }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1.5 }}>
                 Quick Stats
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>

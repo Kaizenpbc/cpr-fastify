@@ -79,20 +79,20 @@ function PricingRuleManager() {
       </Box>
 
       {pricingRules.length === 0 ? (
-        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
-          <Typography sx={{ color: '#9CA3AF', fontSize: 14 }}>No pricing rules found.</Typography>
+        <Box sx={{ bgcolor: (theme) => theme.palette.background.paper, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ color: (theme) => theme.palette.text.secondary, fontSize: 14 }}>No pricing rules found.</Typography>
         </Box>
       ) : (
         <DataTable columns={columns} shownCount={pricingRules.length} totalCount={pricingRules.length}>
           {pricingRules.map(rule => (
             <DataTableRow key={rule.pricingid} columns={columns}>
-              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{rule.organizationname || 'All Orgs'}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{rule.name || 'All Types'}</Typography>
-              <Typography sx={{ fontSize: 14, fontWeight: 700, color: '#111827', fontFamily: 'monospace', textAlign: 'right' }}>{formatCurrency(rule.price)}</Typography>
+              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{rule.organizationname || 'All Orgs'}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{rule.name || 'All Types'}</Typography>
+              <Typography sx={{ fontSize: 14, fontWeight: 700, color: (theme) => theme.palette.text.primary, fontFamily: 'monospace', textAlign: 'right' }}>{formatCurrency(rule.price)}</Typography>
               <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
                 <Box onClick={() => handleEditOpen(rule)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Edit</Box>
-                <Typography sx={{ fontSize: 12, color: '#E5E7EB' }}>|</Typography>
-                <Box onClick={() => handleDelete(rule.pricingid)} sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' } }}>Delete</Box>
+                <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.divider }}>|</Typography>
+                <Box onClick={() => handleDelete(rule.pricingid)} sx={{ fontSize: 12, fontWeight: 600, color: (theme) => theme.palette.text.secondary, cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' } }}>Delete</Box>
               </Box>
             </DataTableRow>
           ))}

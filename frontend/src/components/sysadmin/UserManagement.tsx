@@ -212,8 +212,8 @@ const UserManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
             onClick={() => setRoleFilter('')}
             sx={{
               px: 1.5, py: 0.5, borderRadius: '20px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-              border: '1px solid', borderColor: !roleFilter ? 'rgba(204,31,31,.3)' : '#E5E7EB',
-              bgcolor: !roleFilter ? '#FFF0F0' : '#fff', color: !roleFilter ? '#CC1F1F' : '#4B5563',
+              border: '1px solid', borderColor: !roleFilter ? 'rgba(204,31,31,.3)' : (theme: any) => theme.palette.divider,
+              bgcolor: !roleFilter ? '#FFF0F0' : (theme: any) => theme.palette.background.paper, color: !roleFilter ? '#CC1F1F' : (theme: any) => theme.palette.text.secondary,
             }}
           >
             All
@@ -225,9 +225,9 @@ const UserManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
               sx={{
                 px: 1.5, py: 0.5, borderRadius: '20px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
                 border: '1px solid', textTransform: 'capitalize',
-                borderColor: roleFilter === role ? 'rgba(204,31,31,.3)' : '#E5E7EB',
-                bgcolor: roleFilter === role ? '#FFF0F0' : '#fff',
-                color: roleFilter === role ? '#CC1F1F' : '#4B5563',
+                borderColor: roleFilter === role ? 'rgba(204,31,31,.3)' : (theme: any) => theme.palette.divider,
+                bgcolor: roleFilter === role ? '#FFF0F0' : (theme: any) => theme.palette.background.paper,
+                color: roleFilter === role ? '#CC1F1F' : (theme: any) => theme.palette.text.secondary,
               }}
             >
               {role}
@@ -239,7 +239,7 @@ const UserManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
         </Box>
       </Box>
 
-      <Typography sx={{ fontSize: 12, color: '#9CA3AF', mt: -1 }}>
+      <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, mt: -1 }}>
         {filtered.length} user{filtered.length !== 1 ? 's' : ''}
       </Typography>
 
@@ -251,27 +251,27 @@ const UserManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <UserAvatar initials={getInitials(user)} />
               <Box>
-                <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                   {user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username}
                 </Typography>
-                <Typography sx={{ fontSize: 11.5, color: '#9CA3AF' }}>{user.username}</Typography>
+                <Typography sx={{ fontSize: 11.5, color: (theme) => theme.palette.text.secondary }}>{user.username}</Typography>
               </Box>
             </Box>
             {/* EMAIL */}
-            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{user.email}</Typography>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{user.email}</Typography>
             {/* ROLE */}
             <RoleChip role={user.role} />
             {/* ORG */}
-            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{user.organizationName || '—'}</Typography>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{user.organizationName || '—'}</Typography>
             {/* MOBILE */}
-            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{user.mobile || '—'}</Typography>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{user.mobile || '—'}</Typography>
             {/* STATUS */}
             <StatusChip
               kind={user.status === 'active' ? 'active' : user.status === 'suspended' ? 'danger' : 'inactive'}
               label={user.status || 'active'}
             />
             {/* ONBOARDED */}
-            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatDate(user.dateOnboarded)}</Typography>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{formatDate(user.dateOnboarded)}</Typography>
             {/* ACTIONS */}
             <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
               <Box onClick={() => handleEdit(user)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
@@ -279,8 +279,8 @@ const UserManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
               </Box>
               {user.status !== 'inactive' && (
                 <>
-                  <Typography sx={{ fontSize: 12, color: '#E5E7EB' }}>|</Typography>
-                  <Box onClick={() => handleDelete(user)} sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' } }}>
+                  <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.divider }}>|</Typography>
+                  <Box onClick={() => handleDelete(user)} sx={{ fontSize: 12, fontWeight: 600, color: (theme) => theme.palette.text.secondary, cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' } }}>
                     Deactivate
                   </Box>
                 </>

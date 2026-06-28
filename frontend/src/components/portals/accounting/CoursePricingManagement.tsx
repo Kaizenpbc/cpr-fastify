@@ -89,18 +89,18 @@ const CoursePricingManagement: React.FC = () => {
             <Box sx={{ bgcolor: '#111827', color: '#fff', px: 3, py: 1.5, borderRadius: '10px 10px 0 0' }}>
               <Typography sx={{ fontSize: 14, fontWeight: 700 }}>{organizationName}</Typography>
             </Box>
-            <Box sx={{ border: '1px solid #E5E7EB', borderTop: 'none', borderRadius: '0 0 10px 10px', bgcolor: '#fff' }}>
+            <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderTop: 'none', borderRadius: '0 0 10px 10px', bgcolor: (theme) => theme.palette.background.paper }}>
               <DataTable columns={columns} shownCount={pricingList.length} totalCount={pricingList.length}>
                 {pricingList.map(pricing => (
                   <DataTableRow key={pricing.id} columns={columns}>
-                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{pricing.course_type_name}</Typography>
-                    <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{pricing.course_description || 'No description'}</Typography>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{pricing.course_type_name}</Typography>
+                    <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>{pricing.course_description || 'No description'}</Typography>
                     {editingId === pricing.id ? (
                       <TextField value={editPrice} onChange={e => setEditPrice(e.target.value)} type="number" size="small" InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }} inputProps={{ step: '0.01', min: '0' }} sx={{ minWidth: 120 }} />
                     ) : (
                       <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#16A34A', fontFamily: 'monospace', textAlign: 'right' }}>{formatCurrency(pricing.price_per_student)}</Typography>
                     )}
-                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatDate(pricing.effective_date)}</Typography>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{formatDate(pricing.effective_date)}</Typography>
                     <StatusChip kind={pricing.is_active ? 'active' : 'inactive'} label={pricing.is_active ? 'Active' : 'Inactive'} />
                     <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
                       {editingId === pricing.id ? (
@@ -109,7 +109,7 @@ const CoursePricingManagement: React.FC = () => {
                           <ButtonBase onClick={handleEditCancel} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>Cancel</ButtonBase>
                         </>
                       ) : (
-                        <ButtonBase onClick={() => pricing.is_active && handleEditStart(pricing)} disabled={!pricing.is_active} sx={{ fontSize: 12, fontWeight: 600, color: pricing.is_active ? '#CC1F1F' : '#9CA3AF', '&:hover': pricing.is_active ? { textDecoration: 'underline' } : {}, '&:focus-visible': pricing.is_active ? { outline: '2px solid #CC1F1F', outlineOffset: '2px' } : {} }}>Edit</ButtonBase>
+                        <ButtonBase onClick={() => pricing.is_active && handleEditStart(pricing)} disabled={!pricing.is_active} sx={{ fontSize: 12, fontWeight: 600, color: pricing.is_active ? '#CC1F1F' : (theme: any) => theme.palette.text.secondary, '&:hover': pricing.is_active ? { textDecoration: 'underline' } : {}, '&:focus-visible': pricing.is_active ? { outline: '2px solid #CC1F1F', outlineOffset: '2px' } : {} }}>Edit</ButtonBase>
                       )}
                     </Box>
                   </DataTableRow>

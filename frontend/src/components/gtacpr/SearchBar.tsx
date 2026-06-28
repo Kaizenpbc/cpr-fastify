@@ -17,15 +17,15 @@ const SearchBar: React.FC<SearchBarProps> = ({ placeholder = 'Search...', value,
     InputProps={{
       startAdornment: (
         <InputAdornment position="start">
-          <SearchIcon sx={{ color: '#9CA3AF' }} />
+          <SearchIcon sx={{ color: (theme) => theme.palette.text.secondary }} />
         </InputAdornment>
       ),
     }}
     sx={{
       '& .MuiOutlinedInput-root': {
         borderRadius: '8px',
-        '& fieldset': { borderColor: '#E5E7EB' },
-        '&:hover fieldset': { borderColor: '#9CA3AF' },
+        '& fieldset': { borderColor: (theme) => theme.palette.divider },
+        '&:hover fieldset': { borderColor: (theme) => theme.palette.text.secondary },
         '&.Mui-focused fieldset': {
           borderColor: '#CC1F1F',
           boxShadow: '0 0 0 3px rgba(204,31,31,.1)',

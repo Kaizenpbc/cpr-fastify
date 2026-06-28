@@ -7,6 +7,7 @@ import UserAvatar from '../gtacpr/UserAvatar';
 import DataTable, { DataTableRow } from '../gtacpr/DataTable';
 import SegmentedToggle from '../gtacpr/SegmentedToggle';
 import { PrimaryButton } from '../gtacpr/Buttons';
+import { useClientPagination } from '../../hooks/useClientPagination';
 
 interface CertificationTrackingProps {
   onShowSnackbar: (message: string, severity: 'success' | 'error' | 'warning' | 'info') => void;
@@ -44,6 +45,7 @@ const CertificationTracking = ({ onShowSnackbar }: CertificationTrackingProps) =
   const [certs, setCerts] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const { paged: pagedCerts, page: certPage, hasNextPage: certHasNext, onPrevPage: onCertPrev, onNextPage: onCertNext } = useClientPagination(certs, 25);
 
   const loadStats = async () => {
     try {
@@ -98,7 +100,7 @@ const CertificationTracking = ({ onShowSnackbar }: CertificationTrackingProps) =
         />
         {view === 'expiring' && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography sx={{ fontSize: 12, color: '#9CA3AF', fontWeight: 500 }}>Window:</Typography>
+            <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, fontWeight: 500 }}>Window:</Typography>
             {windowOptions.map(opt => (
               <Box
                 key={opt.value}
@@ -108,9 +110,9 @@ const CertificationTracking = ({ onShowSnackbar }: CertificationTrackingProps) =
                   borderRadius: '20px',
                   fontSize: 12, fontWeight: 600, cursor: 'pointer',
                   border: '1px solid',
-                  borderColor: days === opt.value ? 'rgba(204,31,31,.3)' : '#E5E7EB',
-                  bgcolor: days === opt.value ? '#FFF0F0' : '#fff',
-                  color: days === opt.value ? '#CC1F1F' : '#4B5563',
+                  borderColor: days === opt.value ? 'rgba(204,31,31,.3)' : (theme: any) => theme.palette.divider,
+                  bgcolor: days === opt.value ? '#FFF0F0' : (theme: any) => theme.palette.background.paper,
+                  color: days === opt.value ? '#CC1F1F' : (theme: any) => theme.palette.text.secondary,
                 }}
               >
                 {opt.label}
@@ -126,39 +128,39 @@ const CertificationTracking = ({ onShowSnackbar }: CertificationTrackingProps) =
           <CircularProgress />
         </Box>
       ) : certs.length === 0 ? (
-        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
-          <Typography sx={{ color: '#9CA3AF', fontSize: 14 }}>
+        <Box sx={{ bgcolor: (theme) => theme.palette.background.paper, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ color: (theme) => theme.palette.text.secondary, fontSize: 14 }}>
             {view === 'expiring'
               ? `No certifications expiring within ${days} days.`
               : 'No expired certifications found.'}
           </Typography>
         </Box>
       ) : (
-        <DataTable columns={columns} shownCount={certs.length} totalCount={certs.length}>
-          {certs.map((cert, i) => (
+        <DataTable columns={columns} shownCount={pagedCerts.length} totalCount={certs.length} page={certPage} onPrevPage={onCertPrev} onNextPage={onCertNext} hasNextPage={certHasNext}>
+          {pagedCerts.map((cert, i) => (
             <DataTableRow key={`${cert.student_id}-${cert.certificate_issued_at}-${i}`} columns={columns}>
               {/* STUDENT */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <UserAvatar initials={getInitials(cert.first_name, cert.last_name)} />
                 <Box>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                     {cert.first_name} {cert.last_name}
                   </Typography>
-                  <Typography sx={{ fontSize: 11.5, color: '#9CA3AF' }}>
+                  <Typography sx={{ fontSize: 11.5, color: (theme) => theme.palette.text.secondary }}>
                     {cert.organization_name || '—'}
                   </Typography>
                 </Box>
               </Box>
               {/* COURSE */}
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                 {cert.course_type_name}
               </Typography>
               {/* CERT # */}
-              <Typography sx={{ fontSize: 12.5, fontFamily: 'monospace', color: '#4B5563' }}>
+              <Typography sx={{ fontSize: 12.5, fontFamily: 'monospace', color: (theme) => theme.palette.text.secondary }}>
                 {cert.certificate_number || '—'}
               </Typography>
               {/* EXPIRES */}
-              <Typography sx={{ fontSize: 13, fontWeight: 500, color: '#1F2937' }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 500, color: (theme) => theme.palette.text.primary }}>
                 {cert.certificate_expires_at
                   ? new Date(cert.certificate_expires_at).toLocaleDateString()
                   : '—'}

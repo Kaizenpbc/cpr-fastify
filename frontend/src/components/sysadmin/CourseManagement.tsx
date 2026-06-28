@@ -177,10 +177,10 @@ const CourseManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
       {/* Course Catalog */}
       <Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
             COURSE CATALOG
           </Typography>
-          <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>
+          <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>
             {activeCourses.length} active course type{activeCourses.length !== 1 ? 's' : ''}
           </Typography>
         </Box>
@@ -194,7 +194,7 @@ const CourseManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
                 key={course.id}
                 sx={{
                   borderRadius: '10px',
-                  border: '1px solid #E5E7EB',
+                  border: (theme: any) => `1px solid ${theme.palette.divider}`,
                   boxShadow: '0 1px 3px rgba(0,0,0,.05)',
                   overflow: 'hidden',
                   display: 'flex',
@@ -226,20 +226,20 @@ const CourseManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
                   {/* Key/value rows */}
                   {validityMonths && (
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                      <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>Validity</Typography>
-                      <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#1F2937' }}>{validityMonths} months</Typography>
+                      <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>Validity</Typography>
+                      <Typography sx={{ fontSize: 12, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{validityMonths} months</Typography>
                     </Box>
                   )}
                   {course.courseCategory && (
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                      <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>Category</Typography>
-                      <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#1F2937' }}>{course.courseCategory}</Typography>
+                      <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>Category</Typography>
+                      <Typography sx={{ fontSize: 12, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{course.courseCategory}</Typography>
                     </Box>
                   )}
                   {course.certificationType && (
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                      <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>Cert Type</Typography>
-                      <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#1F2937' }}>{course.certificationType}</Typography>
+                      <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>Cert Type</Typography>
+                      <Typography sx={{ fontSize: 12, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{course.certificationType}</Typography>
                     </Box>
                   )}
 
@@ -251,7 +251,7 @@ const CourseManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
                       pt: 1.5,
                       textAlign: 'center',
                       py: 1,
-                      border: '1.5px solid #E5E7EB',
+                      border: (theme: any) => `1.5px solid ${theme.palette.divider}`,
                       borderRadius: '8px',
                       fontSize: 13,
                       fontWeight: 700,

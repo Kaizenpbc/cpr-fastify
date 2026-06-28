@@ -100,21 +100,21 @@ const MyClassesView: React.FC<MyClassesViewProps> = ({
   return (
     <>
       {sortedSchedule.length === 0 ? (
-        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
-          <Typography sx={{ color: '#9CA3AF', fontSize: 14 }}>No schedule items found.</Typography>
+        <Box sx={{ bgcolor: (theme) => theme.palette.background.paper, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ color: (theme) => theme.palette.text.secondary, fontSize: 14 }}>No schedule items found.</Typography>
         </Box>
       ) : (
         <DataTable columns={columns} shownCount={sortedSchedule.length} totalCount={combinedSchedule.length}>
           {sortedSchedule.map((item, index) => (
             <DataTableRow key={`${item.type}-${item.courseId || item.originalData?.id || index}`} columns={columns}>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{item.displayDate}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{item.type === 'class' ? item.organizationName : ''}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{item.type === 'class' ? item.location : ''}</Typography>
-              <Typography sx={{ fontSize: 12.5, fontFamily: 'monospace', color: '#4B5563' }}>{item.type === 'class' ? item.courseNumber : ''}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{item.type === 'class' ? item.courseTypeName : ''}</Typography>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'right' }}>{item.type === 'class' ? item.studentsRegistered : ''}</Typography>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'right' }}>{item.type === 'class' ? item.studentsAttendance : ''}</Typography>
-              <Typography sx={{ fontSize: 12.5, color: '#9CA3AF' }}>{item.type === 'class' ? item.notes : ''}</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{item.displayDate}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{item.type === 'class' ? item.organizationName : ''}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{item.type === 'class' ? item.location : ''}</Typography>
+              <Typography sx={{ fontSize: 12.5, fontFamily: 'monospace', color: (theme) => theme.palette.text.secondary }}>{item.type === 'class' ? item.courseNumber : ''}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{item.type === 'class' ? item.courseTypeName : ''}</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary, textAlign: 'right' }}>{item.type === 'class' ? item.studentsRegistered : ''}</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary, textAlign: 'right' }}>{item.type === 'class' ? item.studentsAttendance : ''}</Typography>
+              <Typography sx={{ fontSize: 12.5, color: (theme) => theme.palette.text.secondary }}>{item.type === 'class' ? item.notes : ''}</Typography>
               {item.type === 'class' ? (
                 <StatusChip kind={item.status === 'completed' ? 'success' : 'active'} label={item.status || 'Scheduled'} />
               ) : (
@@ -131,9 +131,9 @@ const MyClassesView: React.FC<MyClassesViewProps> = ({
       )}
 
       <Dialog open={deleteDialog.open} onClose={handleDeleteCancel}>
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>Remove Availability</DialogTitle>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>Remove Availability</DialogTitle>
         <DialogContent>
-          <DialogContentText sx={{ fontSize: 14, color: '#4B5563' }}>
+          <DialogContentText sx={{ fontSize: 14, color: (theme) => theme.palette.text.secondary }}>
             Are you sure you want to remove your availability for {formatDisplayDate(deleteDialog.date)}?
             {isDateTooClose(deleteDialog.date) && ' This date is less than 11 days away and cannot be modified.'}
           </DialogContentText>

@@ -133,8 +133,8 @@ const HRDashboard: React.FC<HRDashboardProps> = ({ onViewChange }) => {
 
       {/* Quick Actions + Recent Activity */}
       <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-        <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
-          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Quick Actions</Typography>
+        <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Quick Actions</Typography>
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             <PrimaryButton onClick={() => onViewChange?.('personnel')}>Manage Personnel</PrimaryButton>
             <GhostButton onClick={() => onViewChange?.('payrates')}>Pay Rates</GhostButton>
@@ -143,14 +143,14 @@ const HRDashboard: React.FC<HRDashboardProps> = ({ onViewChange }) => {
           </Box>
         </Box>
 
-        <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
-          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Recent Activity</Typography>
-          <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>{stats?.recentChanges?.length || 0} recent profile changes</Typography>
+        <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Recent Activity</Typography>
+          <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 1 }}>{stats?.recentChanges?.length || 0} recent profile changes</Typography>
           {stats?.recentChanges?.slice(0, 3).map((change) => {
             const extChange = change as RecentChange;
             return (
-              <Box key={change.id} sx={{ p: 1.5, bgcolor: '#F9FAFB', borderRadius: '8px', mb: 1 }}>
-                <Typography sx={{ fontSize: 13, color: '#111827' }}>
+              <Box key={change.id} sx={{ p: 1.5, bgcolor: (theme) => theme.palette.background.default, borderRadius: '8px', mb: 1 }}>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}>
                   <strong>{extChange.username || `User ${change.userId}`}</strong> — {getFieldDisplayName(extChange.fieldName || change.changeType)} change
                 </Typography>
                 <Box sx={{ mt: 0.5 }}>
@@ -163,9 +163,9 @@ const HRDashboard: React.FC<HRDashboardProps> = ({ onViewChange }) => {
       </Box>
 
       {/* Pending Approvals Table */}
-      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
+      <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
             Pending Approvals ({stats?.pendingApprovalsList?.length || 0})
           </Typography>
           <GhostButton onClick={loadDashboardData}>Refresh</GhostButton>
@@ -173,7 +173,7 @@ const HRDashboard: React.FC<HRDashboardProps> = ({ onViewChange }) => {
 
         {(stats?.pendingApprovalsList?.length || 0) === 0 ? (
           <Box sx={{ textAlign: 'center', py: 4 }}>
-            <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#9CA3AF' }}>No pending approvals</Typography>
+            <Typography sx={{ fontSize: 14, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>No pending approvals</Typography>
           </Box>
         ) : (
           <DataTable columns={approvalColumns} shownCount={stats?.pendingApprovalsList?.length || 0} totalCount={stats?.pendingApprovalsList?.length || 0}>
@@ -182,17 +182,17 @@ const HRDashboard: React.FC<HRDashboardProps> = ({ onViewChange }) => {
               return (
                 <DataTableRow key={change.id} columns={approvalColumns}>
                   <Box>
-                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{change.username}</Typography>
-                    <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{change.email}</Typography>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{change.username}</Typography>
+                    <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>{change.email}</Typography>
                   </Box>
                   <StatusChip kind="brand" label={change.changeType} />
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{getFieldDisplayName(change.fieldName)}</Typography>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 150 }}>{change.newValue}</Typography>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{getFieldDisplayName(change.fieldName)}</Typography>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 150 }}>{change.newValue}</Typography>
                   <StatusChip kind={getStatusKind(change.status)} label={change.status} />
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{new Date(change.createdAt).toLocaleDateString()}</Typography>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{new Date(change.createdAt).toLocaleDateString()}</Typography>
                   <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
                     <ButtonBase onClick={() => openApprovalDialog(change, 'approve')} sx={{ fontSize: 12, fontWeight: 600, color: '#16A34A', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #16A34A', outlineOffset: '2px' } }}>Approve</ButtonBase>
-                    <Typography sx={{ fontSize: 12, color: '#E5E7EB' }}>|</Typography>
+                    <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.divider }}>|</Typography>
                     <ButtonBase onClick={() => openApprovalDialog(change, 'reject')} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>Reject</ButtonBase>
                   </Box>
                 </DataTableRow>
@@ -204,16 +204,16 @@ const HRDashboard: React.FC<HRDashboardProps> = ({ onViewChange }) => {
 
       {/* Approval Dialog */}
       <Dialog open={approvalDialog} onClose={() => setApprovalDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>
           {approvalAction === 'approve' ? 'Approve' : 'Reject'} Profile Change
         </DialogTitle>
         <DialogContent>
           {selectedChange && (
             <Box sx={{ pt: 1 }}>
-              <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 1 }}>
                 User: {selectedChange.username} ({selectedChange.email})
               </Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 2 }}>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 2 }}>
                 Change: {getFieldDisplayName(selectedChange.fieldName)} → {selectedChange.newValue}
               </Typography>
               <TextField

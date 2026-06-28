@@ -32,13 +32,13 @@ const TimesheetPage: React.FC = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <Box sx={{ borderBottom: 1, borderColor: '#E5E7EB' }}>
+      <Box sx={{ borderBottom: 1, borderColor: (theme) => theme.palette.divider }}>
         <Tabs
           value={tabValue}
           onChange={handleTabChange}
           aria-label="timesheet tabs"
           sx={{
-            '& .MuiTab-root': { textTransform: 'none', fontSize: 13, fontWeight: 600, color: '#9CA3AF', minHeight: 42 },
+            '& .MuiTab-root': { textTransform: 'none', fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.secondary, minHeight: 42 },
             '& .Mui-selected': { color: '#CC1F1F !important' },
             '& .MuiTabs-indicator': { backgroundColor: '#CC1F1F' },
           }}

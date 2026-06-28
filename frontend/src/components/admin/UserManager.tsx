@@ -97,8 +97,8 @@ function UserManager() {
       </Box>
 
       {users.length === 0 ? (
-        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
-          <Typography sx={{ color: '#9CA3AF', fontSize: 14 }}>No users found.</Typography>
+        <Box sx={{ bgcolor: (theme) => theme.palette.background.paper, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ color: (theme) => theme.palette.text.secondary, fontSize: 14 }}>No users found.</Typography>
         </Box>
       ) : (
         <DataTable columns={columns} shownCount={users.length} totalCount={users.length}>
@@ -107,21 +107,21 @@ function UserManager() {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <UserAvatar initials={getInitials(user)} />
                 <Box>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                     {`${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username}
                   </Typography>
-                  <Typography sx={{ fontSize: 11.5, color: '#9CA3AF' }}>{user.username}</Typography>
+                  <Typography sx={{ fontSize: 11.5, color: (theme) => theme.palette.text.secondary }}>{user.username}</Typography>
                 </Box>
               </Box>
               <RoleChip role={user.role} />
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{user.email}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatPhone(user.phone)}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{user.organizationName || '—'}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{user.locationName || '—'}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{user.email}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{formatPhone(user.phone)}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{user.organizationName || '—'}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{user.locationName || '—'}</Typography>
               <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
                 <Box onClick={() => handleEditOpen(user)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Edit</Box>
-                <Typography sx={{ fontSize: 12, color: '#E5E7EB' }}>|</Typography>
-                <Box onClick={() => handleDelete(user.userId)} sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' } }}>Delete</Box>
+                <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.divider }}>|</Typography>
+                <Box onClick={() => handleDelete(user.userId)} sx={{ fontSize: 12, fontWeight: 600, color: (theme) => theme.palette.text.secondary, cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' } }}>Delete</Box>
               </Box>
             </DataTableRow>
           ))}

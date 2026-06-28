@@ -191,41 +191,41 @@ const InstructorDashboard: React.FC = () => {
 
       {/* Recent Classes */}
       <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-        <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
-          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Upcoming Classes</Typography>
+        <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Upcoming Classes</Typography>
           {upcomingClasses.length > 0 ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               {upcomingClasses.slice(0, 5).map((cls, index: number) => (
-                <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: '1px solid #F3F4F6' }}>
+                <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
                   <Box>
-                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{cls.coursename || 'Course'}</Typography>
-                    <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{formatDate(cls.date)} &bull; {cls.studentcount || 0} students</Typography>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{cls.coursename || 'Course'}</Typography>
+                    <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>{formatDate(cls.date)} &bull; {cls.studentcount || 0} students</Typography>
                   </Box>
                   <ButtonBase onClick={() => navigate(`/instructor/classes/${cls.id}`)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>View</ButtonBase>
                 </Box>
               ))}
             </Box>
           ) : (
-            <Typography sx={{ color: '#9CA3AF', fontSize: 13 }}>No upcoming classes scheduled.</Typography>
+            <Typography sx={{ color: (theme) => theme.palette.text.secondary, fontSize: 13 }}>No upcoming classes scheduled.</Typography>
           )}
         </Box>
 
-        <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
-          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Recent Completed Classes</Typography>
+        <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Recent Completed Classes</Typography>
           {(completedClasses as InstructorClass[]).length > 0 ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               {(completedClasses as InstructorClass[]).slice(0, 5).map((cls, index: number) => (
-                <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: '1px solid #F3F4F6' }}>
+                <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
                   <Box>
-                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{cls.coursename || 'Course'}</Typography>
-                    <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{formatDate(cls.date)} &bull; {cls.studentcount || 0} students</Typography>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{cls.coursename || 'Course'}</Typography>
+                    <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>{formatDate(cls.date)} &bull; {cls.studentcount || 0} students</Typography>
                   </Box>
                   <StatusChip kind="success" label="Completed" />
                 </Box>
               ))}
             </Box>
           ) : (
-            <Typography sx={{ color: '#9CA3AF', fontSize: 13 }}>No completed classes yet.</Typography>
+            <Typography sx={{ color: (theme) => theme.palette.text.secondary, fontSize: 13 }}>No completed classes yet.</Typography>
           )}
         </Box>
       </Box>

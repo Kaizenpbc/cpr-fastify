@@ -13,6 +13,7 @@ import {
   CircularProgress,
   Alert,
 } from '@mui/material';
+import { useClientPagination } from '../../hooks/useClientPagination';
 import { sysAdminApi } from '../../services/api';
 import LocationsDialog from './LocationsDialog';
 import OrganizationWizard from './OrganizationWizard';
@@ -140,6 +141,8 @@ const OrganizationManagement = () => {
       || (org.contactEmail || '').toLowerCase().includes(q);
   });
 
+  const { paged: pagedOrgs, page: orgPage, hasNextPage: orgHasNext, onPrevPage: onOrgPrev, onNextPage: onOrgNext } = useClientPagination(filtered, 25);
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
@@ -162,25 +165,25 @@ const OrganizationManagement = () => {
             onChange={setSearchTerm}
           />
         </Box>
-        <Typography sx={{ fontSize: 12, color: '#9CA3AF', flex: 1 }}>
+        <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, flex: 1 }}>
           {filtered.length} organization{filtered.length !== 1 ? 's' : ''}
         </Typography>
         <PrimaryButton onClick={() => handleOpenDialog()}>+ New Organization</PrimaryButton>
       </Box>
 
       {/* Table */}
-      <DataTable columns={columns} shownCount={filtered.length} totalCount={organizations.length}>
-        {filtered.map(org => (
+      <DataTable columns={columns} shownCount={pagedOrgs.length} totalCount={filtered.length} page={orgPage} onPrevPage={onOrgPrev} onNextPage={onOrgNext} hasNextPage={orgHasNext}>
+        {pagedOrgs.map(org => (
           <DataTableRow key={org.id} columns={columns}>
             {/* ORGANIZATION */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <UserAvatar initials={getInitials(org.organizationName)} />
               <Box>
-                <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                   {org.organizationName}
                 </Typography>
                 {org.organizationComments && (
-                  <Typography sx={{ fontSize: 11.5, color: '#9CA3AF', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <Typography sx={{ fontSize: 11.5, color: (theme) => theme.palette.text.secondary, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {org.organizationComments}
                   </Typography>
                 )}
@@ -188,34 +191,34 @@ const OrganizationManagement = () => {
             </Box>
             {/* CONTACT */}
             <Box>
-              <Typography sx={{ fontSize: 13, fontWeight: 500, color: '#111827' }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 500, color: (theme) => theme.palette.text.primary }}>
                 {org.contactPerson || '—'}
               </Typography>
               {org.contactPosition && (
-                <Typography sx={{ fontSize: 11.5, color: '#9CA3AF' }}>
+                <Typography sx={{ fontSize: 11.5, color: (theme) => theme.palette.text.secondary }}>
                   {org.contactPosition}
                 </Typography>
               )}
             </Box>
             {/* EMAIL */}
-            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
               {org.contactEmail || '—'}
             </Typography>
             {/* PHONE */}
-            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
               {formatPhone(org.contactPhone)}
             </Typography>
             {/* LOCATION */}
-            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
               {org.city && org.province ? `${org.city}, ${org.province}` : '—'}
             </Typography>
             {/* STATS */}
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
-              <Typography sx={{ fontSize: 12, color: '#4B5563' }}>
-                <Box component="span" sx={{ fontWeight: 700, color: '#111827' }}>{org.userCount || 0}</Box> users
+              <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>
+                <Box component="span" sx={{ fontWeight: 700, color: (theme: any) => theme.palette.text.primary }}>{org.userCount || 0}</Box> users
               </Typography>
-              <Typography sx={{ fontSize: 12, color: '#4B5563' }}>
-                <Box component="span" sx={{ fontWeight: 700, color: '#111827' }}>{org.courseCount || 0}</Box> courses
+              <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>
+                <Box component="span" sx={{ fontWeight: 700, color: (theme: any) => theme.palette.text.primary }}>{org.courseCount || 0}</Box> courses
               </Typography>
             </Box>
             {/* ACTIONS */}
@@ -223,14 +226,14 @@ const OrganizationManagement = () => {
               <Box onClick={() => setLocationsDialogOrg(org)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
                 Locations
               </Box>
-              <Typography sx={{ fontSize: 12, color: '#E5E7EB' }}>|</Typography>
+              <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.divider }}>|</Typography>
               <Box onClick={() => handleOpenDialog(org)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
                 Edit
               </Box>
               {org.userCount === 0 && org.courseCount === 0 && (
                 <>
-                  <Typography sx={{ fontSize: 12, color: '#E5E7EB' }}>|</Typography>
-                  <Box onClick={() => setDeleteConfirm(org)} sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' } }}>
+                  <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.divider }}>|</Typography>
+                  <Box onClick={() => setDeleteConfirm(org)} sx={{ fontSize: 12, fontWeight: 600, color: (theme) => theme.palette.text.secondary, cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' } }}>
                     Delete
                   </Box>
                 </>

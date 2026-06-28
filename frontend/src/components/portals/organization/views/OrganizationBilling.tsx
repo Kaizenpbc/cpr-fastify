@@ -700,7 +700,7 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
 
   return (
     <Box>
-      <Typography sx={{ fontSize: 22, fontWeight: 700, color: '#111827', mb: 3 }}>
+      <Typography sx={{ fontSize: 22, fontWeight: 700, color: (theme) => theme.palette.text.primary, mb: 3 }}>
         Bills Payable
       </Typography>
 
@@ -729,7 +729,7 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
       </Box>
 
       {/* Invoices Table */}
-      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
+      <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
         <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center', flexWrap: 'wrap' }}>
           <Box sx={{ flex: '0 0 auto', minWidth: 220 }}>
             <TextField
@@ -762,7 +762,7 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
               </Select>
             </FormControl>
           </Box>
-          <Typography sx={{ fontSize: 12, color: '#9CA3AF', ml: 'auto' }}>
+          <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, ml: 'auto' }}>
             {safeInvoices.length} invoices found
           </Typography>
         </Box>
@@ -774,7 +774,7 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
         >
           {safeInvoices.length === 0 ? (
             <Box sx={{ p: 3, textAlign: 'center' }}>
-              <Typography sx={{ fontSize: 13, color: '#9CA3AF' }}>No invoices found</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>No invoices found</Typography>
             </Box>
           ) : (
             safeInvoices.map((invoice) => {
@@ -785,33 +785,33 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
               return (
                 <DataTableRow key={invoice.id} columns={invoiceColumns}>
                   {/* Invoice # */}
-                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                     {invoice.invoice_number}
                   </Typography>
 
                   {/* Course Name */}
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                     {invoice.course_type_name}
                   </Typography>
 
                   {/* Course Date */}
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                     {formatDisplayDate(invoice.course_date)}
                   </Typography>
 
                   {/* Location */}
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                     {invoice.location}
                   </Typography>
 
                   {/* Students */}
-                  <Typography sx={{ fontSize: 13, color: '#4B5563', textAlign: 'center' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, textAlign: 'center' }}>
                     {invoice.students_billed}
                   </Typography>
 
                   {/* Base Cost */}
                   {invoice.base_cost ? (
-                    <Typography sx={{ fontSize: 13, color: '#4B5563', textAlign: 'right', fontFamily: 'monospace' }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, textAlign: 'right', fontFamily: 'monospace' }}>
                       ${Number(invoice.base_cost).toFixed(2)}
                     </Typography>
                   ) : (
@@ -822,7 +822,7 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
 
                   {/* Tax (HST) */}
                   {invoice.tax_amount ? (
-                    <Typography sx={{ fontSize: 13, color: '#4B5563', textAlign: 'right', fontFamily: 'monospace' }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, textAlign: 'right', fontFamily: 'monospace' }}>
                       ${Number(invoice.tax_amount).toFixed(2)}
                     </Typography>
                   ) : (
@@ -833,7 +833,7 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
 
                   {/* Total */}
                   {invoice.amount ? (
-                    <Typography sx={{ fontSize: 13, color: '#4B5563', textAlign: 'right', fontFamily: 'monospace' }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, textAlign: 'right', fontFamily: 'monospace' }}>
                       ${Number(invoice.amount).toFixed(2)}
                     </Typography>
                   ) : (
@@ -845,7 +845,7 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
                   {/* Amount Paid */}
                   <Typography sx={{
                     fontSize: 13,
-                    color: invoice.amount_paid > 0 ? '#16A34A' : '#9CA3AF',
+                    color: invoice.amount_paid > 0 ? '#16A34A' : (theme) => theme.palette.text.secondary,
                     textAlign: 'right',
                     fontFamily: 'monospace',
                   }}>
@@ -866,7 +866,7 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
                   {/* Due Date */}
                   <Typography sx={{
                     fontSize: 13,
-                    color: isOverdue(invoice.due_date) ? '#CC1F1F' : '#4B5563',
+                    color: isOverdue(invoice.due_date) ? '#CC1F1F' : (theme) => theme.palette.text.secondary,
                   }}>
                     {formatDisplayDate(invoice.due_date)}
                   </Typography>
@@ -904,7 +904,7 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
                         sx={{
                           fontSize: 12,
                           fontWeight: 600,
-                          color: markingAsPaid === invoice.id ? '#9CA3AF' : '#16A34A',
+                          color: markingAsPaid === invoice.id ? (theme) => theme.palette.text.secondary : '#16A34A',
                           cursor: markingAsPaid === invoice.id ? 'not-allowed' : 'pointer',
                           '&:hover': { textDecoration: markingAsPaid === invoice.id ? 'none' : 'underline' },
                         }}
@@ -937,7 +937,7 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
       >
         <DialogTitle id="invoice-details-dialog-title">
           <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
+            <Typography sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>
               Invoice Details - {selectedInvoice?.invoice_number}
             </Typography>
             <Box
@@ -954,23 +954,23 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
               {/* Container for Header Info */}
               <Grid container spacing={2}>
                 <Grid xs={6} md={3}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                     <strong>Invoice #:</strong> {selectedInvoice.invoice_number}
                   </Typography>
                 </Grid>
                 <Grid xs={6} md={3}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                     <strong>Invoice Date:</strong>{' '}
                     {formatDisplayDate(selectedInvoice.created_at)}
                   </Typography>
                 </Grid>
                 <Grid xs={6} md={3}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                     <strong>Due Date:</strong> {formatDisplayDate(selectedInvoice.due_date)}
                   </Typography>
                 </Grid>
                 <Grid xs={6} md={3}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                     <strong>Status:</strong> {selectedInvoice.payment_status || selectedInvoice.status}
                   </Typography>
                 </Grid>
@@ -978,12 +978,12 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
               <Divider sx={{ my: 2 }} />
 
               {/* Organization Info */}
-              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827', mb: 0.5 }}>
+              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary, mb: 0.5 }}>
                 Bill To:
               </Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Your Organization</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Organization Address</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Contact Information</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Your Organization</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Organization Address</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Contact Information</Typography>
 
               <Divider sx={{ my: 2 }} />
 
@@ -995,7 +995,7 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
 
               {/* Class Attendance */}
               <Divider sx={{ my: 2 }} />
-              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827', mb: 1 }}>
+              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary, mb: 1 }}>
                 Class Attendance:
               </Typography>
               {loadingAttendance ? (
@@ -1004,7 +1004,7 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
                 </Box>
               ) : attendanceData.length > 0 ? (
                 <Box sx={{ mb: 2 }}>
-                  <Typography sx={{ fontSize: 12, color: '#9CA3AF', mb: 1 }}>
+                  <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, mb: 1 }}>
                     Total Students: {attendanceData.length} | Present: {attendanceData.filter(s => s.attended).length} | Absent: {attendanceData.filter(s => !s.attended).length}
                   </Typography>
                   <DataTable
@@ -1014,10 +1014,10 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
                   >
                     {attendanceData.map((student, index) => (
                       <DataTableRow key={index} columns={attendanceColumns}>
-                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                        <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                           {student.first_name} {student.last_name}
                         </Typography>
-                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                        <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                           {student.email || 'N/A'}
                         </Typography>
                         <Box sx={{ display: 'flex', justifyContent: 'center' }}>
@@ -1031,14 +1031,14 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
                   </DataTable>
                 </Box>
               ) : (
-                <Typography sx={{ fontSize: 13, color: '#9CA3AF' }}>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                   No attendance data available
                 </Typography>
               )}
 
               {/* Payment Summary */}
               <Divider sx={{ my: 2 }} />
-              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827', mb: 1 }}>
+              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary, mb: 1 }}>
                 Payment Summary:
               </Typography>
               {(() => {
@@ -1065,11 +1065,11 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
                 const balanceAfterPending = balanceAfterVerified - pendingTotal;
 
                 return (
-                  <Box sx={{ bgcolor: '#F9FAFB', p: 2, borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+                  <Box sx={{ bgcolor: (theme) => theme.palette.background.default, p: 2, borderRadius: '8px', border: (theme) => `1px solid ${theme.palette.divider}` }}>
                     {/* Invoice Total */}
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography sx={{ fontSize: 13, color: '#4B5563' }}><strong>Invoice Total:</strong></Typography>
-                      <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace' }}>
+                      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}><strong>Invoice Total:</strong></Typography>
+                      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, fontFamily: 'monospace' }}>
                         ${invoiceTotal.toFixed(2)}
                       </Typography>
                     </Box>
@@ -1084,7 +1084,7 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
                     {verifiedPayments.length > 0 && (
                       <Box sx={{ pl: 2, mt: 0.5 }}>
                         {verifiedPayments.map((payment, idx) => (
-                          <Typography key={idx} sx={{ fontSize: 11, color: '#9CA3AF' }}>
+                          <Typography key={idx} sx={{ fontSize: 11, color: (theme) => theme.palette.text.secondary }}>
                             {formatDisplayDate(payment.payment_date || payment.paymentDate)} - ${Number(payment.amount_paid || payment.amountPaid || payment.amount || 0).toFixed(2)} ({formatPaymentMethod(payment.payment_method || payment.paymentMethod || '')})
                           </Typography>
                         ))}
@@ -1115,7 +1115,7 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
                         <Box sx={{ pl: 2, mt: 0.5 }}>
                           {pendingPayments.map((payment, idx) => (
                             <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Typography sx={{ fontSize: 11, color: '#9CA3AF' }}>
+                              <Typography sx={{ fontSize: 11, color: (theme) => theme.palette.text.secondary }}>
                                 {formatDisplayDate(payment.payment_date || payment.paymentDate)} - ${Number(payment.amount_paid || payment.amountPaid || payment.amount || 0).toFixed(2)} ({formatPaymentMethod(payment.payment_method || payment.paymentMethod || '')}) -
                               </Typography>
                               <StatusChip kind="pending" label="Awaiting Verification" />
@@ -1133,7 +1133,7 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
                             ${balanceAfterPending.toFixed(2)}
                           </Typography>
                         </Box>
-                        <Typography sx={{ fontSize: 11, color: '#9CA3AF' }}>
+                        <Typography sx={{ fontSize: 11, color: (theme) => theme.palette.text.secondary }}>
                           (Once pending payments are verified by accounting)
                         </Typography>
                       </>
@@ -1147,7 +1147,7 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
                 <>
                   <Divider sx={{ my: 2 }} />
                   <Alert severity="warning" sx={{ mb: 2 }}>
-                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                       <strong>Payment Order Warning:</strong> There are older unpaid invoices that should be paid first.
                       Please pay invoices in chronological order.
                     </Typography>
@@ -1157,7 +1157,7 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
 
               {/* Payment History */}
               <Divider sx={{ my: 2 }} />
-              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827', mb: 1 }}>
+              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary, mb: 1 }}>
                 Payment History:
               </Typography>
               <PaymentHistoryTable
@@ -1210,7 +1210,7 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
 
           {selectedInvoice && hasOlderUnpaidInvoices(selectedInvoice) && (
             <Alert severity="warning" sx={{ mr: 'auto', flex: 1 }}>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                 Please pay older invoices first: {getOldestUnpaidInvoice()?.invoice_number}
               </Typography>
             </Alert>
@@ -1237,7 +1237,7 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
         disableEscapeKeyDown={submittingPayment}
       >
         <DialogTitle id="payment-dialog-title">
-          <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
+          <Typography sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>
             Submit Payment - {selectedInvoice?.invoice_number}
           </Typography>
         </DialogTitle>
@@ -1249,7 +1249,7 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
 
           {selectedInvoice && hasOlderUnpaidInvoices(selectedInvoice) && (
             <Alert severity="warning" sx={{ mb: 2 }}>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                 <strong>Payment Order Warning:</strong> There are older unpaid invoices that should be paid first.
                 Please pay invoice <strong>{getOldestUnpaidInvoice()?.invoice_number}</strong> before this one.
               </Typography>
@@ -1257,9 +1257,9 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
           )}
 
           {selectedInvoice && (
-            <Box sx={{ mb: 2, p: 2, bgcolor: '#F9FAFB', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
-              <Typography sx={{ fontSize: 12, color: '#9CA3AF', mb: 1 }}>Invoice Details</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+            <Box sx={{ mb: 2, p: 2, bgcolor: (theme) => theme.palette.background.default, borderRadius: '8px', border: (theme) => `1px solid ${theme.palette.divider}` }}>
+              <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, mb: 1 }}>Invoice Details</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                 Total Amount:{' '}
                 {selectedInvoice.amount ? (
                   <Box component="span" sx={{ fontFamily: 'monospace' }}>
@@ -1269,7 +1269,7 @@ const OrganizationBilling: React.FC<OrganizationBillingProps> = ({
                   <Box component="span" sx={{ color: '#CC1F1F', fontSize: 12 }}>N/A</Box>
                 )}
               </Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                 Amount Paid:{' '}
                 <Box component="span" sx={{ fontFamily: 'monospace' }}>
                   ${Number(selectedInvoice.amount_paid || 0).toFixed(2)}

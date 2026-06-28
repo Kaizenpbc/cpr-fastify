@@ -166,7 +166,7 @@ function OrganizationPricingManager() {
           </Select>
         </FormControl>
 
-        <Typography sx={{ fontSize: 12, color: '#9CA3AF', flex: 1 }}>
+        <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, flex: 1 }}>
           {processedData.length} pricing rule{processedData.length !== 1 ? 's' : ''}
         </Typography>
 
@@ -176,29 +176,29 @@ function OrganizationPricingManager() {
 
       {/* Table */}
       {processedData.length === 0 ? (
-        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
-          <Typography sx={{ color: '#9CA3AF', fontSize: 14 }}>No pricing records found</Typography>
+        <Box sx={{ bgcolor: (theme) => theme.palette.background.paper, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ color: (theme) => theme.palette.text.secondary, fontSize: 14 }}>No pricing records found</Typography>
         </Box>
       ) : (
         <DataTable columns={columns} shownCount={processedData.length} totalCount={pricingData.length}>
           {processedData.map(pricing => (
             <DataTableRow key={pricing.id} columns={columns}>
               {/* ORGANIZATION */}
-              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                 {pricing.organizationName || 'Unknown'}
               </Typography>
               {/* CLASS TYPE */}
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                 {pricing.classTypeName || 'Unknown'}
               </Typography>
               {/* PRICE */}
-              <Typography sx={{ fontSize: 14, fontWeight: 700, color: '#111827', fontFamily: 'monospace' }}>
+              <Typography sx={{ fontSize: 14, fontWeight: 700, color: (theme) => theme.palette.text.primary, fontFamily: 'monospace' }}>
                 {formatCurrency(pricing.pricePerStudent)}
               </Typography>
               {/* STATUS */}
               <StatusChip kind={pricing.isActive ? 'active' : 'inactive'} label={pricing.isActive ? 'Active' : 'Inactive'} />
               {/* UPDATED */}
-              <Typography sx={{ fontSize: 12.5, color: '#9CA3AF' }}>
+              <Typography sx={{ fontSize: 12.5, color: (theme) => theme.palette.text.secondary }}>
                 {formatDate(pricing.updatedAt)}
               </Typography>
               {/* ACTIONS */}
@@ -206,8 +206,8 @@ function OrganizationPricingManager() {
                 <Box onClick={() => handleEditOpen(pricing)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
                   Edit
                 </Box>
-                <Typography sx={{ fontSize: 12, color: '#E5E7EB' }}>|</Typography>
-                <Box onClick={() => handleDelete(pricing.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' } }}>
+                <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.divider }}>|</Typography>
+                <Box onClick={() => handleDelete(pricing.id)} sx={{ fontSize: 12, fontWeight: 600, color: (theme) => theme.palette.text.secondary, cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' } }}>
                   Delete
                 </Box>
               </Box>

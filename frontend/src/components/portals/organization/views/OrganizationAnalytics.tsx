@@ -107,7 +107,7 @@ const OrganizationAnalytics: React.FC<OrganizationAnalyticsProps> = ({
 
   if (!courses || !invoices) {
     return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200 }}>
-      <Typography sx={{ fontSize: 14, color: '#9CA3AF' }}>Loading analytics...</Typography>
+      <Typography sx={{ fontSize: 14, color: (theme) => theme.palette.text.secondary }}>Loading analytics...</Typography>
     </Box>;
   }
 
@@ -124,24 +124,24 @@ const OrganizationAnalytics: React.FC<OrganizationAnalyticsProps> = ({
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
-          <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff' }}>
+          <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper }}>
             <Box sx={{ p: 3, pb: 0 }}>
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
                 Course Type Distribution
               </Typography>
             </Box>
             {Object.keys(courseTypeStats).length === 0 ? (
               <Box sx={{ p: 3, textAlign: 'center' }}>
-                <Typography sx={{ fontSize: 13, color: '#9CA3AF' }}>No course data available</Typography>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>No course data available</Typography>
               </Box>
             ) : (
               <Box sx={{ p: 2 }}>
                 <DataTable columns={distributionColumns} shownCount={Object.keys(courseTypeStats).length} totalCount={Object.keys(courseTypeStats).length}>
                   {Object.entries(courseTypeStats).map(([type, count]) => (
                     <DataTableRow key={type} columns={distributionColumns}>
-                      <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{type}</Typography>
-                      <Typography sx={{ fontSize: 13, color: '#111827', textAlign: 'right' }}>{count}</Typography>
-                      <Typography sx={{ fontSize: 13, color: '#4B5563', textAlign: 'right' }}>{((count / allCourses.length) * 100).toFixed(1)}%</Typography>
+                      <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{type}</Typography>
+                      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary, textAlign: 'right' }}>{count}</Typography>
+                      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, textAlign: 'right' }}>{((count / allCourses.length) * 100).toFixed(1)}%</Typography>
                     </DataTableRow>
                   ))}
                 </DataTable>
@@ -151,24 +151,24 @@ const OrganizationAnalytics: React.FC<OrganizationAnalyticsProps> = ({
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff' }}>
+          <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper }}>
             <Box sx={{ p: 3, pb: 0 }}>
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
                 Course Status Distribution
               </Typography>
             </Box>
             {Object.keys(statusStats).length === 0 ? (
               <Box sx={{ p: 3, textAlign: 'center' }}>
-                <Typography sx={{ fontSize: 13, color: '#9CA3AF' }}>No status data available</Typography>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>No status data available</Typography>
               </Box>
             ) : (
               <Box sx={{ p: 2 }}>
                 <DataTable columns={distributionColumns} shownCount={Object.keys(statusStats).length} totalCount={Object.keys(statusStats).length}>
                   {Object.entries(statusStats).map(([status, count]) => (
                     <DataTableRow key={status} columns={distributionColumns}>
-                      <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{status}</Typography>
-                      <Typography sx={{ fontSize: 13, color: '#111827', textAlign: 'right' }}>{count}</Typography>
-                      <Typography sx={{ fontSize: 13, color: '#4B5563', textAlign: 'right' }}>{((count / allCourses.length) * 100).toFixed(1)}%</Typography>
+                      <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{status}</Typography>
+                      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary, textAlign: 'right' }}>{count}</Typography>
+                      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, textAlign: 'right' }}>{((count / allCourses.length) * 100).toFixed(1)}%</Typography>
                     </DataTableRow>
                   ))}
                 </DataTable>
@@ -180,19 +180,19 @@ const OrganizationAnalytics: React.FC<OrganizationAnalyticsProps> = ({
 
       {/* Recent Activity */}
       {recentCourses.length === 0 ? (
-        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
-          <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#9CA3AF' }}>No recent activity</Typography>
+        <Box sx={{ bgcolor: (theme) => theme.palette.background.paper, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ fontSize: 14, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>No recent activity</Typography>
         </Box>
       ) : (
         <DataTable columns={activityColumns} shownCount={recentCourses.length} totalCount={allCourses.length}>
           {recentCourses.map((course) => (
             <DataTableRow key={course.id} columns={activityColumns}>
-              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{course.courseTypeName}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatDisplayDate(course.requestSubmittedDate)}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.location}</Typography>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'right' }}>{course.registeredStudents}</Typography>
+              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{course.courseTypeName}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{formatDisplayDate(course.requestSubmittedDate)}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{course.location}</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary, textAlign: 'right' }}>{course.registeredStudents}</Typography>
               <StatusChip kind={course.status?.toLowerCase() === 'completed' ? 'success' : course.status?.toLowerCase() === 'confirmed' ? 'active' : 'pending'} label={course.status} />
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.instructor || 'TBD'}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{course.instructor || 'TBD'}</Typography>
             </DataTableRow>
           ))}
         </DataTable>

@@ -80,8 +80,8 @@ function OrganizationManager() {
       </Box>
 
       {organizations.length === 0 ? (
-        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
-          <Typography sx={{ color: '#9CA3AF', fontSize: 14 }}>No organizations found.</Typography>
+        <Box sx={{ bgcolor: (theme) => theme.palette.background.paper, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ color: (theme) => theme.palette.text.secondary, fontSize: 14 }}>No organizations found.</Typography>
         </Box>
       ) : (
         <DataTable columns={columns} shownCount={organizations.length} totalCount={organizations.length}>
@@ -89,16 +89,16 @@ function OrganizationManager() {
             <DataTableRow key={org.id} columns={columns}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <UserAvatar initials={getInitials(org.organizationName)} />
-                <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{org.organizationName}</Typography>
+                <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{org.organizationName}</Typography>
               </Box>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{org.contactName || '—'}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{org.contactEmail || '—'}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatPhone(org.contactPhone)}</Typography>
-              <Typography sx={{ fontSize: 12.5, color: '#4B5563' }}>{formatAddress(org)}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{org.contactName || '—'}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{org.contactEmail || '—'}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{formatPhone(org.contactPhone)}</Typography>
+              <Typography sx={{ fontSize: 12.5, color: (theme) => theme.palette.text.secondary }}>{formatAddress(org)}</Typography>
               <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
                 <ButtonBase onClick={() => handleEditOpen(org)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>Edit</ButtonBase>
-                <Typography sx={{ fontSize: 12, color: '#E5E7EB' }}>|</Typography>
-                <ButtonBase onClick={() => handleDelete(org.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>Delete</ButtonBase>
+                <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.divider }}>|</Typography>
+                <ButtonBase onClick={() => handleDelete(org.id)} sx={{ fontSize: 12, fontWeight: 600, color: (theme) => theme.palette.text.secondary, '&:hover': { textDecoration: 'underline', color: '#CC1F1F' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>Delete</ButtonBase>
               </Box>
             </DataTableRow>
           ))}

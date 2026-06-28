@@ -116,23 +116,23 @@ const CourseManager: React.FC<CourseManagerProps> = ({ showSnackbar }) => {
       </Box>
 
       {courses.length === 0 ? (
-        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
-          <Typography sx={{ color: '#9CA3AF', fontSize: 14 }}>No courses found.</Typography>
+        <Box sx={{ bgcolor: (theme) => theme.palette.background.paper, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ color: (theme) => theme.palette.text.secondary, fontSize: 14 }}>No courses found.</Typography>
         </Box>
       ) : (
         <DataTable columns={columns} shownCount={courses.length} totalCount={courses.length}>
           {courses.map(course => (
             <DataTableRow key={course.id} columns={columns}>
-              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{course.name}</Typography>
-              <Typography sx={{ fontSize: 12.5, fontFamily: 'monospace', color: '#4B5563' }}>{course.coursecode}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatDuration(course.duration)}</Typography>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{course.maxstudents}</Typography>
-              <Typography sx={{ fontSize: 12.5, color: '#9CA3AF' }}>{formatDisplayDate(course.createdAt)}</Typography>
-              <Typography sx={{ fontSize: 12.5, color: '#9CA3AF' }}>{formatDisplayDate(course.updatedAt)}</Typography>
+              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{course.name}</Typography>
+              <Typography sx={{ fontSize: 12.5, fontFamily: 'monospace', color: (theme) => theme.palette.text.secondary }}>{course.coursecode}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{formatDuration(course.duration)}</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{course.maxstudents}</Typography>
+              <Typography sx={{ fontSize: 12.5, color: (theme) => theme.palette.text.secondary }}>{formatDisplayDate(course.createdAt)}</Typography>
+              <Typography sx={{ fontSize: 12.5, color: (theme) => theme.palette.text.secondary }}>{formatDisplayDate(course.updatedAt)}</Typography>
               <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
                 <ButtonBase onClick={() => handleEditOpen(course)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>Edit</ButtonBase>
-                <Typography sx={{ fontSize: 12, color: '#E5E7EB' }}>|</Typography>
-                <ButtonBase onClick={() => handleDelete(course.id, course.name)} sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>Delete</ButtonBase>
+                <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.divider }}>|</Typography>
+                <ButtonBase onClick={() => handleDelete(course.id, course.name)} sx={{ fontSize: 12, fontWeight: 600, color: (theme) => theme.palette.text.secondary, '&:hover': { textDecoration: 'underline', color: '#CC1F1F' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>Delete</ButtonBase>
               </Box>
             </DataTableRow>
           ))}

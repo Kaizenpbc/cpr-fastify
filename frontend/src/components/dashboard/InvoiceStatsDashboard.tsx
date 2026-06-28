@@ -80,10 +80,10 @@ const InvoiceStatsDashboard: React.FC<InvoiceStatsDashboardProps> = ({
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
           Invoice Statistics
         </Typography>
-        <Typography sx={{ fontSize: 11, color: '#9CA3AF' }}>Last updated: {stats.lastUpdated}</Typography>
+        <Typography sx={{ fontSize: 11, color: (theme) => theme.palette.text.secondary }}>Last updated: {stats.lastUpdated}</Typography>
       </Box>
 
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2 }}>

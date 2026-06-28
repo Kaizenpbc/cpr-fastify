@@ -116,23 +116,23 @@ const AttendanceView = ({ onAttendanceUpdate }: { onAttendanceUpdate: any }) => 
       {error && <Alert severity="error" onClose={() => setError('')}>{error}</Alert>}
 
       {todaysClasses.length === 0 ? (
-        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
-          <Typography sx={{ fontSize: 16, fontWeight: 600, color: '#9CA3AF' }}>No classes scheduled for today</Typography>
-          <Typography sx={{ fontSize: 13, color: '#9CA3AF', mt: 1 }}>Check back on days when you have scheduled classes.</Typography>
+        <Box sx={{ bgcolor: (theme) => theme.palette.background.paper, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ fontSize: 16, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>No classes scheduled for today</Typography>
+          <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mt: 1 }}>Check back on days when you have scheduled classes.</Typography>
         </Box>
       ) : (
         <>
           {/* Class Selection */}
-          <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Select Class for Attendance</Typography>
+          <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Select Class for Attendance</Typography>
             <FormControl fullWidth>
               <InputLabel>Today's Classes</InputLabel>
               <Select value={selectedClass?.courseId || ''} label="Today's Classes" onChange={handleClassChange}>
                 {todaysClasses.map((course: any) => (
                   <MenuItem key={course.courseId} value={course.courseId}>
                     <Box>
-                      <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{course.name} - {course.organizationName}</Typography>
-                      <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{formatTime(course.startTime)} - {formatTime(course.endTime)} | {course.location}</Typography>
+                      <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{course.name} - {course.organizationName}</Typography>
+                      <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>{formatTime(course.startTime)} - {formatTime(course.endTime)} | {course.location}</Typography>
                     </Box>
                   </MenuItem>
                 ))}
@@ -142,15 +142,15 @@ const AttendanceView = ({ onAttendanceUpdate }: { onAttendanceUpdate: any }) => 
 
           {/* Student Management */}
           {selectedClass && (
-            <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
+            <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Student Attendance</Typography>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Student Attendance</Typography>
                 <PrimaryButton onClick={() => setAddStudentDialog(true)}>+ Add Student</PrimaryButton>
               </Box>
 
               {/* Class Info */}
-              <Box sx={{ mb: 2, p: 2, bgcolor: '#F9FAFB', borderRadius: '8px' }}>
-                <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#111827', mb: 1 }}>{selectedClass.name} - {selectedClass.organizationName}</Typography>
+              <Box sx={{ mb: 2, p: 2, bgcolor: (theme) => theme.palette.background.default, borderRadius: '8px' }}>
+                <Typography sx={{ fontSize: 14, fontWeight: 600, color: (theme) => theme.palette.text.primary, mb: 1 }}>{selectedClass.name} - {selectedClass.organizationName}</Typography>
                 <Box sx={{ display: 'flex', gap: 1 }}>
                   <StatusChip kind="neutral" label={`${formatTime(selectedClass.startTime)} - ${formatTime(selectedClass.endTime)}`} />
                   <StatusChip kind="neutral" label={`${students.length} Students`} />
@@ -163,15 +163,15 @@ const AttendanceView = ({ onAttendanceUpdate }: { onAttendanceUpdate: any }) => 
                 <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress size={24} /></Box>
               ) : students.length === 0 ? (
                 <Box sx={{ textAlign: 'center', py: 4 }}>
-                  <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#9CA3AF' }}>No Students Registered</Typography>
-                  <Typography sx={{ fontSize: 13, color: '#9CA3AF', mt: 0.5 }}>Add students to this class to mark attendance</Typography>
+                  <Typography sx={{ fontSize: 14, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>No Students Registered</Typography>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mt: 0.5 }}>Add students to this class to mark attendance</Typography>
                 </Box>
               ) : (
                 <DataTable columns={studentColumns} shownCount={students.length} totalCount={students.length}>
                   {students.map(student => (
                     <DataTableRow key={student.studentId} columns={studentColumns}>
-                      <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{student.firstName} {student.lastName}</Typography>
-                      <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{student.email || '—'}</Typography>
+                      <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{student.firstName} {student.lastName}</Typography>
+                      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{student.email || '—'}</Typography>
                       <Box sx={{ display: 'flex', justifyContent: 'center' }}>
                         <Checkbox
                           checked={student.attendance || false}
@@ -194,7 +194,7 @@ const AttendanceView = ({ onAttendanceUpdate }: { onAttendanceUpdate: any }) => 
 
       {/* Add Student Dialog */}
       <Dialog open={addStudentDialog} onClose={() => setAddStudentDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>Add Student to Class</DialogTitle>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>Add Student to Class</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 1 }}>
             <TextField fullWidth label="First Name" value={newStudent.firstName} onChange={e => setNewStudent(prev => ({ ...prev, firstName: e.target.value }))} margin="normal" required />

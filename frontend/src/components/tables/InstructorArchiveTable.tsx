@@ -22,9 +22,9 @@ const columns = [
 const InstructorArchiveTable: React.FC<InstructorArchiveTableProps> = ({ courses = [] }) => {
   if (courses.length === 0) {
     return (
-      <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
-        <Typography sx={{ color: '#9CA3AF', fontSize: 14 }}>No completed classes yet.</Typography>
-        <Typography sx={{ color: '#9CA3AF', fontSize: 12.5, mt: 1 }}>Completed classes will appear here after you mark them as finished.</Typography>
+      <Box sx={{ bgcolor: (theme) => theme.palette.background.paper, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 6, textAlign: 'center' }}>
+        <Typography sx={{ color: (theme) => theme.palette.text.secondary, fontSize: 14 }}>No completed classes yet.</Typography>
+        <Typography sx={{ color: (theme) => theme.palette.text.secondary, fontSize: 12.5, mt: 1 }}>Completed classes will appear here after you mark them as finished.</Typography>
       </Box>
     );
   }
@@ -33,19 +33,19 @@ const InstructorArchiveTable: React.FC<InstructorArchiveTableProps> = ({ courses
     <DataTable columns={columns} shownCount={courses.length} totalCount={courses.length}>
       {courses.map((course, index) => (
         <DataTableRow key={course.courseId || index} columns={columns}>
-          <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
             {course.date ? formatDisplayDate(course.date) : '—'}
           </Typography>
-          <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.name || 'CPR Class'}</Typography>
-          <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.organizationname || 'Unassigned'}</Typography>
-          <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.location || 'TBD'}</Typography>
-          <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'right' }}>
+          <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{course.name || 'CPR Class'}</Typography>
+          <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{course.organizationname || 'Unassigned'}</Typography>
+          <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{course.location || 'TBD'}</Typography>
+          <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary, textAlign: 'right' }}>
             {course.maxStudents || course.registeredStudents || 0}
           </Typography>
-          <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'right' }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary, textAlign: 'right' }}>
             {course.studentsattendance || course.studentsAttended || 0}
           </Typography>
-          <Typography sx={{ fontSize: 12.5, color: '#9CA3AF' }}>
+          <Typography sx={{ fontSize: 12.5, color: (theme) => theme.palette.text.secondary }}>
             {(course.updatedAt || course.date) ? formatDisplayDate((course.updatedAt || course.date)!) : '—'}
           </Typography>
           <StatusChip kind="success" label="Completed" />

@@ -96,7 +96,7 @@ const categoryOptions: Record<string, string[]> = {
 const sectionHeaderSx = {
   fontSize: 13,
   fontWeight: 700,
-  color: '#9CA3AF',
+  color: (theme: any) => theme.palette.text.secondary,
   textTransform: 'uppercase' as const,
   letterSpacing: '0.07em',
 };
@@ -104,7 +104,7 @@ const sectionHeaderSx = {
 const dialogTitleSx = {
   fontSize: 18,
   fontWeight: 700,
-  color: '#111827',
+  color: (theme: any) => theme.palette.text.primary,
 };
 
 const tableColumns = [
@@ -434,7 +434,7 @@ const EmailTemplateManager: React.FC = () => {
     <Box
       key={template.id}
       sx={{
-        border: '1px solid #E5E7EB',
+        border: (theme: any) => `1px solid ${theme.palette.divider}`,
         borderRadius: '8px',
         p: 2.5,
         height: '100%',
@@ -451,7 +451,7 @@ const EmailTemplateManager: React.FC = () => {
         }}
       >
         <Box>
-          <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#111827', mb: 0.5 }}>
+          <Typography sx={{ fontSize: 15, fontWeight: 700, color: (theme) => theme.palette.text.primary, mb: 0.5 }}>
             {template.name}
           </Typography>
           <Typography sx={{ fontSize: 13, color: '#6B7280', mb: 1 }}>
@@ -494,7 +494,7 @@ const EmailTemplateManager: React.FC = () => {
         Subject: {template.subject}
       </Typography>
       {template.updatedAt && (
-        <Typography sx={{ fontSize: 12, color: '#9CA3AF', mt: 1 }}>
+        <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, mt: 1 }}>
           Updated: {new Date(template.updatedAt).toLocaleDateString()}
         </Typography>
       )}
@@ -581,7 +581,7 @@ const EmailTemplateManager: React.FC = () => {
   ];
 
   return (
-    <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '8px', p: 3, mt: 3 }}>
+    <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '8px', p: 3, mt: 3 }}>
       <Box
         sx={{
           display: 'flex',
@@ -590,7 +590,7 @@ const EmailTemplateManager: React.FC = () => {
           mb: 3,
         }}
       >
-        <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
+        <Typography sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>
           Email Template Manager
         </Typography>
         <PrimaryButton onClick={handleCreateTemplate}>+ Create Template</PrimaryButton>
@@ -619,7 +619,7 @@ const EmailTemplateManager: React.FC = () => {
             ))}
           </Select>
         </FormControl>
-        <Box sx={{ display: 'flex', border: '1px solid #E5E7EB', borderRadius: '8px', overflow: 'hidden' }}>
+        <Box sx={{ display: 'flex', border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '8px', overflow: 'hidden' }}>
           {viewModes.map(mode => (
             <Box
               key={mode.value}
@@ -632,7 +632,7 @@ const EmailTemplateManager: React.FC = () => {
                 cursor: 'pointer',
                 borderRadius: '6px',
                 bgcolor: viewMode === mode.value ? '#CC1F1F' : 'transparent',
-                color: viewMode === mode.value ? '#fff' : '#4B5563',
+                color: viewMode === mode.value ? '#fff' : (theme) => theme.palette.text.secondary,
                 transition: 'background-color 0.15s, color 0.15s',
               }}
             >
@@ -642,7 +642,7 @@ const EmailTemplateManager: React.FC = () => {
         </Box>
       </Box>
 
-      <Box sx={{ p: 2, bgcolor: '#F9FAFB', borderRadius: 1, mb: 2, border: '1px solid #E5E7EB' }}>
+      <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.background.default, borderRadius: 1, mb: 2, border: (theme) => `1px solid ${theme.palette.divider}` }}>
         <Typography sx={{ fontSize: 13, color: '#6B7280' }}>
           Showing {sortedTemplates.length} of {templates.length} templates
         </Typography>
@@ -672,7 +672,7 @@ const EmailTemplateManager: React.FC = () => {
                 <DataTableRow key={template.id} columns={tableColumns}>
                   <Box
                     onClick={() => handleColumnSort('name')}
-                    sx={{ fontSize: 13, fontWeight: 600, color: '#111827', cursor: 'pointer' }}
+                    sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary, cursor: 'pointer' }}
                   >
                     {template.name}{getSortIcon('name')}
                   </Box>
@@ -840,7 +840,7 @@ const EmailTemplateManager: React.FC = () => {
                 <Typography sx={{ ...sectionHeaderSx, fontSize: 13 }}>
                   Email Content
                 </Typography>
-                <Box sx={{ display: 'flex', border: '1px solid #E5E7EB', borderRadius: '8px', overflow: 'hidden' }}>
+                <Box sx={{ display: 'flex', border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '8px', overflow: 'hidden' }}>
                   {editorModes.map(mode => (
                     <Box
                       key={mode.value}
@@ -853,7 +853,7 @@ const EmailTemplateManager: React.FC = () => {
                         cursor: 'pointer',
                         borderRadius: '6px',
                         bgcolor: editorMode === mode.value ? '#CC1F1F' : 'transparent',
-                        color: editorMode === mode.value ? '#fff' : '#4B5563',
+                        color: editorMode === mode.value ? '#fff' : (theme) => theme.palette.text.secondary,
                         transition: 'background-color 0.15s, color 0.15s',
                       }}
                     >
@@ -863,7 +863,7 @@ const EmailTemplateManager: React.FC = () => {
                 </Box>
               </Box>
               {editorMode === 'html' ? (
-                <Box sx={{ border: '1px solid #E5E7EB', borderRadius: 1, height: 400 }}>
+                <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: 1, height: 400 }}>
                   <React.Suspense fallback={<Box sx={{ p: 2 }}>Loading editor...</Box>}>
                     <Editor
                       height="400px"
@@ -938,7 +938,7 @@ const EmailTemplateManager: React.FC = () => {
       >
         <DialogTitle sx={dialogTitleSx}>
           Template Preview
-          <Typography sx={{ fontSize: 12, color: '#9CA3AF', mt: 0.5 }}>
+          <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, mt: 0.5 }}>
             Using sample data for preview
           </Typography>
         </DialogTitle>
@@ -967,9 +967,9 @@ const EmailTemplateManager: React.FC = () => {
                   ))}
                 </Grid>
               </Box>
-              <Box sx={{ border: '1px solid #E5E7EB', p: 2, borderRadius: 1 }}>
+              <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, p: 2, borderRadius: 1 }}>
                 <Typography sx={{ ...sectionHeaderSx, mb: 0.5 }}>Subject:</Typography>
-                <Typography sx={{ mb: 2, fontSize: 14, color: '#111827' }}>
+                <Typography sx={{ mb: 2, fontSize: 14, color: (theme) => theme.palette.text.primary }}>
                   {selectedTemplate.subject.replace(
                     /\{\{(\w+)\}\}/g,
                     (_, key) => previewVariables[key] || `{{${key}}}`

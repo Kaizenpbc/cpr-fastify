@@ -22,7 +22,7 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, title, child
   >
     <Box
       sx={{
-        backgroundColor: '#111827',
+        backgroundColor: (theme) => theme.palette.text.primary,
         padding: '16px 20px',
         display: 'flex',
         justifyContent: 'space-between',
@@ -49,7 +49,7 @@ export const DrawerSection: React.FC<{ title: string; children: ReactNode }> = (
       sx={{
         fontSize: '12px',
         fontWeight: 700,
-        color: '#9CA3AF',
+        color: (theme) => theme.palette.text.secondary,
         textTransform: 'uppercase',
         letterSpacing: '0.06em',
         mb: 1.5,

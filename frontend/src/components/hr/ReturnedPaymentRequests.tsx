@@ -86,7 +86,7 @@ const ReturnedPaymentRequestDetailDialog: React.FC<{
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
-      <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         Review Returned Payment Request
         <StatusChip kind="warning" label="RETURNED TO HR" />
       </DialogTitle>
@@ -95,12 +95,12 @@ const ReturnedPaymentRequestDetailDialog: React.FC<{
           <Grid container spacing={2}>
             {/* Instructor Information */}
             <Grid item xs={12} md={6}>
-              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 3 }}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Instructor Information</Typography>
+              <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 3 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Instructor Information</Typography>
                 {[['Name', request.instructorName], ['Email', request.instructorEmail], ['ID', request.instructorId]].map(([l, v]) => (
                   <Box key={String(l)} sx={{ display: 'flex', py: 0.5 }}>
-                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#9CA3AF', width: 60 }}>{l}</Typography>
-                    <Typography sx={{ fontSize: 13, color: '#111827' }}>{v}</Typography>
+                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.secondary, width: 60 }}>{l}</Typography>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}>{v}</Typography>
                   </Box>
                 ))}
               </Box>
@@ -108,13 +108,13 @@ const ReturnedPaymentRequestDetailDialog: React.FC<{
 
             {/* Payment Information */}
             <Grid item xs={12} md={6}>
-              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 3 }}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Payment Information</Typography>
+              <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 3 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Payment Information</Typography>
                 <Typography sx={{ fontSize: 24, fontWeight: 700, fontFamily: 'monospace', color: '#16A34A', mb: 1 }}>${Number(request.amount).toFixed(2)}</Typography>
                 {[['Week Starting', new Date(request.weekStartDate).toLocaleDateString()], ['Hours', `${request.totalHours}h`], ['Courses', request.coursesTaught]].map(([l, v]) => (
                   <Box key={String(l)} sx={{ display: 'flex', py: 0.25 }}>
-                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#9CA3AF', width: 100 }}>{l}</Typography>
-                    <Typography sx={{ fontSize: 13, color: '#111827' }}>{v}</Typography>
+                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.secondary, width: 100 }}>{l}</Typography>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}>{v}</Typography>
                   </Box>
                 ))}
               </Box>
@@ -122,8 +122,8 @@ const ReturnedPaymentRequestDetailDialog: React.FC<{
 
             {/* Payment Breakdown */}
             <Grid item xs={12} md={6}>
-              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 3 }}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Payment Breakdown</Typography>
+              <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 3 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Payment Breakdown</Typography>
                 {[
                   ['Hourly Rate', `$${request.hourlyRate}/hr`],
                   ['Course Bonus', `$${request.courseBonus}/course`],
@@ -132,8 +132,8 @@ const ReturnedPaymentRequestDetailDialog: React.FC<{
                   ['Pay Tier', request.tierName],
                 ].map(([l, v]) => (
                   <Box key={String(l)} sx={{ display: 'flex', py: 0.25 }}>
-                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#9CA3AF', width: 110 }}>{l}</Typography>
-                    <Typography sx={{ fontSize: 13, fontFamily: 'monospace', color: '#111827' }}>{v}</Typography>
+                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.secondary, width: 110 }}>{l}</Typography>
+                    <Typography sx={{ fontSize: 13, fontFamily: 'monospace', color: (theme) => theme.palette.text.primary }}>{v}</Typography>
                   </Box>
                 ))}
               </Box>
@@ -141,15 +141,15 @@ const ReturnedPaymentRequestDetailDialog: React.FC<{
 
             {/* Accountant Notes */}
             <Grid item xs={12} md={6}>
-              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 3, bgcolor: '#FFFBEB' }}>
+              <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 3, bgcolor: '#FFFBEB' }}>
                 <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Accountant Notes</Typography>
-                <Typography sx={{ fontSize: 13, color: '#111827', p: 1, bgcolor: '#fff', borderRadius: '6px' }}>{request.notes || 'No notes provided'}</Typography>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary, p: 1, bgcolor: (theme) => theme.palette.background.paper, borderRadius: '6px' }}>{request.notes || 'No notes provided'}</Typography>
               </Box>
             </Grid>
 
             {/* HR Decision */}
             <Grid item xs={12}>
-              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 3, bgcolor: '#F0F9FF' }}>
+              <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 3, bgcolor: '#F0F9FF' }}>
                 <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#1E40AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>HR Decision Required</Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
@@ -218,7 +218,7 @@ const ReturnedPaymentRequests: React.FC = () => {
 
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Review payment requests returned by accounting for HR decision</Typography>
+        <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Review payment requests returned by accounting for HR decision</Typography>
         <GhostButton onClick={loadData} disabled={loading}>Refresh</GhostButton>
       </Box>
 
@@ -228,26 +228,26 @@ const ReturnedPaymentRequests: React.FC = () => {
       </Box>
 
       {/* Table */}
-      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
+      <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
         {requests.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 4 }}>
-            <Typography sx={{ fontSize: 16, fontWeight: 600, color: '#9CA3AF' }}>No Returned Payment Requests</Typography>
-            <Typography sx={{ fontSize: 13, color: '#9CA3AF', mt: 0.5 }}>All payment requests have been processed or are still pending</Typography>
+            <Typography sx={{ fontSize: 16, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>No Returned Payment Requests</Typography>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mt: 0.5 }}>All payment requests have been processed or are still pending</Typography>
           </Box>
         ) : (
           <>
             <DataTable columns={requestColumns} shownCount={requests.length} totalCount={pagination.total}>
               {requests.map((request) => (
                 <DataTableRow key={request.id} columns={requestColumns}>
-                  <Typography sx={{ fontSize: 13, fontFamily: 'monospace', color: '#4B5563' }}>{request.id}</Typography>
+                  <Typography sx={{ fontSize: 13, fontFamily: 'monospace', color: (theme) => theme.palette.text.secondary }}>{request.id}</Typography>
                   <Box>
-                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{request.instructorName}</Typography>
-                    <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>ID: {request.instructorId}</Typography>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{request.instructorName}</Typography>
+                    <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>ID: {request.instructorId}</Typography>
                   </Box>
-                  <Typography sx={{ fontSize: 13, fontWeight: 600, fontFamily: 'monospace', color: '#111827', textAlign: 'right' }}>${Number(request.amount).toFixed(2)}</Typography>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{new Date(request.weekStartDate).toLocaleDateString()}</Typography>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{request.totalHours}h / {request.coursesTaught} courses</Typography>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{new Date(request.updatedAt).toLocaleDateString()}</Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, fontFamily: 'monospace', color: (theme) => theme.palette.text.primary, textAlign: 'right' }}>${Number(request.amount).toFixed(2)}</Typography>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{new Date(request.weekStartDate).toLocaleDateString()}</Typography>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{request.totalHours}h / {request.coursesTaught} courses</Typography>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{new Date(request.updatedAt).toLocaleDateString()}</Typography>
                   <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <ButtonBase onClick={() => { setSelectedRequest(request); setDetailDialogOpen(true); }} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>Review</ButtonBase>
                   </Box>

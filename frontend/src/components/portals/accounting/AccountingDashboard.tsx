@@ -227,9 +227,9 @@ const PendingActionsSidebar: React.FC = () => {
 
   if (loading) {
     return (
-      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3, height: 'fit-content', minWidth: 280 }}>
+      <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3, height: 'fit-content', minWidth: 280 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
             Pending Actions
           </Typography>
           <Box
@@ -247,9 +247,9 @@ const PendingActionsSidebar: React.FC = () => {
   }
 
   return (
-    <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3, height: 'fit-content', minWidth: 280 }}>
+    <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3, height: 'fit-content', minWidth: 280 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
           Pending Actions
         </Typography>
         <Box
@@ -262,7 +262,7 @@ const PendingActionsSidebar: React.FC = () => {
 
       {pendingActions.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 3 }}>
-          <Typography sx={{ fontSize: 13, color: '#4B5563' }}>No pending actions</Typography>
+          <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>No pending actions</Typography>
         </Box>
       ) : (
         <>
@@ -272,15 +272,15 @@ const PendingActionsSidebar: React.FC = () => {
                 key={action.id}
                 onClick={() => handleActionClick(action.route)}
                 sx={{
-                  border: '1px solid #E5E7EB',
+                  border: (theme) => `1px solid ${theme.palette.divider}`,
                   borderRadius: '8px',
                   p: 1.5,
                   cursor: 'pointer',
-                  '&:hover': { bgcolor: '#F9FAFB' },
+                  '&:hover': { bgcolor: (theme) => theme.palette.background.default },
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                     {action.title}
                   </Typography>
                   {action.count !== undefined && (
@@ -303,7 +303,7 @@ const PendingActionsSidebar: React.FC = () => {
                     </Box>
                   )}
                 </Box>
-                <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{action.description}</Typography>
+                <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>{action.description}</Typography>
               </Box>
             ))}
           </Box>
@@ -428,7 +428,7 @@ const AccountingDashboard: React.FC = () => {
         <Box sx={{ flex: 1, minWidth: 0 }}>
           {/* Header */}
           <Box sx={{ mb: 3 }}>
-            <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#111827', mb: 1 }}>
+            <Typography sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary, mb: 1 }}>
               Financial Overview
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -489,17 +489,17 @@ const AccountingDashboard: React.FC = () => {
           </Box>
 
           {/* Quick Summary */}
-          <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
+          <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
             <Typography
-              sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}
+              sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}
             >
               Quick Summary
             </Typography>
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
                 <Box sx={{ mb: 1.5 }}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
-                    <Box component="span" sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
+                    <Box component="span" sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                       Billing Status:{' '}
                     </Box>
                     {dashboardData.totalBilled > 0
@@ -508,8 +508,8 @@ const AccountingDashboard: React.FC = () => {
                   </Typography>
                 </Box>
                 <Box sx={{ mb: 1.5 }}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
-                    <Box component="span" sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
+                    <Box component="span" sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                       Payment Status:{' '}
                     </Box>
                     {dashboardData.outstandingInvoices.count === 0
@@ -520,8 +520,8 @@ const AccountingDashboard: React.FC = () => {
               </Grid>
               <Grid item xs={12} md={6}>
                 <Box sx={{ mb: 1.5 }}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
-                    <Box component="span" sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
+                    <Box component="span" sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                       Collection Rate:{' '}
                     </Box>
                     {dashboardData.totalBilled > 0
@@ -530,8 +530,8 @@ const AccountingDashboard: React.FC = () => {
                   </Typography>
                 </Box>
                 <Box sx={{ mb: 1.5 }}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
-                    <Box component="span" sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
+                    <Box component="span" sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                       Course Activity:{' '}
                     </Box>
                     {dashboardData.completedCoursesThisMonth} courses completed this month
@@ -561,8 +561,8 @@ const AccountingDashboard: React.FC = () => {
         <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#CC1F1F', mb: 1 }}>
           Error Loading Dashboard
         </Typography>
-        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>An error occurred while loading the dashboard.</Typography>
-        <Typography sx={{ fontSize: 12, color: '#9CA3AF', mt: 0.5 }}>
+        <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>An error occurred while loading the dashboard.</Typography>
+        <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, mt: 0.5 }}>
           Error: {error instanceof Error ? error.message : 'Unknown error'}
         </Typography>
       </Box>

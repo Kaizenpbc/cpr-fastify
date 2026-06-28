@@ -111,9 +111,9 @@ const CourseScheduling = () => {
       {error && <Alert severity="error" onClose={() => setError(null)}>{error}</Alert>}
 
       {/* Filters */}
-      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
+      <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
             Filters
             {hasActiveFilters ? ` (${filteredCourses.length} of ${courses.length})` : ''}
           </Typography>
@@ -140,8 +140,8 @@ const CourseScheduling = () => {
 
       {/* Courses Table */}
       {filteredCourses.length === 0 ? (
-        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
-          <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#9CA3AF' }}>
+        <Box sx={{ bgcolor: (theme) => theme.palette.background.paper, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ fontSize: 14, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>
             {hasActiveFilters ? 'No courses match the selected filters' : 'No courses found'}
           </Typography>
         </Box>
@@ -149,11 +149,11 @@ const CourseScheduling = () => {
         <DataTable columns={columns} shownCount={filteredCourses.length} totalCount={courses.length}>
           {filteredCourses.map((course: Record<string, unknown>) => (
             <DataTableRow key={course.id as number} columns={columns}>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{formatDateWithoutTimezone(course.scheduledDate as string)}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{(course.courseTypeName || course.courseType || '—') as string}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.organizationName as string}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{course.location as string}</Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{(course.instructorName || 'Not Assigned') as string}</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{formatDateWithoutTimezone(course.scheduledDate as string)}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{(course.courseTypeName || course.courseType || '—') as string}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{course.organizationName as string}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{course.location as string}</Typography>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{(course.instructorName || 'Not Assigned') as string}</Typography>
               <StatusChip kind="active" label={course.status as string} />
               <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Box onClick={() => handleCancelClick(course as unknown as Course)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Cancel</Box>
@@ -165,9 +165,9 @@ const CourseScheduling = () => {
 
       {/* Cancel Dialog */}
       <Dialog open={cancelDialogOpen} onClose={handleCancelClose} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>Cancel Course</DialogTitle>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>Cancel Course</DialogTitle>
         <DialogContent>
-          <Box sx={{ p: 2, bgcolor: '#F9FAFB', borderRadius: '8px', border: '1px solid #E5E7EB', mb: 2, mt: 1 }}>
+          <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.background.default, borderRadius: '8px', border: (theme) => `1px solid ${theme.palette.divider}`, mb: 2, mt: 1 }}>
             {[
               ['Course', courseToCancel?.courseType],
               ['Organization', courseToCancel?.organization],
@@ -175,8 +175,8 @@ const CourseScheduling = () => {
               ['Students', courseToCancel?.registeredStudents || 0],
             ].map(([l, v]) => (
               <Box key={String(l)} sx={{ display: 'flex', py: 0.5 }}>
-                <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#9CA3AF', width: 100 }}>{l}</Typography>
-                <Typography sx={{ fontSize: 13, color: '#111827' }}>{v}</Typography>
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.secondary, width: 100 }}>{l}</Typography>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}>{v}</Typography>
               </Box>
             ))}
           </Box>

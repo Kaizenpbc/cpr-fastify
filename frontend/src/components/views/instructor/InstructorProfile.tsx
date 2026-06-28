@@ -84,22 +84,22 @@ const InstructorProfile: React.FC = () => {
       <Grid container spacing={3}>
         {/* Profile Overview Card */}
         <Grid item xs={12} md={4}>
-          <Card sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', p: 3, textAlign: 'center' }}>
+          <Card sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', p: 3, textAlign: 'center' }}>
             <UserAvatar initials={getInitials(profileData.firstName, profileData.lastName)} size={80} />
-            <Typography sx={{ fontSize: 20, fontWeight: 700, color: '#111827', mt: 2 }}>
+            <Typography sx={{ fontSize: 20, fontWeight: 700, color: (theme) => theme.palette.text.primary, mt: 2 }}>
               {profileData.firstName} {profileData.lastName}
             </Typography>
-            <Typography sx={{ fontSize: 13, color: '#9CA3AF', mb: 1 }}>CPR Instructor</Typography>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 1 }}>CPR Instructor</Typography>
             <StatusChip kind="active" label="Active" />
 
-            <Box sx={{ borderTop: '1px solid #E5E7EB', mt: 3, pt: 3, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+            <Box sx={{ borderTop: (theme) => `1px solid ${theme.palette.divider}`, mt: 3, pt: 3, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
               <Box>
                 <Typography sx={{ fontSize: 20, fontWeight: 700, color: '#CC1F1F' }}>{profileData.totalClasses}</Typography>
-                <Typography sx={{ fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase' }}>Classes Taught</Typography>
+                <Typography sx={{ fontSize: 11, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase' }}>Classes Taught</Typography>
               </Box>
               <Box>
                 <Typography sx={{ fontSize: 20, fontWeight: 700, color: '#CC1F1F' }}>{profileData.totalStudents}</Typography>
-                <Typography sx={{ fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase' }}>Students Trained</Typography>
+                <Typography sx={{ fontSize: 11, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase' }}>Students Trained</Typography>
               </Box>
             </Box>
           </Card>
@@ -107,9 +107,9 @@ const InstructorProfile: React.FC = () => {
 
         {/* Profile Details */}
         <Grid item xs={12} md={8}>
-          <Card sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', p: 3 }}>
+          <Card sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', p: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Profile Information</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Profile Information</Typography>
               {!isEditing ? (
                 <GhostButton onClick={handleEdit}>Edit Profile</GhostButton>
               ) : (
@@ -147,9 +147,9 @@ const InstructorProfile: React.FC = () => {
                   ['Location', profileData.location],
                   ['Member Since', new Date(profileData.joinDate).toLocaleDateString()],
                 ].map(([label, value]) => (
-                  <Box key={label} sx={{ display: 'flex', borderBottom: '1px solid #F3F4F6', pb: 1.5 }}>
-                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#9CA3AF', width: 140 }}>{label}</Typography>
-                    <Typography sx={{ fontSize: 13, color: '#111827' }}>{value}</Typography>
+                  <Box key={label} sx={{ display: 'flex', borderBottom: (theme) => `1px solid ${theme.palette.divider}`, pb: 1.5 }}>
+                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.secondary, width: 140 }}>{label}</Typography>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}>{value}</Typography>
                   </Box>
                 ))}
               </Box>
@@ -159,8 +159,8 @@ const InstructorProfile: React.FC = () => {
 
         {/* Certifications */}
         <Grid item xs={12} md={6}>
-          <Card sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', p: 3 }}>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Certifications</Typography>
+          <Card sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', p: 3 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Certifications</Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               {profileData.certifications.map((cert, index) => (
                 <StatusChip key={index} kind="brand" label={cert} />
@@ -176,20 +176,20 @@ const InstructorProfile: React.FC = () => {
 
         {/* Notification Settings */}
         <Grid item xs={12} md={6}>
-          <Card sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', p: 3 }}>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Notification Preferences</Typography>
+          <Card sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', p: 3 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Notification Preferences</Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box>
-                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Email Notifications</Typography>
-                  <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>Receive updates about classes and schedule changes</Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>Email Notifications</Typography>
+                  <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>Receive updates about classes and schedule changes</Typography>
                 </Box>
                 <FormControlLabel control={<Switch checked={emailNotifications} onChange={() => handleNotificationChange('email')} />} label="" />
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box>
-                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>SMS Notifications</Typography>
-                  <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>Receive urgent notifications via text message</Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>SMS Notifications</Typography>
+                  <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>Receive urgent notifications via text message</Typography>
                 </Box>
                 <FormControlLabel control={<Switch checked={smsNotifications} onChange={() => handleNotificationChange('sms')} />} label="" />
               </Box>
@@ -199,8 +199,8 @@ const InstructorProfile: React.FC = () => {
 
         {/* Security Settings */}
         <Grid item xs={12}>
-          <Card sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', p: 3 }}>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Security Settings</Typography>
+          <Card sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', p: 3 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Security Settings</Typography>
             <Alert severity="info" sx={{ mb: 2 }}>
               Keep your account secure by regularly updating your password and reviewing your security settings.
             </Alert>

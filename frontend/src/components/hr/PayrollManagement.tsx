@@ -72,7 +72,7 @@ const PaymentDetailsDialog: React.FC<{
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>Payment Details — {payment.instructorName}</DialogTitle>
+      <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>Payment Details — {payment.instructorName}</DialogTitle>
       <DialogContent>
         <Box sx={{ pt: 1 }}>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 2 }}>
@@ -84,20 +84,20 @@ const PaymentDetailsDialog: React.FC<{
               ['Notes', payment.notes || 'No notes provided'],
             ].map(([label, value]) => (
               <Box key={String(label)}>
-                <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF' }}>{label}</Typography>
-                <Typography sx={{ fontSize: 13, color: '#111827' }}>{value}</Typography>
+                <Typography sx={{ fontSize: 12, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>{label}</Typography>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}>{value}</Typography>
               </Box>
             ))}
             <Box>
-              <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF' }}>Status</Typography>
+              <Typography sx={{ fontSize: 12, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>Status</Typography>
               <StatusChip kind={getStatusKind(payment.status)} label={payment.status.toUpperCase()} />
             </Box>
           </Box>
           {payment.transactionId && (
-            <Box sx={{ mb: 1 }}><Typography sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF' }}>Transaction ID</Typography><Typography sx={{ fontSize: 13, color: '#111827' }}>{payment.transactionId}</Typography></Box>
+            <Box sx={{ mb: 1 }}><Typography sx={{ fontSize: 12, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>Transaction ID</Typography><Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}>{payment.transactionId}</Typography></Box>
           )}
           {payment.hrNotes && (
-            <Box sx={{ mb: 1 }}><Typography sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF' }}>HR Notes</Typography><Typography sx={{ fontSize: 13, color: '#111827' }}>{payment.hrNotes}</Typography></Box>
+            <Box sx={{ mb: 1 }}><Typography sx={{ fontSize: 12, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>HR Notes</Typography><Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}>{payment.hrNotes}</Typography></Box>
           )}
           {payment.status === 'pending' && (
             <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -152,7 +152,7 @@ const CalculatePayrollDialog: React.FC<{
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>Calculate Payroll</DialogTitle>
+      <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>Calculate Payroll</DialogTitle>
       <DialogContent>
         <Grid container spacing={2} sx={{ mt: 0.5 }}>
           <Grid item xs={12}><TextField fullWidth label="Instructor ID" type="number" value={instructorId} onChange={(e) => setInstructorId(e.target.value)} required /></Grid>
@@ -237,10 +237,10 @@ const PayrollManagement: React.FC = () => {
       </Box>
 
       {/* Tabs */}
-      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff' }}>
-        <Box sx={{ borderBottom: 1, borderColor: '#E5E7EB', px: 3, pt: 1 }}>
+      <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper }}>
+        <Box sx={{ borderBottom: 1, borderColor: (theme) => theme.palette.divider, px: 3, pt: 1 }}>
           <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{
-            '& .MuiTab-root': { textTransform: 'none', fontSize: 13, fontWeight: 600, color: '#9CA3AF', minHeight: 42 },
+            '& .MuiTab-root': { textTransform: 'none', fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.secondary, minHeight: 42 },
             '& .Mui-selected': { color: '#CC1F1F !important' },
             '& .MuiTabs-indicator': { backgroundColor: '#CC1F1F' },
           }}>
@@ -271,14 +271,14 @@ const PayrollManagement: React.FC = () => {
               {payments.map((payment) => (
                 <DataTableRow key={payment.id} columns={paymentColumns}>
                   <Box>
-                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{payment.instructorName}</Typography>
-                    <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{payment.instructorEmail}</Typography>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{payment.instructorName}</Typography>
+                    <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>{payment.instructorEmail}</Typography>
                   </Box>
-                  <Typography sx={{ fontSize: 13, fontWeight: 600, fontFamily: 'monospace', color: '#111827', textAlign: 'right' }}>${Number(payment.amount || 0).toFixed(2)}</Typography>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{new Date(payment.paymentDate).toLocaleDateString()}</Typography>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{payment.paymentMethod}</Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, fontFamily: 'monospace', color: (theme) => theme.palette.text.primary, textAlign: 'right' }}>${Number(payment.amount || 0).toFixed(2)}</Typography>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{new Date(payment.paymentDate).toLocaleDateString()}</Typography>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{payment.paymentMethod}</Typography>
                   <StatusChip kind={getStatusKind(payment.status)} label={payment.status.toUpperCase()} />
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{new Date(payment.createdAt).toLocaleDateString()}</Typography>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{new Date(payment.createdAt).toLocaleDateString()}</Typography>
                   <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <ButtonBase onClick={() => { setSelectedPayment(payment); setDetailsDialogOpen(true); }} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>View</ButtonBase>
                   </Box>
@@ -297,7 +297,7 @@ const PayrollManagement: React.FC = () => {
         {/* Calculation Tab */}
         {activeTab === 1 && calculation && (
           <Box sx={{ p: 3 }}>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Payroll Calculation</Typography>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>Payroll Calculation</Typography>
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 3 }}>
               {[
                 ['Instructor', `${calculation.instructor.username} (${calculation.instructor.email})`],
@@ -306,8 +306,8 @@ const PayrollManagement: React.FC = () => {
                 ['Rates', `$${calculation.rates.hourlyRate}/hr + $${calculation.rates.courseBonus}/course`],
               ].map(([label, value]) => (
                 <Box key={String(label)}>
-                  <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF' }}>{label}</Typography>
-                  <Typography sx={{ fontSize: 13, color: '#111827' }}>{value}</Typography>
+                  <Typography sx={{ fontSize: 12, fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>{label}</Typography>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}>{value}</Typography>
                 </Box>
               ))}
             </Box>

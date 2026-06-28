@@ -168,10 +168,10 @@ const PayRateManagement: React.FC = () => {
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {error && <Alert severity="error" onClose={() => setError(null)}>{error}</Alert>}
 
-      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff' }}>
-        <Box sx={{ borderBottom: 1, borderColor: '#E5E7EB', px: 3, pt: 1 }}>
+      <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper }}>
+        <Box sx={{ borderBottom: 1, borderColor: (theme) => theme.palette.divider, px: 3, pt: 1 }}>
           <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{
-            '& .MuiTab-root': { textTransform: 'none', fontSize: 13, fontWeight: 600, color: '#9CA3AF', minHeight: 42 },
+            '& .MuiTab-root': { textTransform: 'none', fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.secondary, minHeight: 42 },
             '& .Mui-selected': { color: '#CC1F1F !important' },
             '& .MuiTabs-indicator': { backgroundColor: '#CC1F1F' },
           }}>
@@ -208,25 +208,25 @@ const PayRateManagement: React.FC = () => {
                     sx={{ '&.Mui-checked': { color: '#CC1F1F' } }}
                   />
                   <Box>
-                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{instructor.username}</Typography>
-                    <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{instructor.email}</Typography>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{instructor.username}</Typography>
+                    <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>{instructor.email}</Typography>
                   </Box>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{instructor.phone || '—'}</Typography>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{instructor.phone || '—'}</Typography>
                   <Box>
                     {instructor.hourlyRate ? (
                       <>
-                        <Typography sx={{ fontSize: 13, fontWeight: 600, fontFamily: 'monospace', color: '#111827' }}>${instructor.hourlyRate}/hr</Typography>
-                        <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>+${instructor.courseBonus}/course</Typography>
+                        <Typography sx={{ fontSize: 13, fontWeight: 600, fontFamily: 'monospace', color: (theme) => theme.palette.text.primary }}>${instructor.hourlyRate}/hr</Typography>
+                        <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>+${instructor.courseBonus}/course</Typography>
                         {instructor.tierName && <StatusChip kind="brand" label={instructor.tierName} />}
                       </>
                     ) : (
-                      <Typography sx={{ fontSize: 13, color: '#9CA3AF' }}>No rate set</Typography>
+                      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>No rate set</Typography>
                     )}
                   </Box>
                   <StatusChip kind={instructor.rateStatus === 'Set' ? 'success' : 'warning'} label={instructor.rateStatus} />
                   <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
                     <ButtonBase onClick={() => openRateDialog(instructor)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>Edit</ButtonBase>
-                    <Typography sx={{ fontSize: 12, color: '#E5E7EB' }}>|</Typography>
+                    <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.divider }}>|</Typography>
                     <ButtonBase onClick={() => openHistoryDialog(instructor)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>History</ButtonBase>
                   </Box>
                 </DataTableRow>
@@ -252,11 +252,11 @@ const PayRateManagement: React.FC = () => {
             </Box>
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
               {tiers.map((tier) => (
-                <Card key={tier.id} sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', p: 3 }}>
-                  <Typography sx={{ fontSize: 16, fontWeight: 700, color: '#111827', mb: 0.5 }}>{tier.name}</Typography>
-                  <Typography sx={{ fontSize: 13, color: '#9CA3AF', mb: 1 }}>{tier.description}</Typography>
+                <Card key={tier.id} sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', p: 3 }}>
+                  <Typography sx={{ fontSize: 16, fontWeight: 700, color: (theme) => theme.palette.text.primary, mb: 0.5 }}>{tier.name}</Typography>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 1 }}>{tier.description}</Typography>
                   <Typography sx={{ fontSize: 24, fontWeight: 700, fontFamily: 'monospace', color: '#CC1F1F' }}>${tier.baseHourlyRate}/hr</Typography>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>+${tier.courseBonus} per course</Typography>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 1 }}>+${tier.courseBonus} per course</Typography>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <StatusChip kind={tier.isActive ? 'active' : 'inactive'} label={tier.isActive ? 'Active' : 'Inactive'} />
                     <ButtonBase onClick={() => openTierDialog(tier)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>Edit</ButtonBase>
@@ -270,8 +270,8 @@ const PayRateManagement: React.FC = () => {
         {/* Bulk Operations Tab */}
         {activeTab === 2 && (
           <Box sx={{ p: 3 }}>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Bulk Pay Rate Operations</Typography>
-            <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 2 }}>Select multiple instructors from the Instructors tab and update their pay rates simultaneously.</Typography>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Bulk Pay Rate Operations</Typography>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 2 }}>Select multiple instructors from the Instructors tab and update their pay rates simultaneously.</Typography>
             <PrimaryButton onClick={() => setBulkDialogOpen(true)} disabled={selectedInstructors.length === 0}>
               Update {selectedInstructors.length} Selected Instructors
             </PrimaryButton>
@@ -281,7 +281,7 @@ const PayRateManagement: React.FC = () => {
 
       {/* Tier Dialog */}
       <Dialog open={tierDialogOpen} onClose={() => setTierDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{editingTier ? 'Edit Pay Rate Tier' : 'Create New Pay Rate Tier'}</DialogTitle>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>{editingTier ? 'Edit Pay Rate Tier' : 'Create New Pay Rate Tier'}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
             <Grid item xs={12}><TextField fullWidth label="Tier Name" value={tierForm.name} onChange={(e) => setTierForm({ ...tierForm, name: e.target.value })} required /></Grid>
@@ -298,7 +298,7 @@ const PayRateManagement: React.FC = () => {
 
       {/* Rate Dialog */}
       <Dialog open={rateDialogOpen} onClose={() => setRateDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>Set Pay Rate for {selectedInstructor?.username}</DialogTitle>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>Set Pay Rate for {selectedInstructor?.username}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
             <Grid item xs={6}><TextField fullWidth label="Hourly Rate ($)" type="number" value={rateForm.hourlyRate} onChange={(e) => setRateForm({ ...rateForm, hourlyRate: parseFloat(e.target.value) || 0 })} inputProps={{ min: 0, step: 0.01 }} required /></Grid>
@@ -324,7 +324,7 @@ const PayRateManagement: React.FC = () => {
 
       {/* Bulk Update Dialog */}
       <Dialog open={bulkDialogOpen} onClose={() => setBulkDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>Bulk Update Pay Rates ({selectedInstructors.length} instructors)</DialogTitle>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>Bulk Update Pay Rates ({selectedInstructors.length} instructors)</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
             <Grid item xs={6}><TextField fullWidth label="Hourly Rate ($)" type="number" value={bulkForm.hourlyRate} onChange={(e) => setBulkForm({ ...bulkForm, hourlyRate: parseFloat(e.target.value) || 0 })} inputProps={{ min: 0, step: 0.01 }} required /></Grid>
@@ -352,35 +352,35 @@ const PayRateManagement: React.FC = () => {
 
       {/* History Dialog */}
       <Dialog open={historyDialogOpen} onClose={() => setHistoryDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>Pay Rate History — {instructorDetail?.instructor.username}</DialogTitle>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>Pay Rate History — {instructorDetail?.instructor.username}</DialogTitle>
         <DialogContent>
           {instructorDetail && (
             <Box sx={{ pt: 1 }}>
-              <Box sx={{ p: 2, bgcolor: '#F9FAFB', borderRadius: '8px', border: '1px solid #E5E7EB', mb: 2 }}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Current Rate</Typography>
+              <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.background.default, borderRadius: '8px', border: (theme) => `1px solid ${theme.palette.divider}`, mb: 2 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Current Rate</Typography>
                 {instructorDetail.currentRate ? (
                   <>
                     <Typography sx={{ fontSize: 24, fontWeight: 700, fontFamily: 'monospace', color: '#CC1F1F' }}>${instructorDetail.currentRate.hourlyRate}/hr</Typography>
-                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>+${instructorDetail.currentRate.courseBonus} per course</Typography>
-                    <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>Effective: {new Date(instructorDetail.currentRate.effectiveDate).toLocaleDateString()}</Typography>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>+${instructorDetail.currentRate.courseBonus} per course</Typography>
+                    <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>Effective: {new Date(instructorDetail.currentRate.effectiveDate).toLocaleDateString()}</Typography>
                   </>
                 ) : (
-                  <Typography sx={{ fontSize: 13, color: '#9CA3AF' }}>No current rate set</Typography>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>No current rate set</Typography>
                 )}
               </Box>
 
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Rate History</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Rate History</Typography>
               <DataTable columns={historyColumns} shownCount={instructorDetail.history.length} totalCount={instructorDetail.history.length}>
                 {instructorDetail.history.map((change) => (
                   <DataTableRow key={change.id} columns={historyColumns}>
-                    <Typography sx={{ fontSize: 13, fontFamily: 'monospace', color: '#111827' }}>${change.oldHourlyRate || 0} → ${change.newHourlyRate}/hr</Typography>
-                    <Typography sx={{ fontSize: 13, fontFamily: 'monospace', color: '#4B5563' }}>${change.oldCourseBonus || 0} → ${change.newCourseBonus}</Typography>
-                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{new Date(change.effectiveDate).toLocaleDateString()}</Typography>
-                    <Typography sx={{ fontSize: 12.5, color: '#9CA3AF' }}>{change.changeReason || '—'}</Typography>
-                    <Typography sx={{ fontSize: 12.5, color: '#9CA3AF' }}>{change.changedByName || '—'}</Typography>
+                    <Typography sx={{ fontSize: 13, fontFamily: 'monospace', color: (theme) => theme.palette.text.primary }}>${change.oldHourlyRate || 0} → ${change.newHourlyRate}/hr</Typography>
+                    <Typography sx={{ fontSize: 13, fontFamily: 'monospace', color: (theme) => theme.palette.text.secondary }}>${change.oldCourseBonus || 0} → ${change.newCourseBonus}</Typography>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{new Date(change.effectiveDate).toLocaleDateString()}</Typography>
+                    <Typography sx={{ fontSize: 12.5, color: (theme) => theme.palette.text.secondary }}>{change.changeReason || '—'}</Typography>
+                    <Typography sx={{ fontSize: 12.5, color: (theme) => theme.palette.text.secondary }}>{change.changedByName || '—'}</Typography>
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
                       <StatusChip kind="neutral" label={change.oldTierName || 'None'} />
-                      <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>→</Typography>
+                      <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>→</Typography>
                       <StatusChip kind="brand" label={change.newTierName || 'None'} />
                     </Box>
                   </DataTableRow>

@@ -237,7 +237,7 @@ const AgingReportView = () => {
         minHeight='400px'
       >
         <CircularProgress />
-        <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#4B5563', ml: 2 }}>
+        <Typography sx={{ fontSize: 14, fontWeight: 600, color: (theme) => theme.palette.text.secondary, ml: 2 }}>
           Generating Aging Report...
         </Typography>
       </Box>
@@ -263,11 +263,11 @@ const AgingReportView = () => {
       >
         <Box>
           <Typography
-            sx={{ fontSize: 22, fontWeight: 700, color: '#111827', mb: 0.5 }}
+            sx={{ fontSize: 22, fontWeight: 700, color: (theme) => theme.palette.text.primary, mb: 0.5 }}
           >
             Aging Report
           </Typography>
-          <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+          <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
             As of {formatDate(reportData?.report_metadata?.as_of_date)} &bull;
             Generated{' '}
             {new Date(
@@ -290,8 +290,8 @@ const AgingReportView = () => {
       </Box>
 
       {/* Filters */}
-      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3, mb: 3 }}>
-        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
+      <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3, mb: 3 }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
           Report Filters
         </Typography>
         <Grid container spacing={2} alignItems='center'>
@@ -366,8 +366,8 @@ const AgingReportView = () => {
       </Grid>
 
       {/* Charts and Tables */}
-      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', overflow: 'hidden' }}>
-        <Box sx={{ borderBottom: '1px solid #E5E7EB' }}>
+      <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, overflow: 'hidden' }}>
+        <Box sx={{ borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
           <Tabs value={selectedTab} onChange={handleTabChange}>
             <Tab label='Aging Summary' />
             <Tab label='Organization Breakdown' />
@@ -389,22 +389,22 @@ const AgingReportView = () => {
                   <StatusChip kind={getBucketKind(bucket.aging_bucket)} label={bucket.aging_bucket} />
 
                   {/* Invoice Count */}
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                     {bucket.invoice_count}
                   </Typography>
 
                   {/* Total Balance */}
-                  <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, fontFamily: 'monospace' }}>
                     {formatCurrency(bucket.total_balance)}
                   </Typography>
 
                   {/* % of Total */}
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                     {bucket.percentage_of_total}%
                   </Typography>
 
                   {/* Avg Days Outstanding */}
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                     {bucket.avg_days_outstanding} days
                   </Typography>
 
@@ -432,37 +432,37 @@ const AgingReportView = () => {
               {reportData?.organization_breakdown?.map((org: any) => (
                 <DataTableRow key={org.organization_id} columns={orgBreakdownColumns}>
                   {/* Organization */}
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                     {org.organization_name}
                   </Typography>
 
                   {/* Total Balance */}
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827', fontFamily: 'monospace' }}>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary, fontFamily: 'monospace' }}>
                     {formatCurrency(org.total_balance)}
                   </Typography>
 
                   {/* Current */}
-                  <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, fontFamily: 'monospace' }}>
                     {formatCurrency(org.current_balance)}
                   </Typography>
 
                   {/* 1-30 Days */}
-                  <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, fontFamily: 'monospace' }}>
                     {formatCurrency(org.days_1_30)}
                   </Typography>
 
                   {/* 31-60 Days */}
-                  <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, fontFamily: 'monospace' }}>
                     {formatCurrency(org.days_31_60)}
                   </Typography>
 
                   {/* 61-90 Days */}
-                  <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, fontFamily: 'monospace' }}>
                     {formatCurrency(org.days_61_90)}
                   </Typography>
 
                   {/* 90+ Days */}
-                  <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, fontFamily: 'monospace' }}>
                     {formatCurrency(org.days_90_plus)}
                   </Typography>
 
@@ -479,7 +479,7 @@ const AgingReportView = () => {
           <Box sx={{ p: 3 }}>
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
                   Aging Distribution
                 </Typography>
                 <ResponsiveContainer width='100%' height={300}>
@@ -508,7 +508,7 @@ const AgingReportView = () => {
                 </ResponsiveContainer>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
                   Aging Amounts by Bucket
                 </Typography>
                 <ResponsiveContainer width='100%' height={300}>
@@ -564,32 +564,32 @@ const AgingReportView = () => {
                 ?.map((invoice: any) => (
                   <DataTableRow key={invoice.id} columns={invoiceDetailColumns}>
                     {/* Invoice # */}
-                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                       {invoice.invoice_number}
                     </Typography>
 
                     {/* Organization */}
-                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                       {invoice.organization_name}
                     </Typography>
 
                     {/* Amount */}
-                    <Typography sx={{ fontSize: 13, color: '#4B5563', fontFamily: 'monospace' }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, fontFamily: 'monospace' }}>
                       {formatCurrency(invoice.amount)}
                     </Typography>
 
                     {/* Balance Due */}
-                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827', fontFamily: 'monospace' }}>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary, fontFamily: 'monospace' }}>
                       {formatCurrency(invoice.balance_due)}
                     </Typography>
 
                     {/* Due Date */}
-                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                       {formatDate(invoice.due_date)}
                     </Typography>
 
                     {/* Days Outstanding */}
-                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                       {invoice.days_outstanding} days
                     </Typography>
                   </DataTableRow>

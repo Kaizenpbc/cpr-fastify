@@ -148,15 +148,15 @@ const StudentManagement = ({ onShowSnackbar }: StudentManagementProps) => {
             onChange={handleSearchChange}
           />
         </Box>
-        <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>
+        <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>
           {students.length} student{students.length !== 1 ? 's' : ''}
         </Typography>
       </Box>
 
       {/* Table */}
       {students.length === 0 ? (
-        <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
-          <Typography sx={{ color: '#9CA3AF', fontSize: 14 }}>
+        <Box sx={{ bgcolor: (theme) => theme.palette.background.paper, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 6, textAlign: 'center' }}>
+          <Typography sx={{ color: (theme) => theme.palette.text.secondary, fontSize: 14 }}>
             {searchTerm ? 'No students match your search.' : 'No students found.'}
           </Typography>
         </Box>
@@ -167,28 +167,28 @@ const StudentManagement = ({ onShowSnackbar }: StudentManagementProps) => {
               {/* STUDENT */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <UserAvatar initials={getInitials(student.first_name, student.last_name)} />
-                <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                   {student.last_name}, {student.first_name}
                 </Typography>
               </Box>
               {/* EMAIL */}
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                 {student.email}
               </Typography>
               {/* PHONE */}
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                 {student.phone || '—'}
               </Typography>
               {/* ORGANIZATION */}
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                 {student.organization_name || '—'}
               </Typography>
               {/* COURSES */}
-              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'center' }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary, textAlign: 'center' }}>
                 {student.course_count || 0}
               </Typography>
               {/* LAST COURSE */}
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                 {student.last_course_date
                   ? new Date(student.last_course_date).toLocaleDateString()
                   : '—'}
@@ -213,7 +213,7 @@ const StudentManagement = ({ onShowSnackbar }: StudentManagementProps) => {
                 >
                   View
                 </Box>
-                <Typography sx={{ fontSize: 12, color: '#E5E7EB' }}>|</Typography>
+                <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.divider }}>|</Typography>
                 <Box
                   onClick={() => handleEditOpen(student)}
                   sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
@@ -237,7 +237,7 @@ const StudentManagement = ({ onShowSnackbar }: StudentManagementProps) => {
               <CircularProgress />
             </Box>
           ) : courseHistory.length === 0 ? (
-            <Typography sx={{ color: '#9CA3AF', py: 4, textAlign: 'center', fontSize: 14 }}>
+            <Typography sx={{ color: (theme) => theme.palette.text.secondary, py: 4, textAlign: 'center', fontSize: 14 }}>
               No course history found.
             </Typography>
           ) : (
@@ -260,15 +260,15 @@ const StudentManagement = ({ onShowSnackbar }: StudentManagementProps) => {
                       alignItems: 'center',
                       p: '10px 14px',
                       borderRadius: '8px',
-                      border: '1px solid #E5E7EB',
+                      border: (theme: any) => `1px solid ${theme.palette.divider}`,
                       gap: 1,
                     }}
                   >
-                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{course.course_type_name}</Typography>
-                    <Typography sx={{ fontSize: 12, color: '#4B5563' }}>{course.organization_name}</Typography>
-                    <Typography sx={{ fontSize: 12, color: '#4B5563' }}>{course.instructor_name || '—'}</Typography>
-                    <Typography sx={{ fontSize: 12, color: '#4B5563' }}>{course.location || '—'}</Typography>
-                    <Typography sx={{ fontSize: 12, color: '#4B5563' }}>
+                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{course.course_type_name}</Typography>
+                    <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>{course.organization_name}</Typography>
+                    <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>{course.instructor_name || '—'}</Typography>
+                    <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>{course.location || '—'}</Typography>
+                    <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>
                       {course.completed_at ? new Date(course.completed_at).toLocaleDateString() : '—'}
                     </Typography>
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -280,8 +280,8 @@ const StudentManagement = ({ onShowSnackbar }: StudentManagementProps) => {
             </Box>
           )}
           {selectedStudent && (
-            <Box sx={{ mt: 2, p: 2, bgcolor: '#F9FAFB', borderRadius: '8px' }}>
-              <Typography sx={{ fontSize: 12, color: '#4B5563' }}>
+            <Box sx={{ mt: 2, p: 2, bgcolor: (theme) => theme.palette.background.default, borderRadius: '8px' }}>
+              <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>
                 <strong>Email:</strong> {selectedStudent.email} &nbsp;|&nbsp;
                 <strong>Phone:</strong> {selectedStudent.phone || '—'} &nbsp;|&nbsp;
                 <strong>Marketing consent:</strong> {selectedStudent.marketing_consent ? 'Yes' : 'No'}

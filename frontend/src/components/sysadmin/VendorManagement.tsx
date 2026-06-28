@@ -206,44 +206,44 @@ const VendorManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
           <DataTableRow key={vendor.id} columns={columns}>
             {/* VENDOR */}
             <Box>
-              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{vendor.vendorName}</Typography>
-              {vendor.email && <Typography sx={{ fontSize: 11.5, color: '#9CA3AF' }}>{vendor.email}</Typography>}
+              <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{vendor.vendorName}</Typography>
+              {vendor.email && <Typography sx={{ fontSize: 11.5, color: (theme) => theme.palette.text.secondary }}>{vendor.email}</Typography>}
             </Box>
             {/* CONTACT */}
             <Box>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                 {`${vendor.contactFirstName || ''} ${vendor.contactLastName || ''}`.trim() || '—'}
               </Typography>
-              {vendor.mobile && <Typography sx={{ fontSize: 11.5, color: '#9CA3AF' }}>{vendor.mobile}</Typography>}
+              {vendor.mobile && <Typography sx={{ fontSize: 11.5, color: (theme) => theme.palette.text.secondary }}>{vendor.mobile}</Typography>}
             </Box>
             {/* TYPE */}
-            <Typography sx={{ fontSize: 12.5, color: '#4B5563' }}>{vendor.vendorType || '—'}</Typography>
+            <Typography sx={{ fontSize: 12.5, color: (theme) => theme.palette.text.secondary }}>{vendor.vendorType || '—'}</Typography>
             {/* SERVICES */}
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
               {vendor.services && vendor.services.length > 0 ? (
                 <>
                   {vendor.services.slice(0, 2).map((s: string, i: number) => (
-                    <Chip key={i} label={s} size="small" sx={{ fontSize: 11, bgcolor: '#F3F4F6', color: '#4B5563', height: 22 }} />
+                    <Chip key={i} label={s} size="small" sx={{ fontSize: 11, bgcolor: (theme) => theme.palette.divider, color: (theme) => theme.palette.text.secondary, height: 22 }} />
                   ))}
                   {vendor.services.length > 2 && (
                     <Chip label={`+${vendor.services.length - 2}`} size="small" sx={{ fontSize: 11, bgcolor: '#FFF0F0', color: '#CC1F1F', height: 22 }} />
                   )}
                 </>
               ) : (
-                <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>—</Typography>
+                <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>—</Typography>
               )}
             </Box>
             {/* RATING */}
-            <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
               {vendor.performanceRating ? `${vendor.performanceRating}/5` : '—'}
             </Typography>
             {/* CERTIFICATION */}
             <StatusChip kind={getCertKind(vendor.certificationStatus)} label={vendor.certificationStatus || 'Not Set'} />
             {/* CONTRACT */}
             <Box>
-              <Typography sx={{ fontSize: 12, color: '#4B5563' }}>{formatDate(vendor.contractStartDate)}</Typography>
+              <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>{formatDate(vendor.contractStartDate)}</Typography>
               {vendor.contractEndDate && (
-                <Typography sx={{ fontSize: 11, color: '#9CA3AF' }}>to {formatDate(vendor.contractEndDate)}</Typography>
+                <Typography sx={{ fontSize: 11, color: (theme) => theme.palette.text.secondary }}>to {formatDate(vendor.contractEndDate)}</Typography>
               )}
             </Box>
             {/* STATUS */}
@@ -258,8 +258,8 @@ const VendorManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
               </Box>
               {vendor.status !== 'inactive' && (
                 <>
-                  <Typography sx={{ fontSize: 12, color: '#E5E7EB' }}>|</Typography>
-                  <Box onClick={() => handleDelete(vendor)} sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' } }}>
+                  <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.divider }}>|</Typography>
+                  <Box onClick={() => handleDelete(vendor)} sx={{ fontSize: 12, fontWeight: 600, color: (theme) => theme.palette.text.secondary, cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' } }}>
                     Deactivate
                   </Box>
                 </>
@@ -275,7 +275,7 @@ const VendorManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
         <DialogContent>
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
             <Grid container spacing={2}>
-              <Grid item xs={12}><Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Basic Information</Typography></Grid>
+              <Grid item xs={12}><Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Basic Information</Typography></Grid>
               <Grid item xs={12} sm={6}><TextField fullWidth required label="Vendor Name" name="vendorName" value={formData.vendorName} onChange={handleChange} /></Grid>
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth><InputLabel>Vendor Type</InputLabel>
@@ -285,7 +285,7 @@ const VendorManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
                 </FormControl>
               </Grid>
 
-              <Grid item xs={12}><Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mt: 1 }}>Contact Information</Typography></Grid>
+              <Grid item xs={12}><Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mt: 1 }}>Contact Information</Typography></Grid>
               <Grid item xs={12} sm={6}><TextField fullWidth label="Contact First Name" name="contactFirstName" value={formData.contactFirstName} onChange={handleChange} /></Grid>
               <Grid item xs={12} sm={6}><TextField fullWidth label="Contact Last Name" name="contactLastName" value={formData.contactLastName} onChange={handleChange} /></Grid>
               <Grid item xs={12} sm={6}><TextField fullWidth type="email" label="Email" name="email" value={formData.email} onChange={handleChange} /></Grid>
@@ -305,12 +305,12 @@ const VendorManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
                 </FormControl>
               </Grid>
 
-              <Grid item xs={12}><Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mt: 1 }}>Contract & Performance</Typography></Grid>
+              <Grid item xs={12}><Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mt: 1 }}>Contract & Performance</Typography></Grid>
               <Grid item xs={12} sm={6}><TextField fullWidth type="date" label="Contract Start" name="contractStartDate" value={formData.contractStartDate} onChange={handleChange} InputLabelProps={{ shrink: true }} /></Grid>
               <Grid item xs={12} sm={6}><TextField fullWidth type="date" label="Contract End" name="contractEndDate" value={formData.contractEndDate} onChange={handleChange} InputLabelProps={{ shrink: true }} /></Grid>
               <Grid item xs={12} sm={6}>
                 <Box>
-                  <Typography sx={{ fontSize: 12, color: '#4B5563', mb: 0.5 }}>Performance Rating</Typography>
+                  <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, mb: 0.5 }}>Performance Rating</Typography>
                   <Rating name="performanceRating" value={formData.performanceRating} onChange={(_, newValue) => setFormData(prev => ({ ...prev, performanceRating: newValue }))} />
                 </Box>
               </Grid>

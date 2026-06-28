@@ -299,8 +299,8 @@ const InvoiceUpload: React.FC = () => {
         {error && <Alert severity="error" onClose={() => setError(null)}>{error}</Alert>}
         {success && <Alert severity="success" onClose={() => setSuccess(null)}>{success}</Alert>}
 
-        <Card sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', p: 3 }}>
-          <Typography sx={{ fontSize: 14, color: '#4B5563', mb: 3 }}>
+        <Card sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,.05)', p: 3 }}>
+          <Typography sx={{ fontSize: 14, color: (theme) => theme.palette.text.secondary, mb: 3 }}>
             Please fill in the invoice details below and select your PDF file, then click "Upload Invoice" to submit.
           </Typography>
 
@@ -308,7 +308,7 @@ const InvoiceUpload: React.FC = () => {
             <Grid container spacing={3}>
               {/* Row 1: Vendor Name and Date */}
               <Grid item xs={12}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
                   Invoice Details
                 </Typography>
               </Grid>
@@ -362,7 +362,7 @@ const InvoiceUpload: React.FC = () => {
 
               {/* Row 6: Subtotal, HST, and Total */}
               <Grid item xs={12}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mt: 1 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mt: 1 }}>
                   Financial Summary
                 </Typography>
               </Grid>
@@ -393,13 +393,13 @@ const InvoiceUpload: React.FC = () => {
 
               {/* File Upload */}
               <Grid item xs={12}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mt: 1, mb: 1 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mt: 1, mb: 1 }}>
                   File Upload
                 </Typography>
                 <GhostButton
                   component="label"
                   fullWidth
-                  sx={{ py: 2, border: file ? '1px solid #16A34A' : '1px dashed #E5E7EB', color: file ? '#16A34A' : '#4B5563' }}
+                  sx={{ py: 2, border: file ? '1px solid #16A34A' : (theme) => `1px dashed ${theme.palette.divider}`, color: file ? '#16A34A' : (theme) => theme.palette.text.secondary }}
                 >
                   {file ? `${file.name} (${formatFileSize(file.size)})` : 'Choose PDF or HTML File'}
                   <input type="file" hidden accept=".pdf,.html,.htm" onChange={handleFileChange} />
@@ -408,7 +408,7 @@ const InvoiceUpload: React.FC = () => {
                   <Typography sx={{ fontSize: 12, color: '#16A34A', mt: 0.5 }}>File selected: {file.name} - {formatFileSize(file.size)}</Typography>
                 )}
                 {!file && (
-                  <Typography sx={{ fontSize: 12, color: '#9CA3AF', mt: 0.5 }}>Please select a PDF or HTML file (max 5MB)</Typography>
+                  <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, mt: 0.5 }}>Please select a PDF or HTML file (max 5MB)</Typography>
                 )}
               </Grid>
 
@@ -433,9 +433,9 @@ const InvoiceUpload: React.FC = () => {
                 )}
 
                 {showConfirmation && pendingOcrData && (
-                  <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 3, mt: 2, bgcolor: '#F9FAFB' }}>
-                    <Typography sx={{ fontSize: 14, fontWeight: 700, color: '#111827', mb: 1 }}>Extracted Data Review</Typography>
-                    <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 2 }}>
+                  <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 3, mt: 2, bgcolor: (theme) => theme.palette.background.default }}>
+                    <Typography sx={{ fontSize: 14, fontWeight: 700, color: (theme) => theme.palette.text.primary, mb: 1 }}>Extracted Data Review</Typography>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 2 }}>
                       The form has been automatically populated with the extracted data. Please review and select the vendor from the dropdown above.
                     </Typography>
 
@@ -454,13 +454,13 @@ const InvoiceUpload: React.FC = () => {
                         ['Total', pendingOcrData.amount],
                       ].map(([label, value]) => (
                         <Grid item xs={6} md={3} key={String(label)}>
-                          <Typography sx={{ fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase' }}>{String(label)}</Typography>
-                          <Typography sx={{ fontSize: 13, color: '#111827', fontWeight: label === 'Total' ? 700 : 400 }}>{String(value || '—')}</Typography>
+                          <Typography sx={{ fontSize: 11, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase' }}>{String(label)}</Typography>
+                          <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary, fontWeight: label === 'Total' ? 700 : 400 }}>{String(value || '—')}</Typography>
                         </Grid>
                       ))}
                       <Grid item xs={12}>
-                        <Typography sx={{ fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase' }}>Description</Typography>
-                        <Typography sx={{ fontSize: 13, color: '#111827' }}>{String(pendingOcrData.description || '—')}</Typography>
+                        <Typography sx={{ fontSize: 11, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase' }}>Description</Typography>
+                        <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}>{String(pendingOcrData.description || '—')}</Typography>
                       </Grid>
                     </Grid>
 

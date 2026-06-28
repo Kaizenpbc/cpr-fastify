@@ -10,8 +10,8 @@ interface PageHeaderProps {
 const PageHeader: React.FC<PageHeaderProps> = ({ eyebrow, title, actions }) => (
   <Box
     sx={{
-      backgroundColor: '#fff',
-      borderBottom: '1px solid #E5E7EB',
+      backgroundColor: (theme) => theme.palette.background.paper,
+      borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
       padding: '18px 32px',
       display: 'flex',
       justifyContent: 'space-between',
@@ -23,7 +23,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ eyebrow, title, actions }) => (
         sx={{
           fontSize: '11px',
           fontWeight: 600,
-          color: '#9CA3AF',
+          color: (theme) => theme.palette.text.secondary,
           textTransform: 'uppercase',
           letterSpacing: '0.08em',
           lineHeight: 1,
@@ -36,7 +36,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ eyebrow, title, actions }) => (
         sx={{
           fontSize: '21px',
           fontWeight: 800,
-          color: '#111827',
+          color: (theme) => theme.palette.text.primary,
           letterSpacing: '-0.015em',
           lineHeight: 1.2,
         }}

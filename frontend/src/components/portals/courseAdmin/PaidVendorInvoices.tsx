@@ -54,7 +54,7 @@ interface PaymentHistory {
 const sectionHeader = {
   fontSize: 13,
   fontWeight: 700,
-  color: '#9CA3AF',
+  color: (theme: any) => theme.palette.text.secondary,
   textTransform: 'uppercase' as const,
   letterSpacing: '0.07em',
 };
@@ -62,7 +62,7 @@ const sectionHeader = {
 const dialogTitleStyle = {
   fontSize: 18,
   fontWeight: 700,
-  color: '#111827',
+  color: (theme: any) => theme.palette.text.primary,
 };
 
 const mainTableColumns = [
@@ -211,7 +211,7 @@ const PaidVendorInvoices: React.FC = () => {
   return (
     <Box>
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography sx={{ fontSize: 24, fontWeight: 800, color: '#111827' }}>
+        <Typography sx={{ fontSize: 24, fontWeight: 800, color: (theme) => theme.palette.text.primary }}>
           Paid Vendor Invoices
         </Typography>
         <StatusChip
@@ -264,37 +264,37 @@ const PaidVendorInvoices: React.FC = () => {
       >
         {invoices.length === 0 ? (
           <Box sx={{ py: 6, textAlign: 'center' }}>
-            <Typography sx={{ fontSize: 16, fontWeight: 600, color: '#6B7280', mb: 0.5 }}>
+            <Typography sx={{ fontSize: 16, fontWeight: 600, color: (theme) => theme.palette.text.secondary, mb: 0.5 }}>
               No Paid Invoices Found
             </Typography>
-            <Typography sx={{ fontSize: 13, color: '#9CA3AF' }}>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
               Paid vendor invoices will appear here once they are fully processed.
             </Typography>
           </Box>
         ) : (
           invoices.map((invoice) => (
             <DataTableRow key={invoice.id} columns={mainTableColumns} onClick={() => handleView(invoice)}>
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>
                 {invoice.invoiceNumber}
               </Typography>
               <Box>
-                <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                   {invoice.vendorName}
                 </Typography>
-                <Typography sx={{ fontSize: 11.5, color: '#9CA3AF' }}>
+                <Typography sx={{ fontSize: 11.5, color: (theme) => theme.palette.text.secondary }}>
                   {invoice.vendorEmail}
                 </Typography>
               </Box>
-              <Typography sx={{ fontSize: 13, color: '#4B5563', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {invoice.description}
               </Typography>
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#111827', textAlign: 'right' }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.primary, textAlign: 'right' }}>
                 {formatCurrency(invoice.total)}
               </Typography>
               <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#15803D', textAlign: 'right' }}>
                 {formatCurrency(invoice.totalPaid || invoice.total)}
               </Typography>
-              <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+              <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                 {formatDate(invoice.paidAt || invoice.sentToAccountingAt)}
               </Typography>
               <Box>
@@ -336,21 +336,21 @@ const PaidVendorInvoices: React.FC = () => {
           {selectedInvoice && (
             <Box>
               {/* Vendor Information */}
-              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 3, mb: 3 }}>
+              <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 3, mb: 3 }}>
                 <Typography sx={{ ...sectionHeader, mb: 2 }}>
                   Vendor Information
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
-                    <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 1 }}>
                       <strong>Vendor:</strong> {selectedInvoice.vendorName}
                     </Typography>
-                    <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 1 }}>
                       <strong>Email:</strong> {selectedInvoice.vendorEmail}
                     </Typography>
                   </Grid>
                   <Grid item xs={12} md={6}>
-                    <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 1 }}>
                       <strong>Payment Method:</strong> {selectedInvoice.vendorPaymentMethod?.replace('_', ' ').toUpperCase() || 'CHECK'}
                     </Typography>
                   </Grid>
@@ -358,7 +358,7 @@ const PaidVendorInvoices: React.FC = () => {
               </Box>
 
               {/* Payment Summary */}
-              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 3, mb: 3 }}>
+              <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 3, mb: 3 }}>
                 <Typography sx={{ ...sectionHeader, mb: 2 }}>
                   Payment Summary
                 </Typography>
@@ -384,24 +384,24 @@ const PaidVendorInvoices: React.FC = () => {
               </Box>
 
               {/* Invoice Details */}
-              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 3, mb: 3 }}>
+              <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 3, mb: 3 }}>
                 <Typography sx={{ ...sectionHeader, mb: 2 }}>
                   Invoice Details
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
-                    <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 1 }}>
                       <strong>Description:</strong> {selectedInvoice.description}
                     </Typography>
-                    <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 1 }}>
                       <strong>Invoice Date:</strong> {formatDate(selectedInvoice.invoiceDate)}
                     </Typography>
                   </Grid>
                   <Grid item xs={12} md={6}>
-                    <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 1 }}>
                       <strong>Due Date:</strong> {formatDate(selectedInvoice.dueDate)}
                     </Typography>
-                    <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 1 }}>
                       <strong>Created:</strong> {formatDate(selectedInvoice.createdAt)}
                     </Typography>
                   </Grid>
@@ -409,21 +409,21 @@ const PaidVendorInvoices: React.FC = () => {
               </Box>
 
               {/* Payment Information */}
-              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 3, mb: 3 }}>
+              <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 3, mb: 3 }}>
                 <Typography sx={{ ...sectionHeader, mb: 2 }}>
                   Payment Information
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
-                    <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 1 }}>
                       <strong>Approved By:</strong> {selectedInvoice.approvedByName || 'Admin User'}
                     </Typography>
-                    <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 1 }}>
                       <strong>Paid Date:</strong> {formatDate(selectedInvoice.paidAt || selectedInvoice.sentToAccountingAt)}
                     </Typography>
                   </Grid>
                   <Grid item xs={12} md={6}>
-                    <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 1 }}>
                       <strong>Admin Notes:</strong> {selectedInvoice.adminNotes || 'No notes provided'}
                     </Typography>
                   </Grid>
@@ -431,7 +431,7 @@ const PaidVendorInvoices: React.FC = () => {
               </Box>
 
               {/* Payment History */}
-              <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', p: 3 }}>
+              <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 3 }}>
                 <Typography sx={{ ...sectionHeader, mb: 2 }}>
                   Payment History
                 </Typography>
@@ -446,10 +446,10 @@ const PaidVendorInvoices: React.FC = () => {
                   <DataTable columns={paymentTableColumns}>
                     {paymentHistory.map((payment) => (
                       <DataTableRow key={payment.id} columns={paymentTableColumns}>
-                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                        <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                           {formatDate(payment.paymentDate)}
                         </Typography>
-                        <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', textAlign: 'right' }}>
+                        <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary, textAlign: 'right' }}>
                           {formatCurrency(payment.amount)}
                         </Typography>
                         <Box>
@@ -458,10 +458,10 @@ const PaidVendorInvoices: React.FC = () => {
                             label={payment.paymentMethod.replace('_', ' ').toUpperCase()}
                           />
                         </Box>
-                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                        <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                           {payment.referenceNumber || '-'}
                         </Typography>
-                        <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                        <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                           {payment.processedByName || 'Unknown'}
                         </Typography>
                         <Box>

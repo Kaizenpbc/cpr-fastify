@@ -156,11 +156,11 @@ const CourseCalendar: React.FC = () => {
   }
 
   return (
-    <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', p: 3 }}>
+    <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, p: 3 }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Box onClick={handlePrevMonth} sx={{ fontSize: 13, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', px: 1.5, py: 0.5, borderRadius: '6px', '&:hover': { bgcolor: '#FEF2F2' } }}>← Prev</Box>
-        <Typography sx={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>
+        <Typography sx={{ fontSize: 16, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>
           {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
         </Typography>
         <Box onClick={handleNextMonth} sx={{ fontSize: 13, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', px: 1.5, py: 0.5, borderRadius: '6px', '&:hover': { bgcolor: '#FEF2F2' } }}>Next →</Box>
@@ -175,13 +175,13 @@ const CourseCalendar: React.FC = () => {
         ].map(({ color, label }) => (
           <Box key={label} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
             <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: color }} />
-            <Typography sx={{ fontSize: 12, color: '#4B5563' }}>{label}</Typography>
+            <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>{label}</Typography>
           </Box>
         ))}
-        <Box sx={{ width: 1, height: 16, bgcolor: '#E5E7EB', mx: 1 }} />
+        <Box sx={{ width: 1, height: 16, bgcolor: (theme) => theme.palette.divider, mx: 1 }} />
         <FormControlLabel
           control={<Checkbox checked={showCompleted} onChange={(e) => setShowCompleted(e.target.checked)} size="small" sx={{ '&.Mui-checked': { color: '#CC1F1F' } }} />}
-          label={<Typography sx={{ fontSize: 12, color: '#4B5563' }}>Show Completed</Typography>}
+          label={<Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary }}>Show Completed</Typography>}
           sx={{ m: 0 }}
         />
       </Box>
@@ -200,25 +200,25 @@ const CourseCalendar: React.FC = () => {
         {calendarDays.map((day, index) => {
           const isToday = day.date.toDateString() === new Date().toDateString();
           return (
-            <Box key={index} sx={{ minHeight: 90, border: '1px solid #E5E7EB', borderTop: 'none', p: 0.5, bgcolor: day.isCurrentMonth ? (isToday ? '#FEF2F2' : '#fff') : '#F9FAFB' }}>
-              <Typography sx={{ fontSize: 12, fontWeight: isToday ? 700 : 400, color: day.isCurrentMonth ? (isToday ? '#CC1F1F' : '#111827') : '#9CA3AF', mb: 0.5 }}>
+            <Box key={index} sx={{ minHeight: 90, border: (theme) => `1px solid ${theme.palette.divider}`, borderTop: 'none', p: 0.5, bgcolor: day.isCurrentMonth ? (isToday ? '#FEF2F2' : (theme) => theme.palette.background.paper) : (theme) => theme.palette.background.default }}>
+              <Typography sx={{ fontSize: 12, fontWeight: isToday ? 700 : 400, color: day.isCurrentMonth ? (isToday ? '#CC1F1F' : (theme) => theme.palette.text.primary) : (theme) => theme.palette.text.secondary, mb: 0.5 }}>
                 {day.date.getDate()}
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                 {day.courses.slice(0, 3).map((course) => (
                   <Box key={course.id} onClick={() => handleCourseClick(course)} sx={{ cursor: 'pointer', p: 0.5, borderRadius: '4px', bgcolor: `${getStatusColor(course.status)}15`, borderLeft: `3px solid ${getStatusColor(course.status)}`, '&:hover': { bgcolor: `${getStatusColor(course.status)}25` }, overflow: 'hidden' }}>
-                    <Typography sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: 10, fontWeight: 600, lineHeight: 1.2, color: '#111827' }}>
+                    <Typography sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: 10, fontWeight: 600, lineHeight: 1.2, color: (theme) => theme.palette.text.primary }}>
                       {course.organizationName?.substring(0, 12) || 'N/A'}
                     </Typography>
                     {course.status?.toLowerCase() === 'confirmed' && (
-                      <Typography sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: 9, lineHeight: 1.1, color: '#9CA3AF' }}>
+                      <Typography sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: 9, lineHeight: 1.1, color: (theme) => theme.palette.text.secondary }}>
                         {course.instructorName?.split(' ')[0] || 'No Instr'} • {course.registeredStudents || 0}
                       </Typography>
                     )}
                   </Box>
                 ))}
                 {day.courses.length > 3 && (
-                  <Typography sx={{ fontSize: 9, color: '#9CA3AF' }}>+{day.courses.length - 3} more</Typography>
+                  <Typography sx={{ fontSize: 9, color: (theme) => theme.palette.text.secondary }}>+{day.courses.length - 3} more</Typography>
                 )}
               </Box>
             </Box>
@@ -228,14 +228,14 @@ const CourseCalendar: React.FC = () => {
 
       {/* Course Details Dialog */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>Course Details</DialogTitle>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>Course Details</DialogTitle>
         <DialogContent>
           {selectedCourse && (
             <Box sx={{ pt: 1 }}>
               <Box sx={{ mb: 2 }}>
                 <StatusChip kind={getStatusKind(selectedCourse.status)} label={getStatusLabel(selectedCourse.status)} />
               </Box>
-              <Box sx={{ borderTop: '1px solid #E5E7EB', pt: 2 }}>
+              <Box sx={{ borderTop: (theme) => `1px solid ${theme.palette.divider}`, pt: 2 }}>
                 <Grid container spacing={2}>
                   {[
                     ['Organization', selectedCourse.organizationName || 'N/A'],
@@ -247,14 +247,14 @@ const CourseCalendar: React.FC = () => {
                     ...(selectedCourse.location ? [['Location', selectedCourse.location]] : []),
                   ].map(([label, value]) => (
                     <Grid item xs={6} key={String(label)}>
-                      <Typography sx={{ fontSize: 12, color: '#9CA3AF', mb: 0.25 }}>{label}</Typography>
-                      <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{value}</Typography>
+                      <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, mb: 0.25 }}>{label}</Typography>
+                      <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>{value}</Typography>
                     </Grid>
                   ))}
                   {selectedCourse.notes && (
                     <Grid item xs={12}>
-                      <Typography sx={{ fontSize: 12, color: '#9CA3AF', mb: 0.25 }}>Notes</Typography>
-                      <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{selectedCourse.notes}</Typography>
+                      <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, mb: 0.25 }}>Notes</Typography>
+                      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{selectedCourse.notes}</Typography>
                     </Grid>
                   )}
                 </Grid>

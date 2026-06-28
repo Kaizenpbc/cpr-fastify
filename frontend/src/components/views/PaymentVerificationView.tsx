@@ -390,8 +390,8 @@ const PaymentVerificationView = () => {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="error">
-          <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>Error loading payment verifications</Typography>
-          <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{error.message}</Typography>
+          <Typography sx={{ fontSize: 14, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>Error loading payment verifications</Typography>
+          <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>{error.message}</Typography>
         </Alert>
       </Box>
     );
@@ -402,21 +402,21 @@ const PaymentVerificationView = () => {
   return (
     <Box sx={{ p: 3 }}>
       {/* Page header */}
-      <Typography sx={{ fontSize: 22, fontWeight: 700, color: '#111827', mb: 0.5 }}>
+      <Typography sx={{ fontSize: 22, fontWeight: 700, color: (theme) => theme.palette.text.primary, mb: 0.5 }}>
         Payment Verification
       </Typography>
-      <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 3 }}>
+      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 3 }}>
         Review and verify payment submissions from organizations.
       </Typography>
 
       {/* Payments table */}
-      <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', bgcolor: '#fff', overflow: 'hidden' }}>
+      <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', bgcolor: (theme) => theme.palette.background.paper, overflow: 'hidden' }}>
         {payments.length === 0 ? (
           <Box sx={{ py: 6, textAlign: 'center' }}>
             <Typography sx={{ fontSize: 15, fontWeight: 600, color: '#16A34A', mb: 0.5 }}>
               All Payments Verified!
             </Typography>
-            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
               There are no pending payment verifications at this time.
             </Typography>
           </Box>
@@ -432,32 +432,32 @@ const PaymentVerificationView = () => {
               return (
                 <DataTableRow key={payment.paymentId} columns={PAYMENT_TABLE_COLUMNS}>
                   {/* Organization */}
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                     {payment.organizationName}
                   </Typography>
 
                   {/* Invoice # */}
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                     {payment.invoiceNumber}
                   </Typography>
 
                   {/* Payment Amount */}
-                  <Typography sx={{ fontSize: 13, fontFamily: 'monospace', color: '#111827', fontWeight: 600 }}>
+                  <Typography sx={{ fontSize: 13, fontFamily: 'monospace', color: (theme) => theme.palette.text.primary, fontWeight: 600 }}>
                     {formatCurrency(payment.amount)}
                   </Typography>
 
                   {/* Payment Method */}
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                     {payment.paymentMethod?.replace('_', ' ').toUpperCase()}
                   </Typography>
 
                   {/* Reference # */}
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                     {payment.referenceNumber || '-'}
                   </Typography>
 
                   {/* Submitted Date */}
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                     {formatDate(payment.submittedByOrgAt)}
                   </Typography>
 
@@ -490,12 +490,12 @@ const PaymentVerificationView = () => {
 
       {/* Payment Detail / Action Dialog */}
       <Dialog open={paymentDialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>
           {dialogMode === 'action'
             ? `${verificationAction === 'approve' ? 'Approve' : 'Reject'} Payment`
             : 'Payment Details'}
           {selectedPayment && (
-            <Typography sx={{ fontSize: 13, color: '#4B5563', mt: 0.5 }}>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mt: 0.5 }}>
               {selectedPayment.organizationName} - {selectedPayment.invoiceNumber}
             </Typography>
           )}
@@ -511,7 +511,7 @@ const PaymentVerificationView = () => {
 
               {/* Student Attendance Section */}
               <Divider sx={{ my: 2 }} />
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>
                 Class Attendance
               </Typography>
               {loadingAttendance ? (
@@ -520,12 +520,12 @@ const PaymentVerificationView = () => {
                 </Box>
               ) : attendanceData.length > 0 ? (
                 <Box sx={{ mb: 2 }}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 1 }}>
                     Total Students: {attendanceData.length} &nbsp;|&nbsp;
                     Present: {attendanceData.filter(s => s.attended).length} &nbsp;|&nbsp;
                     Absent: {attendanceData.filter(s => !s.attended).length}
                   </Typography>
-                  <Box sx={{ border: '1px solid #E5E7EB', borderRadius: '10px', overflow: 'hidden', mt: 1 }}>
+                  <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', overflow: 'hidden', mt: 1 }}>
                     <DataTable
                       columns={ATTENDANCE_TABLE_COLUMNS}
                       shownCount={attendanceData.length}
@@ -534,12 +534,12 @@ const PaymentVerificationView = () => {
                       {attendanceData.map((student, index) => (
                         <DataTableRow key={index} columns={ATTENDANCE_TABLE_COLUMNS}>
                           {/* Name */}
-                          <Typography sx={{ fontSize: 13, color: '#111827' }}>
+                          <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}>
                             {student.firstName} {student.lastName}
                           </Typography>
 
                           {/* Email */}
-                          <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                          <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                             {student.email || 'N/A'}
                           </Typography>
 
@@ -556,55 +556,55 @@ const PaymentVerificationView = () => {
                   </Box>
                 </Box>
               ) : (
-                <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+                <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                   No student attendance data available
                 </Typography>
               )}
 
               {/* Payment Information */}
               <Divider sx={{ my: 2 }} />
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>
                 Payment Information
               </Typography>
               <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Invoice Number</Typography>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Invoice Number</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                     {selectedPayment.invoiceNumber}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Payment Amount</Typography>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Payment Amount</Typography>
                   <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#16A34A', fontFamily: 'monospace' }}>
                     {formatCurrency(selectedPayment.amount)}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Payment Method</Typography>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Payment Method</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                     {selectedPayment.paymentMethod?.replace('_', ' ').toUpperCase()}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Reference Number</Typography>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Reference Number</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                     {selectedPayment.referenceNumber || '-'}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Payment Date</Typography>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Payment Date</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                     {formatDate(selectedPayment.paymentDate)}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Submitted Date</Typography>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Submitted Date</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                     {formatDate(selectedPayment.submittedByOrgAt)}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 0.5 }}>Status</Typography>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 0.5 }}>Status</Typography>
                   <StatusChip
                     kind={getPaymentStatusKind(selectedPayment).kind}
                     label={getPaymentStatusKind(selectedPayment).label}
@@ -612,16 +612,16 @@ const PaymentVerificationView = () => {
                 </Grid>
                 {selectedPayment.verifiedByAccountingAt && (
                   <Grid item xs={12} sm={6}>
-                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Verified By Accounting</Typography>
-                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Verified By Accounting</Typography>
+                    <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                       {formatDate(selectedPayment.verifiedByAccountingAt)}
                     </Typography>
                   </Grid>
                 )}
                 {selectedPayment.notes && (
                   <Grid item xs={12}>
-                    <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Organization Notes</Typography>
-                    <Typography sx={{ fontSize: 13, color: '#4B5563', fontStyle: 'italic' }}>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Organization Notes</Typography>
+                    <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, fontStyle: 'italic' }}>
                       {selectedPayment.notes}
                     </Typography>
                   </Grid>
@@ -661,7 +661,7 @@ const PaymentVerificationView = () => {
 
               {/* Payment History Section */}
               <Divider sx={{ my: 2 }} />
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>
                 Payment History
               </Typography>
 
@@ -756,7 +756,7 @@ const PaymentVerificationView = () => {
 
       {/* Invoice Detail Dialog */}
       <Dialog open={invoiceDialogOpen} onClose={handleCloseInvoiceDialog} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 700, color: (theme) => theme.palette.text.primary }}>
           Invoice Details
         </DialogTitle>
         <DialogContent>
@@ -768,55 +768,55 @@ const PaymentVerificationView = () => {
             <Box>
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Invoice Number</Typography>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Invoice Number</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                     {selectedInvoice.invoicenumber}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Organization</Typography>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Organization</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                     {selectedInvoice.organizationname}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Course Type</Typography>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Course Type</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                     {selectedInvoice.name}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Location</Typography>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Location</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                     {selectedInvoice.location}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Course Date</Typography>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Course Date</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                     {selectedInvoice.courseDate ? formatDisplayDate(selectedInvoice.courseDate) : 'N/A'}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Students Billed</Typography>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Students Billed</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                     {selectedInvoice.studentsattendance}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Total Amount</Typography>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827', fontFamily: 'monospace' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Total Amount</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary, fontFamily: 'monospace' }}>
                     ${Number(selectedInvoice.amount || 0).toFixed(2)}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Amount Paid</Typography>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Amount Paid</Typography>
                   <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#16A34A', fontFamily: 'monospace' }}>
                     ${Number(selectedInvoice.amountPaid || 0).toFixed(2)}
                   </Typography>
                 </Grid>
                 <Grid item xs={12}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Balance Due</Typography>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Balance Due</Typography>
                   <Typography
                     sx={{
                       fontSize: 13.5,
@@ -829,13 +829,13 @@ const PaymentVerificationView = () => {
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563' }}>Due Date</Typography>
-                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>Due Date</Typography>
+                  <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: (theme) => theme.palette.text.primary }}>
                     {selectedInvoice.duedate ? formatDisplayDate(selectedInvoice.duedate) : 'N/A'}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 0.5 }}>Status</Typography>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 0.5 }}>Status</Typography>
                   <StatusChip
                     kind={getPaymentStatusKind(selectedInvoice).kind}
                     label={String(selectedInvoice.paymentstatus || selectedInvoice.status || 'unknown').toUpperCase()}
@@ -844,7 +844,7 @@ const PaymentVerificationView = () => {
               </Grid>
             </Box>
           ) : (
-            <Typography sx={{ fontSize: 13, color: '#4B5563' }}>
+            <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
               No invoice details available.
             </Typography>
           )}
