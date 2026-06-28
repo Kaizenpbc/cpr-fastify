@@ -10,9 +10,9 @@ import NotificationsPanel from '../hr/NotificationsPanel';
 import ReturnedPaymentRequests from '../hr/ReturnedPaymentRequests';
 
 const HRReports = () => (
-  <Box sx={{ bgcolor: '#fff', border: '1px solid #E5E7EB', borderRadius: '10px', p: 6, textAlign: 'center' }}>
-    <Typography sx={{ fontSize: 16, fontWeight: 600, color: '#9CA3AF' }}>HR Reports</Typography>
-    <Typography sx={{ fontSize: 13, color: '#9CA3AF', mt: 1 }}>Analytics and compliance reports will be implemented here.</Typography>
+  <Box sx={{ bgcolor: (theme: any) => theme.palette.background.paper, border: (theme: any) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 6, textAlign: 'center' }}>
+    <Typography sx={{ fontSize: 16, fontWeight: 600, color: (theme: any) => theme.palette.text.secondary }}>HR Reports</Typography>
+    <Typography sx={{ fontSize: 13, color: (theme: any) => theme.palette.text.secondary, mt: 1 }}>Coming soon - Analytics and compliance reports.</Typography>
   </Box>
 );
 
@@ -24,7 +24,7 @@ const views = [
   { key: 'payroll', label: 'Instructor Payroll', eyebrow: 'Time & Pay' },
   { key: 'returned-payments', label: 'Returned Payments', eyebrow: 'Time & Pay' },
   { key: 'notifications', label: 'Notifications', eyebrow: 'System' },
-  { key: 'reports', label: 'HR Reports', eyebrow: 'Analytics' },
+  { key: 'reports', label: 'HR Reports (Coming Soon)', eyebrow: 'Analytics' },
 ];
 
 const HRPortal: React.FC = () => {

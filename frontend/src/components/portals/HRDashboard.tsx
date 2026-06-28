@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  ButtonBase,
 } from '@mui/material';
 import { hrDashboardService, HRDashboardStats, ProfileChange, RecentChange as ServiceRecentChange } from '../../services/hrDashboardService';
 import StatCard from '../gtacpr/StatCard';
@@ -190,9 +191,9 @@ const HRDashboard: React.FC<HRDashboardProps> = ({ onViewChange }) => {
                   <StatusChip kind={getStatusKind(change.status)} label={change.status} />
                   <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{new Date(change.createdAt).toLocaleDateString()}</Typography>
                   <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-                    <Box onClick={() => openApprovalDialog(change, 'approve')} sx={{ fontSize: 12, fontWeight: 600, color: '#16A34A', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Approve</Box>
+                    <ButtonBase onClick={() => openApprovalDialog(change, 'approve')} sx={{ fontSize: 12, fontWeight: 600, color: '#16A34A', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #16A34A', outlineOffset: '2px' } }}>Approve</ButtonBase>
                     <Typography sx={{ fontSize: 12, color: '#E5E7EB' }}>|</Typography>
-                    <Box onClick={() => openApprovalDialog(change, 'reject')} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Reject</Box>
+                    <ButtonBase onClick={() => openApprovalDialog(change, 'reject')} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>Reject</ButtonBase>
                   </Box>
                 </DataTableRow>
               );

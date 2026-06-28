@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as api from '../../services/api';
-import { Box, Typography, CircularProgress, Alert } from '@mui/material';
+import { Box, Typography, CircularProgress, Alert, ButtonBase } from '@mui/material';
 import OrganizationDialog from './OrganizationDialog';
 import { formatPhoneNumber } from 'react-phone-number-input';
 import DataTable, { DataTableRow } from '../gtacpr/DataTable';
@@ -96,9 +96,9 @@ function OrganizationManager() {
               <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{formatPhone(org.contactPhone)}</Typography>
               <Typography sx={{ fontSize: 12.5, color: '#4B5563' }}>{formatAddress(org)}</Typography>
               <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-                <Box onClick={() => handleEditOpen(org)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Edit</Box>
+                <ButtonBase onClick={() => handleEditOpen(org)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>Edit</ButtonBase>
                 <Typography sx={{ fontSize: 12, color: '#E5E7EB' }}>|</Typography>
-                <Box onClick={() => handleDelete(org.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' } }}>Delete</Box>
+                <ButtonBase onClick={() => handleDelete(org.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>Delete</ButtonBase>
               </Box>
             </DataTableRow>
           ))}

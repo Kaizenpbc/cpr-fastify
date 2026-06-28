@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, TextField, Alert, CircularProgress, InputAdornment } from '@mui/material';
+import { Box, Typography, TextField, Alert, CircularProgress, InputAdornment, ButtonBase } from '@mui/material';
 import { api } from '../../../services/api';
 import DataTable, { DataTableRow } from '../../gtacpr/DataTable';
 import StatusChip from '../../gtacpr/StatusChip';
@@ -105,11 +105,11 @@ const CoursePricingManagement: React.FC = () => {
                     <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
                       {editingId === pricing.id ? (
                         <>
-                          <Box onClick={() => handleEditSave(pricing.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#16A34A', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Save</Box>
-                          <Box onClick={handleEditCancel} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Cancel</Box>
+                          <ButtonBase onClick={() => handleEditSave(pricing.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#16A34A', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #16A34A', outlineOffset: '2px' } }}>Save</ButtonBase>
+                          <ButtonBase onClick={handleEditCancel} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>Cancel</ButtonBase>
                         </>
                       ) : (
-                        <Box onClick={() => pricing.is_active && handleEditStart(pricing)} sx={{ fontSize: 12, fontWeight: 600, color: pricing.is_active ? '#CC1F1F' : '#9CA3AF', cursor: pricing.is_active ? 'pointer' : 'default', '&:hover': pricing.is_active ? { textDecoration: 'underline' } : {} }}>Edit</Box>
+                        <ButtonBase onClick={() => pricing.is_active && handleEditStart(pricing)} disabled={!pricing.is_active} sx={{ fontSize: 12, fontWeight: 600, color: pricing.is_active ? '#CC1F1F' : '#9CA3AF', '&:hover': pricing.is_active ? { textDecoration: 'underline' } : {}, '&:focus-visible': pricing.is_active ? { outline: '2px solid #CC1F1F', outlineOffset: '2px' } : {} }}>Edit</ButtonBase>
                       )}
                     </Box>
                   </DataTableRow>

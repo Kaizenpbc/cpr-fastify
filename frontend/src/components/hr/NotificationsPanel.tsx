@@ -15,6 +15,7 @@ import {
   Alert,
   CircularProgress,
   Grid,
+  ButtonBase,
 } from '@mui/material';
 import { notificationService, Notification, SystemNotifications, NotificationFilters } from '../../services/notificationService';
 import StatCard from '../gtacpr/StatCard';
@@ -64,9 +65,9 @@ const NotificationItem: React.FC<{
       </Box>
       <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
         {!notification.isRead && (
-          <Box onClick={() => onMarkAsRead(notification.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#16A34A', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Read</Box>
+          <ButtonBase onClick={() => onMarkAsRead(notification.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#16A34A', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #16A34A', outlineOffset: '2px' } }}>Read</ButtonBase>
         )}
-        <Box onClick={() => onDelete(notification.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Delete</Box>
+        <ButtonBase onClick={() => onDelete(notification.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>Delete</ButtonBase>
       </Box>
     </Box>
   </Box>

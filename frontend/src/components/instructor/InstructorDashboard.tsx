@@ -4,8 +4,8 @@ import {
   Typography,
   Alert,
   CircularProgress,
+  ButtonBase,
 } from '@mui/material';
-import {} from '@mui/icons-material';
 import StatCard from '../gtacpr/StatCard';
 import StatusChip from '../gtacpr/StatusChip';
 import { GhostButton } from '../gtacpr/Buttons';
@@ -53,8 +53,6 @@ interface ErrorWithDetails {
 }
 
 const InstructorDashboard: React.FC = () => {
-  console.log('[DEBUG] Consolidated InstructorDashboard rendered');
-  
   const navigate = useNavigate();
   
   // Use centralized service hooks instead of useInstructorData
@@ -73,16 +71,6 @@ const InstructorDashboard: React.FC = () => {
   const loading = classesLoading || completedLoading || availabilityLoading || todayLoading;
   const error = classesError || completedError || availabilityError || todayError || errorState;
 
-  // Temporary debugging
-  console.log('[DEBUG] Current data state:', {
-    scheduledClasses: scheduledClasses,
-    scheduledClassesLength: Array.isArray(scheduledClasses) ? scheduledClasses.length : 'not array',
-    completedClasses: completedClasses,
-    completedClassesLength: Array.isArray(completedClasses) ? completedClasses.length : 'not array',
-    dashboardData: dashboardData,
-    forceRefresh: forceRefresh
-  });
-
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
@@ -95,8 +83,6 @@ const InstructorDashboard: React.FC = () => {
           completedCourses: completed.length,
           cancelledCourses: 0 // We'll need to get this from API if needed
         };
-
-        console.log('[DEBUG] Setting dashboard stats:', stats);
 
         setDashboardData({
           instructorStats: stats,
@@ -215,7 +201,7 @@ const InstructorDashboard: React.FC = () => {
                     <Typography sx={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{cls.coursename || 'Course'}</Typography>
                     <Typography sx={{ fontSize: 12, color: '#9CA3AF' }}>{formatDate(cls.date)} &bull; {cls.studentcount || 0} students</Typography>
                   </Box>
-                  <Box onClick={() => navigate(`/instructor/classes/${cls.id}`)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>View</Box>
+                  <ButtonBase onClick={() => navigate(`/instructor/classes/${cls.id}`)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>View</ButtonBase>
                 </Box>
               ))}
             </Box>

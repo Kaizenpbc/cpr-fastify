@@ -15,6 +15,7 @@ import {
   Select,
   MenuItem,
   Grid,
+  ButtonBase,
 } from '@mui/material';
 import { hrService } from '../../services/hrService';
 import StatCard from '../gtacpr/StatCard';
@@ -248,7 +249,7 @@ const ReturnedPaymentRequests: React.FC = () => {
                   <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{request.totalHours}h / {request.coursesTaught} courses</Typography>
                   <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{new Date(request.updatedAt).toLocaleDateString()}</Typography>
                   <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <Box onClick={() => { setSelectedRequest(request); setDetailDialogOpen(true); }} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Review</Box>
+                    <ButtonBase onClick={() => { setSelectedRequest(request); setDetailDialogOpen(true); }} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>Review</ButtonBase>
                   </Box>
                 </DataTableRow>
               ))}

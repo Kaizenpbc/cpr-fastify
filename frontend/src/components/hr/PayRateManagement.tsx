@@ -19,6 +19,7 @@ import {
   Checkbox,
   Card,
   TablePagination,
+  ButtonBase,
 } from '@mui/material';
 import { payRateService,
   PayRateTier,
@@ -224,9 +225,9 @@ const PayRateManagement: React.FC = () => {
                   </Box>
                   <StatusChip kind={instructor.rateStatus === 'Set' ? 'success' : 'warning'} label={instructor.rateStatus} />
                   <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-                    <Box onClick={() => openRateDialog(instructor)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Edit</Box>
+                    <ButtonBase onClick={() => openRateDialog(instructor)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>Edit</ButtonBase>
                     <Typography sx={{ fontSize: 12, color: '#E5E7EB' }}>|</Typography>
-                    <Box onClick={() => openHistoryDialog(instructor)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>History</Box>
+                    <ButtonBase onClick={() => openHistoryDialog(instructor)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>History</ButtonBase>
                   </Box>
                 </DataTableRow>
               ))}
@@ -258,7 +259,7 @@ const PayRateManagement: React.FC = () => {
                   <Typography sx={{ fontSize: 13, color: '#4B5563', mb: 1 }}>+${tier.courseBonus} per course</Typography>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <StatusChip kind={tier.isActive ? 'active' : 'inactive'} label={tier.isActive ? 'Active' : 'Inactive'} />
-                    <Box onClick={() => openTierDialog(tier)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Edit</Box>
+                    <ButtonBase onClick={() => openTierDialog(tier)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>Edit</ButtonBase>
                   </Box>
                 </Card>
               ))}

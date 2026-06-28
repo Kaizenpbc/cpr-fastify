@@ -1,7 +1,6 @@
 import React, { Suspense, lazy, useMemo } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import {
-  Container,
   Box,
   Alert,
   Button,
@@ -107,39 +106,18 @@ const InstructorPortal: React.FC<InstructorPortalProps> = ({
 }) => {
   // Create combined schedule from scheduled classes and availability dates
   const combinedSchedule: CombinedScheduleItem[] = useMemo(() => {
-    console.log('[InstructorPortal] Creating combined schedule:', {
-      availableDates: availableDates,
-      scheduledClasses: scheduledClasses
-    });
-
     const combined: CombinedScheduleItem[] = [];
 
     // Add scheduled classes (filter out completed classes)
     scheduledClasses
       .filter((classItem) => {
-        // Filter out completed classes
         const extClass = classItem as ExtendedClassItem;
-        const isCompleted = classItem.status === 'completed' ||
-                          extClass.completed === true ||
-                          classItem.status === 'Completed';
-        console.log('[InstructorPortal] Filtering class:', {
-          courseId: classItem.courseId,
-          status: classItem.status,
-          completed: extClass.completed,
-          isCompleted: isCompleted
-        });
-        return !isCompleted;
+        return !(classItem.status === 'completed' ||
+                 extClass.completed === true ||
+                 classItem.status === 'Completed');
       })
       .forEach((classItem) => {
         const extClass = classItem as ExtendedClassItem;
-        console.log('[InstructorPortal] Processing scheduled class:', {
-          courseId: classItem.courseId,
-          date: classItem.date,
-          organization_name: extClass.organizationname || classItem.organizationName,
-          course_name: extClass.course_name || classItem.courseType,
-          location: classItem.location,
-          status: classItem.status
-        });
         const dateStr = classItem.date.includes('T')
           ? classItem.date.split('T')[0]
           : classItem.date;
@@ -162,23 +140,11 @@ const InstructorPortal: React.FC<InstructorPortalProps> = ({
 
     // Add availability dates
     availableDates.forEach((availability) => {
-      console.log('[InstructorPortal] Processing availability:', {
-        id: availability.id,
-        date: availability.date,
-        status: availability.status
-      });
-      const dateStr = availability.date.includes('T') 
-        ? availability.date.split('T')[0] 
+      const dateStr = availability.date.includes('T')
+        ? availability.date.split('T')[0]
         : availability.date;
-      
-      console.log('[InstructorPortal] Date processing:', {
-        originalDate: availability.date,
-        dateStr: dateStr,
-        formattedDate: formatDisplayDate(dateStr)
-      });
-      
-      // Include all availability dates (don't filter by date)
-      const entry: CombinedScheduleItem = {
+
+      combined.push({
         key: `availability-${availability.id}`,
         type: 'availability' as const,
         displayDate: formatDisplayDate(dateStr),
@@ -189,28 +155,16 @@ const InstructorPortal: React.FC<InstructorPortalProps> = ({
         studentsRegistered: 0,
         studentsAttendance: 0,
         status: 'available',
-      };
-      
-      console.log('[InstructorPortal] Created availability entry:', entry);
-      combined.push(entry);
+      });
     });
 
     // Sort by date
     combined.sort((a, b) => new Date(a.displayDate).getTime() - new Date(b.displayDate).getTime());
-    
-    console.log('[InstructorPortal] Final combined schedule:', combined.map(item => ({
-      key: item.key,
-      type: item.type,
-      displayDate: item.displayDate,
-      organizationName: item.organizationName,
-      status: item.status
-    })));
     return combined;
   }, [availableDates, scheduledClasses]);
 
-  // Handle error boundary errors
   const handleError = (error: Error, errorInfo: React.ErrorInfo) => {
-    console.error('Instructor Portal Error:', error, errorInfo);
+    // Error boundary handler — logged by ErrorBoundary itself
   };
 
   // Get current view from URL
@@ -224,11 +178,9 @@ const InstructorPortal: React.FC<InstructorPortalProps> = ({
   if (loading) {
     return (
       <InstructorLayout currentView={currentView}>
-        <Container maxWidth='lg'>
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-            <div>Loading...</div>
-          </Box>
-        </Container>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+          <div>Loading...</div>
+        </Box>
       </InstructorLayout>
     );
   }
@@ -236,13 +188,6 @@ const InstructorPortal: React.FC<InstructorPortalProps> = ({
   return (
     <ErrorBoundary onError={handleError}>
       <InstructorLayout currentView={currentView} onRefresh={onRefreshData}>
-        <Container maxWidth='lg'>
-          {/* Success and Error Messages */}
-          {/* The original code had successState and onClearMessages, but they are not defined in the props.
-              Assuming they are meant to be removed or handled differently if they were intended to be used.
-              For now, removing them as they are not in the new_code's context. */}
-          
-          {/* Routes */}
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
               <Route
@@ -299,8 +244,7 @@ const InstructorPortal: React.FC<InstructorPortalProps> = ({
                   <ErrorBoundary onError={handleError}>
                     <AttendanceView
                       onAttendanceUpdate={() => {
-                        // This will trigger a refresh of the data
-                        console.log('[InstructorPortal] Attendance updated, should refresh data');
+                        // Refresh handled by react-query invalidation
                       }}
                     />
                   </ErrorBoundary>
@@ -342,7 +286,6 @@ const InstructorPortal: React.FC<InstructorPortalProps> = ({
               />
             </Routes>
           </Suspense>
-        </Container>
       </InstructorLayout>
     </ErrorBoundary>
   );

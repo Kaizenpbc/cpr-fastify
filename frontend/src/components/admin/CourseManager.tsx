@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, CircularProgress, Alert } from '@mui/material';
+import { Box, Typography, CircularProgress, Alert, ButtonBase } from '@mui/material';
 import { api } from '../../services/api';
 import logger from '../../utils/logger';
 import CourseDialog from './CourseDialog';
@@ -130,9 +130,9 @@ const CourseManager: React.FC<CourseManagerProps> = ({ showSnackbar }) => {
               <Typography sx={{ fontSize: 12.5, color: '#9CA3AF' }}>{formatDisplayDate(course.createdAt)}</Typography>
               <Typography sx={{ fontSize: 12.5, color: '#9CA3AF' }}>{formatDisplayDate(course.updatedAt)}</Typography>
               <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-                <Box onClick={() => handleEditOpen(course)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Edit</Box>
+                <ButtonBase onClick={() => handleEditOpen(course)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>Edit</ButtonBase>
                 <Typography sx={{ fontSize: 12, color: '#E5E7EB' }}>|</Typography>
-                <Box onClick={() => handleDelete(course.id, course.name)} sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' } }}>Delete</Box>
+                <ButtonBase onClick={() => handleDelete(course.id, course.name)} sx={{ fontSize: 12, fontWeight: 600, color: '#9CA3AF', '&:hover': { textDecoration: 'underline', color: '#CC1F1F' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>Delete</ButtonBase>
               </Box>
             </DataTableRow>
           ))}

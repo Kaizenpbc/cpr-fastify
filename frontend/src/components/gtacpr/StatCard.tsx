@@ -11,14 +11,14 @@ interface StatCardProps {
 const StatCard: React.FC<StatCardProps> = ({ label, value, sub, dotColor }) => (
   <Card
     sx={{
-      border: '1px solid #E5E7EB',
+      border: (theme) => `1px solid ${theme.palette.divider}`,
       borderRadius: '10px',
       padding: '18px 20px',
       boxShadow: '0 1px 3px rgba(0,0,0,.05)',
     }}
   >
     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#4B5563' }}>
+      <Typography sx={{ fontSize: '12px', fontWeight: 600, color: (theme) => theme.palette.text.secondary }}>
         {label}
       </Typography>
       {dotColor && (
@@ -36,7 +36,7 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, sub, dotColor }) => (
       sx={{
         fontSize: '34px',
         fontWeight: 800,
-        color: '#111827',
+        color: (theme) => theme.palette.text.primary,
         letterSpacing: '-0.02em',
         mt: 0.5,
       }}
@@ -44,7 +44,7 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, sub, dotColor }) => (
       {value}
     </Typography>
     {sub && (
-      <Typography sx={{ fontSize: '11.5px', color: '#9CA3AF', mt: '7px' }}>
+      <Typography sx={{ fontSize: '11.5px', color: (theme) => theme.palette.text.secondary, mt: '7px' }}>
         {sub}
       </Typography>
     )}

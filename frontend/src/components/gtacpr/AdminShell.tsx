@@ -1,8 +1,18 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Box, Typography, Drawer } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Drawer,
+  ButtonBase,
+  IconButton,
+  useMediaQuery,
+  useTheme as useMuiTheme,
+} from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
 import ThemeToggle from '../common/ThemeToggle';
+import { RED, RED_DARK, SIDEBAR_BG, SIDEBAR_BORDER, SIDEBAR_TEXT, SIDEBAR_TEXT_MUTED, SIDEBAR_HOVER, SIDEBAR_DOT } from './tokens';
 
 const SIDEBAR_WIDTH = 248;
 
@@ -39,10 +49,12 @@ const AdminShell: React.FC<AdminShellProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
+  const muiTheme = useMuiTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const isActive = (path: string) => {
     if (activePath) return path === activePath;
-    // Check if the current pathname ends with this path segment
     const segments = location.pathname.split('/').filter(Boolean);
     const lastSegment = segments[segments.length - 1];
     if (path === basePath) {
@@ -52,10 +64,10 @@ const AdminShell: React.FC<AdminShellProps> = ({
   };
 
   const handleNavClick = (path: string) => {
+    if (isMobile) setMobileOpen(false);
     if (onNavigate) {
       onNavigate(path);
     } else {
-      // Navigate relative to the portal base (go up one segment, then to the new path)
       navigate('../' + path, { relative: 'path' });
     }
   };
@@ -67,154 +79,108 @@ const AdminShell: React.FC<AdminShellProps> = ({
   const userEmail = user?.email || '';
 
   const handleLogout = () => {
+    if (isMobile) setMobileOpen(false);
     logout();
     navigate('/');
   };
 
-  return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      {/* Dark Sidebar */}
-      <Drawer
-        variant="permanent"
+  const sidebarContent = (
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Brand block */}
+      <Box
         sx={{
-          width: SIDEBAR_WIDTH,
-          flexShrink: 0,
-          '& .MuiDrawer-paper': {
-            width: SIDEBAR_WIDTH,
-            boxSizing: 'border-box',
-            backgroundColor: '#111827',
-            borderRight: 'none',
-          },
+          padding: '20px 22px',
+          borderBottom: `1px solid ${SIDEBAR_BORDER}`,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
         }}
       >
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-          {/* Brand block */}
-          <Box
+        <Box
+          sx={{
+            width: 34,
+            height: 34,
+            borderRadius: '8px',
+            backgroundColor: RED,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <Typography sx={{ color: SIDEBAR_TEXT, fontSize: '16px', fontWeight: 800 }}>G</Typography>
+        </Box>
+        <Box>
+          <Typography
             sx={{
-              padding: '20px 22px',
-              borderBottom: '1px solid rgba(255,255,255,.07)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
+              fontSize: '15px',
+              fontWeight: 800,
+              color: SIDEBAR_TEXT,
+              letterSpacing: '-0.01em',
+              lineHeight: 1.2,
             }}
           >
-            <Box
-              sx={{
-                width: 34,
-                height: 34,
-                borderRadius: '8px',
-                backgroundColor: '#CC1F1F',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <Typography sx={{ color: '#fff', fontSize: '16px', fontWeight: 800 }}>G</Typography>
-            </Box>
-            <Box>
-              <Typography
-                sx={{
-                  fontSize: '15px',
-                  fontWeight: 800,
-                  color: '#fff',
-                  letterSpacing: '-0.01em',
-                  lineHeight: 1.2,
-                }}
-              >
-                GTACPR
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: '9.5px',
-                  fontWeight: 600,
-                  color: '#9CA3AF',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.12em',
-                  lineHeight: 1.2,
-                }}
-              >
-                {portalName}
-              </Typography>
-            </Box>
-          </Box>
+            GTACPR
+          </Typography>
+          <Typography
+            sx={{
+              fontSize: '9.5px',
+              fontWeight: 600,
+              color: SIDEBAR_TEXT_MUTED,
+              textTransform: 'uppercase',
+              letterSpacing: '0.12em',
+              lineHeight: 1.2,
+            }}
+          >
+            {portalName}
+          </Typography>
+        </Box>
+      </Box>
 
-          {/* Subtitle (e.g. org name) */}
-          {subtitle && (
-            <Box sx={{ padding: '10px 22px', borderBottom: '1px solid rgba(255,255,255,.07)' }}>
-              <Typography
-                sx={{
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  color: '#9CA3AF',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {subtitle}
-              </Typography>
-            </Box>
-          )}
+      {/* Subtitle (e.g. org name) */}
+      {subtitle && (
+        <Box sx={{ padding: '10px 22px', borderBottom: `1px solid ${SIDEBAR_BORDER}` }}>
+          <Typography
+            sx={{
+              fontSize: '11px',
+              fontWeight: 600,
+              color: SIDEBAR_TEXT_MUTED,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {subtitle}
+          </Typography>
+        </Box>
+      )}
 
-          {/* Nav list */}
-          <Box sx={{ padding: '14px 12px', flex: 1, overflowY: 'auto' }}>
-            {navItems.map((item) => {
-              const active = isActive(item.path);
-              return (
-                <Box
-                  key={item.path}
-                  onClick={() => handleNavClick(item.path)}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '11px',
-                    padding: '9px 12px',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    mb: '2px',
-                    backgroundColor: active ? '#CC1F1F' : 'transparent',
-                    '&:hover': {
-                      backgroundColor: active ? '#9B1515' : 'rgba(255,255,255,.06)',
-                    },
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 7,
-                      height: 7,
-                      borderRadius: '50%',
-                      backgroundColor: active ? '#fff' : 'rgba(255,255,255,.25)',
-                      flexShrink: 0,
-                    }}
-                  />
-                  <Typography
-                    sx={{
-                      fontSize: '13.5px',
-                      fontWeight: active ? 700 : 500,
-                      color: active ? '#fff' : '#9CA3AF',
-                      lineHeight: 1.3,
-                    }}
-                  >
-                    {item.label}
-                  </Typography>
-                </Box>
-              );
-            })}
-          </Box>
-
-          {/* Logout */}
-          <Box sx={{ padding: '0 12px 8px' }}>
-            <Box
-              onClick={handleLogout}
+      {/* Nav list */}
+      <Box sx={{ padding: '14px 12px', flex: 1, overflowY: 'auto' }}>
+        {navItems.map((item) => {
+          const active = isActive(item.path);
+          return (
+            <ButtonBase
+              key={item.path}
+              onClick={() => handleNavClick(item.path)}
+              aria-current={active ? 'page' : undefined}
               sx={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '11px',
                 padding: '9px 12px',
                 borderRadius: '8px',
-                cursor: 'pointer',
-                '&:hover': { backgroundColor: 'rgba(255,255,255,.06)' },
+                width: '100%',
+                justifyContent: 'flex-start',
+                mb: '2px',
+                backgroundColor: active ? RED : 'transparent',
+                '&:hover': {
+                  backgroundColor: active ? RED_DARK : SIDEBAR_HOVER,
+                },
+                '&:focus-visible': {
+                  outline: `2px solid ${RED}`,
+                  outlineOffset: '2px',
+                },
               }}
             >
               <Box
@@ -222,76 +188,142 @@ const AdminShell: React.FC<AdminShellProps> = ({
                   width: 7,
                   height: 7,
                   borderRadius: '50%',
-                  backgroundColor: 'rgba(255,255,255,.25)',
+                  backgroundColor: active ? SIDEBAR_TEXT : SIDEBAR_DOT,
                   flexShrink: 0,
                 }}
               />
-              <Typography sx={{ fontSize: '13.5px', fontWeight: 500, color: '#9CA3AF' }}>
-                Logout
-              </Typography>
-            </Box>
-          </Box>
-
-          {/* User block */}
-          <Box
-            sx={{
-              padding: '16px 18px',
-              borderTop: '1px solid rgba(255,255,255,.07)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-            }}
-          >
-            <Box
-              sx={{
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                backgroundColor: '#CC1F1F',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <Typography sx={{ color: '#fff', fontSize: '13px', fontWeight: 700 }}>
-                {userInitial}
-              </Typography>
-            </Box>
-            <Box sx={{ minWidth: 0 }}>
               <Typography
                 sx={{
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  color: '#fff',
+                  fontSize: '13.5px',
+                  fontWeight: active ? 700 : 500,
+                  color: active ? SIDEBAR_TEXT : SIDEBAR_TEXT_MUTED,
                   lineHeight: 1.3,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
+                  textAlign: 'left',
                 }}
               >
-                {userName}
+                {item.label}
               </Typography>
-              {userEmail && (
-                <Typography
-                  sx={{
-                    fontSize: '11px',
-                    color: '#9CA3AF',
-                    lineHeight: 1.3,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {userEmail}
-                </Typography>
-              )}
-            </Box>
-            <Box sx={{ ml: 'auto' }}>
-              <ThemeToggle size="small" />
-            </Box>
-          </Box>
+            </ButtonBase>
+          );
+        })}
+      </Box>
+
+      {/* Logout */}
+      <Box sx={{ padding: '0 12px 8px' }}>
+        <ButtonBase
+          onClick={handleLogout}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '11px',
+            padding: '9px 12px',
+            borderRadius: '8px',
+            width: '100%',
+            justifyContent: 'flex-start',
+            '&:hover': { backgroundColor: SIDEBAR_HOVER },
+            '&:focus-visible': {
+              outline: `2px solid ${RED}`,
+              outlineOffset: '2px',
+            },
+          }}
+        >
+          <Box
+            sx={{
+              width: 7,
+              height: 7,
+              borderRadius: '50%',
+              backgroundColor: SIDEBAR_DOT,
+              flexShrink: 0,
+            }}
+          />
+          <Typography sx={{ fontSize: '13.5px', fontWeight: 500, color: SIDEBAR_TEXT_MUTED }}>
+            Logout
+          </Typography>
+        </ButtonBase>
+      </Box>
+
+      {/* User block */}
+      <Box
+        sx={{
+          padding: '16px 18px',
+          borderTop: `1px solid ${SIDEBAR_BORDER}`,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+        }}
+      >
+        <Box
+          sx={{
+            width: 32,
+            height: 32,
+            borderRadius: '50%',
+            backgroundColor: RED,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <Typography sx={{ color: SIDEBAR_TEXT, fontSize: '13px', fontWeight: 700 }}>
+            {userInitial}
+          </Typography>
         </Box>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography
+            sx={{
+              fontSize: '13px',
+              fontWeight: 600,
+              color: SIDEBAR_TEXT,
+              lineHeight: 1.3,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {userName}
+          </Typography>
+          {userEmail && (
+            <Typography
+              sx={{
+                fontSize: '11px',
+                color: SIDEBAR_TEXT_MUTED,
+                lineHeight: 1.3,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {userEmail}
+            </Typography>
+          )}
+        </Box>
+        <Box sx={{ ml: 'auto' }}>
+          <ThemeToggle size="small" />
+        </Box>
+      </Box>
+    </Box>
+  );
+
+  return (
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      {/* Sidebar — permanent on desktop, temporary on mobile */}
+      <Drawer
+        variant={isMobile ? 'temporary' : 'permanent'}
+        open={isMobile ? mobileOpen : true}
+        onClose={() => setMobileOpen(false)}
+        ModalProps={{ keepMounted: true }}
+        sx={{
+          width: isMobile ? 0 : SIDEBAR_WIDTH,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
+            width: SIDEBAR_WIDTH,
+            boxSizing: 'border-box',
+            backgroundColor: SIDEBAR_BG,
+            borderRight: 'none',
+          },
+        }}
+      >
+        {sidebarContent}
       </Drawer>
 
       {/* Main content */}
@@ -299,40 +331,52 @@ const AdminShell: React.FC<AdminShellProps> = ({
         {/* Top header */}
         <Box
           sx={{
-            backgroundColor: '#fff',
-            borderBottom: '1px solid #E5E7EB',
-            padding: '18px 32px',
+            backgroundColor: (theme) => theme.palette.background.paper,
+            borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+            padding: { xs: '14px 16px', md: '18px 32px' },
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             flexShrink: 0,
           }}
         >
-          <Box>
-            <Typography
-              sx={{
-                fontSize: '11px',
-                fontWeight: 600,
-                color: '#9CA3AF',
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                lineHeight: 1,
-                mb: 0.5,
-              }}
-            >
-              {eyebrow}
-            </Typography>
-            <Typography
-              sx={{
-                fontSize: '21px',
-                fontWeight: 800,
-                color: '#111827',
-                letterSpacing: '-0.015em',
-                lineHeight: 1.2,
-              }}
-            >
-              {title}
-            </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            {isMobile && (
+              <IconButton
+                onClick={() => setMobileOpen(true)}
+                aria-label="Open navigation"
+                size="small"
+                sx={{ mr: 0.5 }}
+              >
+                <MenuIcon />
+              </IconButton>
+            )}
+            <Box>
+              <Typography
+                sx={{
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: (theme) => theme.palette.text.secondary,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  lineHeight: 1,
+                  mb: 0.5,
+                }}
+              >
+                {eyebrow}
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: '21px',
+                  fontWeight: 800,
+                  color: (theme) => theme.palette.text.primary,
+                  letterSpacing: '-0.015em',
+                  lineHeight: 1.2,
+                }}
+              >
+                {title}
+              </Typography>
+            </Box>
           </Box>
           {actions && (
             <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
@@ -344,8 +388,8 @@ const AdminShell: React.FC<AdminShellProps> = ({
         {/* Content area */}
         <Box
           sx={{
-            backgroundColor: '#F9FAFB',
-            padding: '28px 32px',
+            backgroundColor: (theme) => theme.palette.background.default,
+            padding: { xs: '20px 16px', md: '28px 32px' },
             flex: 1,
             display: 'flex',
             flexDirection: 'column',

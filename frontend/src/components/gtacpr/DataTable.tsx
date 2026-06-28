@@ -1,5 +1,6 @@
 import React, { ReactNode } from 'react';
-import { Card, Box, Typography, Button } from '@mui/material';
+import { Card, Box, Typography, Button, CircularProgress } from '@mui/material';
+import { SIDEBAR_BG } from './tokens';
 
 interface DataTableColumn {
   key: string;
@@ -17,6 +18,8 @@ interface DataTableProps {
   onPrevPage?: () => void;
   onNextPage?: () => void;
   hasNextPage?: boolean;
+  loading?: boolean;
+  emptyMessage?: string;
 }
 
 const DataTable: React.FC<DataTableProps> = ({
@@ -28,6 +31,8 @@ const DataTable: React.FC<DataTableProps> = ({
   onPrevPage,
   onNextPage,
   hasNextPage,
+  loading,
+  emptyMessage = 'No results found.',
 }) => (
   <Card
     sx={{
@@ -36,32 +41,48 @@ const DataTable: React.FC<DataTableProps> = ({
       boxShadow: '0 1px 3px rgba(0,0,0,.05)',
     }}
   >
-    {/* Header */}
-    <Box
-      sx={{
-        display: 'grid',
-        gridTemplateColumns: columns.map((c) => c.width || '1fr').join(' '),
-        backgroundColor: '#111827',
-        padding: '13px 22px',
-      }}
-    >
-      {columns.map((col) => (
-        <Typography
-          key={col.key}
+    {/* Header — scrolls with body */}
+    <Box sx={{ overflowX: 'auto' }}>
+      <Box sx={{ minWidth: 720 }}>
+        <Box
           sx={{
-            fontSize: '11px',
-            fontWeight: 700,
-            color: '#ffffff',
-            textAlign: col.align || 'left',
+            display: 'grid',
+            gridTemplateColumns: columns.map((c) => c.width || '1fr').join(' '),
+            backgroundColor: SIDEBAR_BG,
+            padding: '13px 22px',
           }}
         >
-          {col.label}
-        </Typography>
-      ))}
-    </Box>
+          {columns.map((col) => (
+            <Typography
+              key={col.key}
+              sx={{
+                fontSize: '11px',
+                fontWeight: 700,
+                color: '#ffffff',
+                textAlign: col.align || 'left',
+              }}
+            >
+              {col.label}
+            </Typography>
+          ))}
+        </Box>
 
-    {/* Body */}
-    <Box>{children}</Box>
+        {/* Body */}
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+            <CircularProgress size={32} />
+          </Box>
+        ) : React.Children.count(children) === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 6 }}>
+            <Typography sx={{ fontSize: '13px', color: (theme) => theme.palette.text.secondary }}>
+              {emptyMessage}
+            </Typography>
+          </Box>
+        ) : (
+          <Box>{children}</Box>
+        )}
+      </Box>
+    </Box>
 
     {/* Footer */}
     {(totalCount !== undefined || onPrevPage || onNextPage) && (
@@ -71,10 +92,10 @@ const DataTable: React.FC<DataTableProps> = ({
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '13px 22px',
-          borderTop: '1px solid #F3F4F6',
+          borderTop: (theme) => `1px solid ${theme.palette.divider}`,
         }}
       >
-        <Typography sx={{ fontSize: '12px', color: '#9CA3AF' }}>
+        <Typography sx={{ fontSize: '12px', color: (theme) => theme.palette.text.secondary }}>
           {totalCount !== undefined
             ? `Showing ${shownCount || 0} of ${totalCount} results`
             : ''}
@@ -119,10 +140,10 @@ export const DataTableRow: React.FC<{
       display: 'grid',
       gridTemplateColumns: columns.map((c) => c.width || '1fr').join(' '),
       padding: '14px 22px',
-      borderBottom: '1px solid #F3F4F6',
+      borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
       alignItems: 'center',
       cursor: onClick ? 'pointer' : 'default',
-      '&:hover': onClick ? { backgroundColor: '#F9FAFB' } : {},
+      '&:hover': onClick ? { backgroundColor: (theme) => theme.palette.action.hover } : {},
     }}
   >
     {children}

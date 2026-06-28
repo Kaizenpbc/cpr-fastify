@@ -17,6 +17,7 @@ import {
   Tabs,
   Tab,
   Grid,
+  ButtonBase,
 } from '@mui/material';
 import { payrollService, PayrollPayment, PayrollStats, PayrollFilters, PayrollCalculation } from '../../services/payrollService';
 import StatCard from '../gtacpr/StatCard';
@@ -279,7 +280,7 @@ const PayrollManagement: React.FC = () => {
                   <StatusChip kind={getStatusKind(payment.status)} label={payment.status.toUpperCase()} />
                   <Typography sx={{ fontSize: 13, color: '#4B5563' }}>{new Date(payment.createdAt).toLocaleDateString()}</Typography>
                   <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <Box onClick={() => { setSelectedPayment(payment); setDetailsDialogOpen(true); }} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>View</Box>
+                    <ButtonBase onClick={() => { setSelectedPayment(payment); setDetailsDialogOpen(true); }} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>View</ButtonBase>
                   </Box>
                 </DataTableRow>
               ))}

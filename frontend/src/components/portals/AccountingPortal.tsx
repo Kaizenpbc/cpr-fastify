@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box, Typography,
-  CircularProgress
+  CircularProgress, ButtonBase
 } from '@mui/material';
 import DataTable, { DataTableRow } from '../gtacpr/DataTable';
 import { PrimaryButton, GhostButton } from '../gtacpr/Buttons';
@@ -325,7 +325,7 @@ const PendingApprovalsView: React.FC = () => {
                 {formatCurrency(parseFloat(String((invoice as Record<string, unknown>).base_cost || 0)) + parseFloat(String((invoice as Record<string, unknown>).tax_amount || 0)))}
               </Typography>
               <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Box onClick={() => handleReview(invoice.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Review</Box>
+                <ButtonBase onClick={() => handleReview(invoice.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>Review</ButtonBase>
               </Box>
             </DataTableRow>
           ))}
@@ -463,8 +463,8 @@ const RejectedInvoicesView: React.FC = () => {
                 {(invoice as Record<string, unknown>).rejectionReason as string || '-'}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'flex-end' }}>
-                <Box onClick={() => handleViewDetails(invoice.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>View</Box>
-                <Box onClick={() => handleResubmit(invoice.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#16A34A', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>Resubmit</Box>
+                <ButtonBase onClick={() => handleViewDetails(invoice.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#CC1F1F', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' } }}>View</ButtonBase>
+                <ButtonBase onClick={() => handleResubmit(invoice.id)} sx={{ fontSize: 12, fontWeight: 600, color: '#16A34A', '&:hover': { textDecoration: 'underline' }, '&:focus-visible': { outline: '2px solid #16A34A', outlineOffset: '2px' } }}>Resubmit</ButtonBase>
               </Box>
             </DataTableRow>
           ))}

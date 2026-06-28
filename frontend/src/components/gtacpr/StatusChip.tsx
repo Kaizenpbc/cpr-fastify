@@ -1,21 +1,22 @@
 import React from 'react';
 import { Chip } from '@mui/material';
+import { STATUS, RED } from './tokens';
 
 type StatusKind = 'success' | 'active' | 'open' | 'warning' | 'pending' | 'danger' | 'overdue' | 'expired' | 'neutral' | 'inactive' | 'brand' | 'critical';
 
-const palette: Record<StatusKind, { bg: string; color: string }> = {
-  success: { bg: '#F0FDF4', color: '#15803D' },
-  active: { bg: '#F0FDF4', color: '#15803D' },
-  open: { bg: '#F0FDF4', color: '#15803D' },
-  warning: { bg: '#FFFBEB', color: '#B45309' },
-  pending: { bg: '#FFFBEB', color: '#B45309' },
-  danger: { bg: '#FFF0F0', color: '#CC1F1F' },
-  overdue: { bg: '#FFF0F0', color: '#CC1F1F' },
-  expired: { bg: '#FFF0F0', color: '#CC1F1F' },
-  neutral: { bg: '#F3F4F6', color: '#4B5563' },
-  inactive: { bg: '#F3F4F6', color: '#4B5563' },
-  brand: { bg: '#CC1F1F', color: '#ffffff' },
-  critical: { bg: '#CC1F1F', color: '#ffffff' },
+const kindMap: Record<StatusKind, { bg: string; color: string }> = {
+  success: STATUS.success,
+  active: STATUS.success,
+  open: STATUS.success,
+  warning: STATUS.warning,
+  pending: STATUS.warning,
+  danger: STATUS.danger,
+  overdue: STATUS.danger,
+  expired: STATUS.danger,
+  neutral: STATUS.neutral,
+  inactive: STATUS.neutral,
+  brand: STATUS.brand,
+  critical: STATUS.brand,
 };
 
 interface StatusChipProps {
@@ -24,7 +25,7 @@ interface StatusChipProps {
 }
 
 const StatusChip: React.FC<StatusChipProps> = ({ kind, label }) => {
-  const p = palette[kind];
+  const p = kindMap[kind];
   return (
     <Chip
       label={label}
@@ -36,7 +37,7 @@ const StatusChip: React.FC<StatusChipProps> = ({ kind, label }) => {
         backgroundColor: p.bg,
         color: p.color,
         height: 'auto',
-        padding: '3px 4px',
+        padding: '3px 10px',
       }}
     />
   );
