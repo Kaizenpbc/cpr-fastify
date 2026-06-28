@@ -95,7 +95,25 @@ jobs:
           protocol: ftps
           local-dir: frontend/dist/
           server-dir: cpr.kpbc.ca/public/
-          dangerous-clean-slate: true
+          dangerous-clean-slate: false
+
+      # Read current root .htaccess for diagnostics
+      - name: Read root .htaccess
+        run: |
+          RESP=$(curl -sk -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
+            "https://${{ secrets.FTP_SERVER }}:2083/json-api/cpanel?cpanel_jsonapi_version=2&cpanel_jsonapi_module=Fileman&cpanel_jsonapi_func=viewfile&dir=/home/${{ secrets.FTP_USERNAME }}/cpr.kpbc.ca&file=.htaccess")
+          echo "=== Root .htaccess ==="
+          echo "$RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('cpanelresult',{}).get('data',[''])[0].get('content','(empty)'))" 2>/dev/null || echo "$RESP"
+          echo "=== End ==="
+
+      # Read public/.htaccess for diagnostics
+      - name: Read public .htaccess
+        run: |
+          RESP=$(curl -sk -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" \
+            "https://${{ secrets.FTP_SERVER }}:2083/json-api/cpanel?cpanel_jsonapi_version=2&cpanel_jsonapi_module=Fileman&cpanel_jsonapi_func=viewfile&dir=/home/${{ secrets.FTP_USERNAME }}/cpr.kpbc.ca/public&file=.htaccess")
+          echo "=== Public .htaccess ==="
+          echo "$RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('cpanelresult',{}).get('data',[''])[0].get('content','(empty)'))" 2>/dev/null || echo "$RESP"
+          echo "=== End ==="
 
       # Restart Passenger
       - name: Restart application

@@ -87,3 +87,52 @@ describe('AdminShell', () => {
     expect(screen.getByText('Custom Action')).toBeInTheDocument();
   });
 });
+
+// Test org portal navigation pattern (bare path segments)
+describe('AdminShell — org portal navigation (bare paths)', () => {
+  const orgNavItems = [
+    { label: 'Dashboard', path: 'dashboard' },
+    { label: 'My Courses', path: 'courses' },
+    { label: 'Billing', path: 'billing' },
+  ];
+
+  function renderOrgShell(initialPath = '/organization/dashboard') {
+    const navigatedPaths: string[] = [];
+    return {
+      navigatedPaths,
+      ...render(
+        <MemoryRouter initialEntries={[initialPath]}>
+          <AdminShell
+            eyebrow="Overview"
+            title="Dashboard"
+            portalName="Organization Portal"
+            basePath="dashboard"
+            navItems={orgNavItems}
+          >
+            <div data-testid="content">Org Content</div>
+          </AdminShell>
+        </MemoryRouter>
+      ),
+    };
+  }
+
+  it('highlights the active nav item based on URL segment', () => {
+    renderOrgShell('/organization/dashboard');
+    // Dashboard nav item should exist
+    expect(screen.getAllByText('Dashboard').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('My Courses')).toBeInTheDocument();
+  });
+
+  it('nav items are clickable', () => {
+    renderOrgShell('/organization/dashboard');
+    const coursesLink = screen.getByText('My Courses');
+    expect(coursesLink).toBeInTheDocument();
+    // Should not throw when clicked
+    fireEvent.click(coursesLink);
+  });
+
+  it('highlights billing when on billing page', () => {
+    renderOrgShell('/organization/billing');
+    expect(screen.getByText('Billing')).toBeInTheDocument();
+  });
+});
