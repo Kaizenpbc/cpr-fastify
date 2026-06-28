@@ -42,15 +42,21 @@ const AdminShell: React.FC<AdminShellProps> = ({
 
   const isActive = (path: string) => {
     if (activePath) return path === activePath;
-    if (path === basePath) return location.pathname === basePath;
-    return location.pathname.startsWith(path);
+    // Check if the current pathname ends with this path segment
+    const segments = location.pathname.split('/').filter(Boolean);
+    const lastSegment = segments[segments.length - 1];
+    if (path === basePath) {
+      return lastSegment === basePath || location.pathname.endsWith('/' + basePath);
+    }
+    return lastSegment === path || location.pathname.endsWith('/' + path);
   };
 
   const handleNavClick = (path: string) => {
     if (onNavigate) {
       onNavigate(path);
     } else {
-      navigate(path);
+      // Navigate relative to the portal base (go up one segment, then to the new path)
+      navigate('../' + path, { relative: 'path' });
     }
   };
 
