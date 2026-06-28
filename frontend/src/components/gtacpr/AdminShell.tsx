@@ -156,7 +156,7 @@ const AdminShell: React.FC<AdminShellProps> = ({
       )}
 
       {/* Nav list */}
-      <Box sx={{ padding: '14px 12px', flex: 1, overflowY: 'auto' }}>
+      <Box component="nav" aria-label="Sidebar" sx={{ padding: '14px 12px', flex: 1, overflowY: 'auto' }}>
         {navItems.map((item) => {
           const active = isActive(item.path);
           return (
@@ -306,12 +306,44 @@ const AdminShell: React.FC<AdminShellProps> = ({
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      {/* Skip-to-content link for keyboard users */}
+      <Box
+        component="a"
+        href="#main-content"
+        sx={{
+          position: 'absolute',
+          left: '-9999px',
+          top: 'auto',
+          width: '1px',
+          height: '1px',
+          overflow: 'hidden',
+          '&:focus': {
+            position: 'fixed',
+            top: 8,
+            left: 8,
+            width: 'auto',
+            height: 'auto',
+            padding: '8px 16px',
+            backgroundColor: RED,
+            color: '#fff',
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontWeight: 700,
+            zIndex: 9999,
+            outline: 'none',
+          },
+        }}
+      >
+        Skip to main content
+      </Box>
+
       {/* Sidebar — permanent on desktop, temporary on mobile */}
       <Drawer
         variant={isMobile ? 'temporary' : 'permanent'}
         open={isMobile ? mobileOpen : true}
         onClose={() => setMobileOpen(false)}
         ModalProps={{ keepMounted: true }}
+        aria-label="Main navigation"
         sx={{
           width: isMobile ? 0 : SIDEBAR_WIDTH,
           flexShrink: 0,
@@ -330,6 +362,7 @@ const AdminShell: React.FC<AdminShellProps> = ({
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         {/* Top header */}
         <Box
+          component="header"
           sx={{
             backgroundColor: (theme) => theme.palette.background.paper,
             borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
@@ -366,6 +399,7 @@ const AdminShell: React.FC<AdminShellProps> = ({
                 {eyebrow}
               </Typography>
               <Typography
+                component="h1"
                 sx={{
                   fontSize: '21px',
                   fontWeight: 800,
@@ -387,6 +421,8 @@ const AdminShell: React.FC<AdminShellProps> = ({
 
         {/* Content area */}
         <Box
+          component="main"
+          id="main-content"
           sx={{
             backgroundColor: (theme) => theme.palette.background.default,
             padding: { xs: '20px 16px', md: '28px 32px' },

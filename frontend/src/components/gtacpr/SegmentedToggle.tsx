@@ -11,6 +11,7 @@ const SegmentedToggle: React.FC<SegmentedToggleProps> = ({ value, options, onCha
   <ToggleButtonGroup
     value={value}
     exclusive
+    aria-label="View options"
     onChange={(_, v) => v && onChange(v)}
     sx={{
       backgroundColor: (theme) => theme.palette.divider,

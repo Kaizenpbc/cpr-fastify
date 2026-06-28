@@ -8,6 +8,7 @@ interface UserAvatarProps {
 
 const UserAvatar: React.FC<UserAvatarProps> = ({ initials, size = 32 }) => (
   <Box
+    aria-hidden="true"
     sx={{
       width: size,
       height: size,

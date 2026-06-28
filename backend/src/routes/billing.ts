@@ -6,6 +6,7 @@ import { CoursePricingRepository } from '../repositories/CoursePricingRepository
 import { InvoiceNumberService } from '../services/InvoiceNumberService.js';
 import { getPool } from '../config/database.js';
 import { requireAuth, requireRole } from '../plugins/auth.js';
+import { parsePagination } from '../utils/pagination.js';
 
 // --- Schemas ---
 
@@ -100,16 +101,22 @@ export async function billingRoutes(app: FastifyInstance) {
     } catch (err) { return handleError(err, reply); }
   });
 
-  app.get('/invoices', { preHandler: acctRole }, async () => {
-    return { success: true, data: await service.getAllInvoices() };
+  app.get('/invoices', { preHandler: acctRole }, async (request) => {
+    const pg = parsePagination(request.query as Record<string, string>);
+    const result = await service.getAllInvoices(pg);
+    return { success: true, ...(Array.isArray(result) ? { data: result } : result) };
   });
 
-  app.get('/invoices/pending-approval', { preHandler: acctRole }, async () => {
-    return { success: true, data: await service.getPendingApproval() };
+  app.get('/invoices/pending-approval', { preHandler: acctRole }, async (request) => {
+    const pg = parsePagination(request.query as Record<string, string>);
+    const result = await service.getPendingApproval(pg);
+    return { success: true, ...(Array.isArray(result) ? { data: result } : result) };
   });
 
-  app.get('/invoices/rejected', { preHandler: acctRole }, async () => {
-    return { success: true, data: await service.getRejected() };
+  app.get('/invoices/rejected', { preHandler: acctRole }, async (request) => {
+    const pg = parsePagination(request.query as Record<string, string>);
+    const result = await service.getRejected(pg);
+    return { success: true, ...(Array.isArray(result) ? { data: result } : result) };
   });
 
   app.get('/invoices/:id', { preHandler: acctRole }, async (request, reply) => {

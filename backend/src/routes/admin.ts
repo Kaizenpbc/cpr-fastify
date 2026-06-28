@@ -6,6 +6,7 @@ import { logger } from '../config/logger.js';
 import { env } from '../config/env.js';
 import bcrypt from 'bcryptjs';
 import { StudentRepository } from '../repositories/StudentRepository.js';
+import { parsePagination, paginatedQuery } from '../utils/pagination.js';
 
 const createUserSchema = z.object({
   username: z.string().min(3).max(50).regex(/^[a-zA-Z0-9_-]+$/),
@@ -130,9 +131,8 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // ===== User management =====
   app.get('/users', { preHandler: adminRole }, async (request) => {
-    const { page = '1', limit = '100', search = '', role = '' } = request.query as Record<string, string>;
-    const safeLimit = Math.min(parseInt(limit), 200);
-    const offset = (parseInt(page) - 1) * safeLimit;
+    const { search = '', role = '' } = request.query as Record<string, string>;
+    const pg = parsePagination(request.query as Record<string, string>);
 
     let where = '';
     const params: unknown[] = [];
@@ -145,7 +145,7 @@ export async function adminRoutes(app: FastifyInstance) {
     if (role) { conditions.push('u.role = ?'); params.push(role); }
     if (conditions.length > 0) where = 'WHERE ' + conditions.join(' AND ');
 
-    const [rows] = await pool.query<any[]>(
+    const result = await paginatedQuery(
       `SELECT u.id, u.username, u.email, u.role, u.phone, u.mobile,
               u.first_name, u.last_name, u.full_name,
               u.organization_id, o.name as organization_name,
@@ -155,13 +155,13 @@ export async function adminRoutes(app: FastifyInstance) {
        FROM users u
        LEFT JOIN organizations o ON u.organization_id = o.id
        LEFT JOIN organization_locations ol ON u.location_id = ol.id
-       ${where} ORDER BY u.created_at DESC LIMIT ? OFFSET ?`,
-      [...params, safeLimit, offset]
+       ${where} ORDER BY u.created_at DESC`,
+      `SELECT COUNT(*) as count FROM users u ${where}`,
+      params,
+      pg,
     );
-    const [countRows] = await pool.query<any[]>(`SELECT COUNT(*) as count FROM users u ${where}`, params);
-    const total = Number(countRows[0]?.count ?? 0);
 
-    return { success: true, data: rows, pagination: { page: parseInt(page), limit: safeLimit, total, pages: Math.ceil(total / safeLimit) } };
+    return { success: true, ...result };
   });
 
   app.post('/users', { preHandler: adminRole }, async (request, reply) => {
@@ -227,11 +227,15 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   // ===== Organization management =====
-  app.get('/organizations', { preHandler: adminRole }, async () => {
-    const [rows] = await pool.query<any[]>(
-      'SELECT * FROM organizations ORDER BY name LIMIT 500'
+  app.get('/organizations', { preHandler: adminRole }, async (request) => {
+    const pg = parsePagination(request.query as Record<string, string>);
+    const result = await paginatedQuery(
+      'SELECT * FROM organizations ORDER BY name',
+      'SELECT COUNT(*) as count FROM organizations',
+      [],
+      pg,
     );
-    return { success: true, data: rows };
+    return { success: true, ...result };
   });
 
   app.post('/organizations', { preHandler: adminRole }, async (request) => {

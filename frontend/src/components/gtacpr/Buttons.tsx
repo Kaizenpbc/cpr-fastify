@@ -20,6 +20,7 @@ export const PrimaryButton: React.FC<BtnProps> = ({ children, sx, ...props }) =>
       textTransform: 'none',
       boxShadow: 'none',
       '&:hover': { backgroundColor: RED_DARK, boxShadow: '0px 2px 4px rgba(0,0,0,.1)' },
+      '&:focus-visible': { outline: `2px solid ${RED}`, outlineOffset: '2px' },
       ...sx,
     }}
   >
@@ -44,6 +45,7 @@ export const GhostButton: React.FC<BtnProps> = ({ children, sx, ...props }) => (
         backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,.14)' : '#E5E7EB',
         boxShadow: 'none',
       },
+      '&:focus-visible': { outline: '2px solid #CC1F1F', outlineOffset: '2px' },
       ...sx,
     }}
   >

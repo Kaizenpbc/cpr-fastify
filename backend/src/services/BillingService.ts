@@ -4,6 +4,7 @@ import { InvoiceRepository, Invoice, InvoiceWithDetails, DashboardData } from '.
 import { CoursePricingRepository, CoursePricing } from '../repositories/CoursePricingRepository.js';
 import { InvoiceNumberService } from './InvoiceNumberService.js';
 import { getHSTRate } from '../utils/taxConfig.js';
+import { PaginationParams, PaginatedResult } from '../utils/pagination.js';
 
 const INVOICE_DUE_DAYS = 30;
 
@@ -143,8 +144,8 @@ export class BillingService {
 
   // --- Invoice queries ---
 
-  async getAllInvoices(): Promise<InvoiceWithDetails[]> {
-    return this.invoiceRepo.findAllWithDetails();
+  async getAllInvoices(pg?: PaginationParams) {
+    return this.invoiceRepo.findAllWithDetails(pg);
   }
 
   async getInvoiceById(id: number): Promise<InvoiceWithDetails> {
@@ -153,12 +154,12 @@ export class BillingService {
     return invoice;
   }
 
-  async getPendingApproval(): Promise<InvoiceWithDetails[]> {
-    return this.invoiceRepo.findPendingApproval();
+  async getPendingApproval(pg?: PaginationParams) {
+    return this.invoiceRepo.findPendingApproval(pg);
   }
 
-  async getRejected(): Promise<any[]> {
-    return this.invoiceRepo.findRejected();
+  async getRejected(pg?: PaginationParams) {
+    return this.invoiceRepo.findRejected(pg);
   }
 
   // --- Approval workflow ---

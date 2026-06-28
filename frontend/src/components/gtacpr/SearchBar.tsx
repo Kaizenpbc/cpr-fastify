@@ -12,12 +12,13 @@ const SearchBar: React.FC<SearchBarProps> = ({ placeholder = 'Search...', value,
   <TextField
     fullWidth
     placeholder={placeholder}
+    aria-label={placeholder}
     value={value}
     onChange={(e) => onChange(e.target.value)}
     InputProps={{
       startAdornment: (
         <InputAdornment position="start">
-          <SearchIcon sx={{ color: (theme) => theme.palette.text.secondary }} />
+          <SearchIcon aria-hidden="true" sx={{ color: (theme) => theme.palette.text.secondary }} />
         </InputAdornment>
       ),
     }}

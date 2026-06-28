@@ -751,14 +751,14 @@ export const createInvoice = async (courseId: number) => {
   return response.data;
 };
 
-export const getInvoices = async () => {
-  const response = await api.get('/accounting/invoices');
-  return response.data.data || [];
+export const getInvoices = async (params?: { page?: number; limit?: number }) => {
+  const response = await api.get('/accounting/invoices', { params });
+  return params ? response.data : (response.data.data || []);
 };
 
-export const getPendingApprovals = async () => {
-  const response = await api.get('/accounting/invoices/pending-approval');
-  return response.data.data || [];
+export const getPendingApprovals = async (params?: { page?: number; limit?: number }) => {
+  const response = await api.get('/accounting/invoices/pending-approval', { params });
+  return params ? response.data : (response.data.data || []);
 };
 
 export const approveInvoice = async (invoiceId: number) => {
@@ -776,9 +776,9 @@ export const rejectInvoice = async (invoiceId: number, reason: string) => {
   return response.data;
 };
 
-export const getRejectedInvoices = async () => {
-  const response = await api.get('/accounting/invoices/rejected');
-  return response.data.data || [];
+export const getRejectedInvoices = async (params?: { page?: number; limit?: number }) => {
+  const response = await api.get('/accounting/invoices/rejected', { params });
+  return params ? response.data : (response.data.data || []);
 };
 
 export const resubmitInvoice = async (invoiceId: number) => {
@@ -918,8 +918,8 @@ export const sysAdminApi = {
   },
 
   // Organization Management
-  getOrganizations: async () => {
-    const response = await api.get('/sysadmin/organizations');
+  getOrganizations: async (params?: { page?: number; limit?: number }) => {
+    const response = await api.get('/sysadmin/organizations', { params });
     return response.data;
   },
   createOrganization: async (orgData: OrganizationData) => {

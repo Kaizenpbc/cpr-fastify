@@ -9,6 +9,7 @@ interface PageHeaderProps {
 
 const PageHeader: React.FC<PageHeaderProps> = ({ eyebrow, title, actions }) => (
   <Box
+    component="header"
     sx={{
       backgroundColor: (theme) => theme.palette.background.paper,
       borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
@@ -33,6 +34,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ eyebrow, title, actions }) => (
         {eyebrow}
       </Typography>
       <Typography
+        component="h1"
         sx={{
           fontSize: '21px',
           fontWeight: 800,

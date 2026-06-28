@@ -14,6 +14,7 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, title, child
     anchor="right"
     open={open}
     onClose={onClose}
+    aria-label={title}
     sx={{
       '& .MuiDrawer-paper': {
         width: 440,
@@ -29,10 +30,10 @@ const DetailDrawer: React.FC<DetailDrawerProps> = ({ open, onClose, title, child
         alignItems: 'center',
       }}
     >
-      <Typography sx={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>
+      <Typography component="h2" sx={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>
         {title}
       </Typography>
-      <IconButton onClick={onClose} size="small" sx={{ color: '#fff' }}>
+      <IconButton onClick={onClose} aria-label="Close" size="small" sx={{ color: '#fff' }}>
         <CloseIcon />
       </IconButton>
     </Box>
@@ -46,6 +47,7 @@ export const DrawerSection: React.FC<{ title: string; children: ReactNode }> = (
 }) => (
   <Box sx={{ mb: 3 }}>
     <Typography
+      component="h3"
       sx={{
         fontSize: '12px',
         fontWeight: 700,

@@ -2,6 +2,7 @@ import { BaseRepository } from './BaseRepository.js';
 import { getPool } from '../config/database.js';
 import { RowDataPacket } from 'mysql2/promise';
 import { getHSTRate } from '../utils/taxConfig.js';
+import { PaginationParams, PaginatedResult, paginatedQuery } from '../utils/pagination.js';
 
 export interface Invoice {
   id: number;
@@ -130,9 +131,8 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
     );
   }
 
-  async findAllWithDetails(): Promise<InvoiceWithDetails[]> {
-    return this.query<InvoiceWithDetails>(
-      `SELECT
+  async findAllWithDetails(pg?: PaginationParams): Promise<InvoiceWithDetails[] | PaginatedResult<InvoiceWithDetails>> {
+    const dataSQL = `SELECT
          i.id, i.invoice_number, i.organization_id, i.course_request_id,
          COALESCE(i.invoice_date, i.created_at) as invoice_date,
          i.due_date, i.amount, i.base_cost, i.tax_amount,
@@ -161,9 +161,18 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
        LEFT JOIN class_types ct ON cr.course_type_id = ct.id
        LEFT JOIN (SELECT invoice_id, SUM(amount) as total_paid FROM payments
                   WHERE status = 'verified' GROUP BY invoice_id) p ON p.invoice_id = i.id
-       ORDER BY i.created_at DESC
-       LIMIT 500`
-    );
+       ORDER BY i.created_at DESC`;
+
+    if (pg) {
+      return paginatedQuery<InvoiceWithDetails>(
+        dataSQL,
+        `SELECT COUNT(*) as count FROM invoice_with_breakdown i
+         JOIN organizations o ON i.organization_id = o.id`,
+        [],
+        pg,
+      );
+    }
+    return this.query<InvoiceWithDetails>(`${dataSQL} LIMIT 500`);
   }
 
   async findByIdWithDetails(id: number): Promise<InvoiceWithDetails | null> {
@@ -191,9 +200,8 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
     return rows[0] ?? null;
   }
 
-  async findPendingApproval(): Promise<InvoiceWithDetails[]> {
-    return this.query<InvoiceWithDetails>(
-      `SELECT i.*, o.name as organization_name,
+  async findPendingApproval(pg?: PaginationParams): Promise<InvoiceWithDetails[] | PaginatedResult<InvoiceWithDetails>> {
+    const dataSQL = `SELECT i.*, o.name as organization_name,
               COALESCE(p.total_paid, 0) as amount_paid,
               GREATEST(0, (i.base_cost + i.tax_amount) - COALESCE(p.total_paid, 0)) as balance_due
        FROM invoices i
@@ -201,14 +209,21 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
        LEFT JOIN (SELECT invoice_id, SUM(amount) as total_paid FROM payments
                   WHERE status = 'completed' GROUP BY invoice_id) p ON p.invoice_id = i.id
        WHERE i.approval_status = 'pending'
-       ORDER BY i.created_at ASC
-       LIMIT 200`
-    );
+       ORDER BY i.created_at ASC`;
+
+    if (pg) {
+      return paginatedQuery<InvoiceWithDetails>(
+        dataSQL,
+        `SELECT COUNT(*) as count FROM invoices WHERE approval_status = 'pending'`,
+        [],
+        pg,
+      );
+    }
+    return this.query<InvoiceWithDetails>(`${dataSQL} LIMIT 200`);
   }
 
-  async findRejected(): Promise<any[]> {
-    return this.query(
-      `SELECT i.*, o.name as organization_name, ct.name as course_type_name,
+  async findRejected(pg?: PaginationParams): Promise<any[] | PaginatedResult<any>> {
+    const dataSQL = `SELECT i.*, o.name as organization_name, ct.name as course_type_name,
               u.username as rejected_by_name
        FROM invoices i
        LEFT JOIN organizations o ON i.organization_id = o.id
@@ -216,9 +231,17 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
        LEFT JOIN class_types ct ON cr.course_type_id = ct.id
        LEFT JOIN users u ON i.rejected_by = u.id
        WHERE i.approval_status = 'rejected'
-       ORDER BY i.rejected_at DESC
-       LIMIT 200`
-    );
+       ORDER BY i.rejected_at DESC`;
+
+    if (pg) {
+      return paginatedQuery(
+        dataSQL,
+        `SELECT COUNT(*) as count FROM invoices WHERE approval_status = 'rejected'`,
+        [],
+        pg,
+      );
+    }
+    return this.query(`${dataSQL} LIMIT 200`);
   }
 
   async getPayments(invoiceId: number): Promise<any[]> {

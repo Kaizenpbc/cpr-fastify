@@ -23,6 +23,7 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, sub, dotColor }) => (
       </Typography>
       {dotColor && (
         <Box
+          aria-hidden="true"
           sx={{
             width: 9,
             height: 9,
