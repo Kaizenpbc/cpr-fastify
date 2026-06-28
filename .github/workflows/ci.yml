@@ -126,17 +126,19 @@ jobs:
             > /dev/null 2>&1
           echo "Passenger restarted"
 
-      # Health check — Passenger can take up to 2 min to restart
+      # Health check — Passenger can take up to 3 min to restart
       - name: Health check
         run: |
-          for i in 1 2 3 4 5 6; do
-            sleep 20
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "Accept: application/json" https://cpr.kpbc.ca/api/v1/health)
+          echo "Waiting 30s for Passenger to restart..."
+          sleep 30
+          for i in 1 2 3 4 5 6 7 8; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 -H "Accept: application/json" https://cpr.kpbc.ca/api/v1/health)
             echo "Attempt $i: HTTP $STATUS"
             if [ "$STATUS" = "200" ]; then
               echo "Health check: OK"
               exit 0
             fi
+            sleep 20
           done
           echo "Health check FAILED after 6 attempts"
           exit 1
