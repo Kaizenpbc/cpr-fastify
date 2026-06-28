@@ -8,6 +8,7 @@ import helmet from '@fastify/helmet';
 import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import sensible from '@fastify/sensible';
+import fastifyStatic from '@fastify/static';
 import { env } from './config/env.js';
 import { logger } from './config/logger.js';
 import { getPool } from './config/database.js';
@@ -107,9 +108,18 @@ export async function buildApp() {
     return reply.status(httpStatus).send({ status, database: dbStatus, timestamp: new Date().toISOString() });
   });
 
-  // SPA fallback: serve index.html for non-API routes (frontend routing)
+  // Serve frontend static files from ../public
   const publicDir = resolve(process.cwd(), '../public');
   const indexPath = resolve(publicDir, 'index.html');
+  if (existsSync(publicDir)) {
+    await app.register(fastifyStatic, {
+      root: publicDir,
+      prefix: '/',
+      decorateReply: false,
+    });
+  }
+
+  // SPA fallback: serve index.html for non-API routes (frontend routing)
   if (existsSync(indexPath)) {
     const indexHtml = readFileSync(indexPath, 'utf-8');
     app.setNotFoundHandler((request, reply) => {
