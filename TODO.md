@@ -29,6 +29,7 @@
   - **Option B (recommended at scale)**: Upgrade to TMD Managed VPS — no process limits, dedicated resources, full root access. Do this before onboarding multiple paying customers simultaneously.
 - [x] **🔴 Database backup SLA (BACKUP-1)**: Daily `mysqldump` cron running at 2 AM via `/home/kaizenmo/backup-cpr.sh` — 7-day rotation confirmed. Backup log shows successful runs 2026-04-14 and 2026-04-15.
   - [ ] **BACKUP-2 (offsite)**: Both backups are on the same server — if TMD server fails, backups are lost. Add offsite copy: push `cpr_*.sql.gz` to an FTP/S3/B2 destination after each successful dump. Do before scaling.
+  - [ ] **S2 (durable uploads)**: Vendor invoice PDFs in `uploads/vendor-invoices/` live on local disk — not backed up and may be lost on redeploy. Move to S3-compatible storage or add backup job for the uploads directory. Tied to BACKUP-2.
 
 ### **Security Enhancements**
 - [ ] **🟡 Switch to dedicated noreply mailbox (EMAIL-2)**: Currently using `michaela@kpbc.ca` as SMTP sender (temporary). Create a dedicated `noreply@kpbc.ca` mailbox in cPanel, update `.htaccess` `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM` to use it, and restart Passenger.
@@ -38,7 +39,7 @@
 - [x] **🟡 Fix vendor dashboard non-standard response (BUG-3)**: `GET /vendor/dashboard` returns a raw object `{pendingInvoices, totalInvoices, ...}` instead of the standard `{success: true, data: {...}}` wrapper used by every other endpoint. Frontend may handle this inconsistently.
 - [x] **🟡 Fix sysadmin POST /vendors ignoring contactEmail (BUG-4)**: `POST /sysadmin/vendors` only maps `email` or `contact_email` from request body — camelCase `contactEmail` is silently ignored. Created vendors have null contact_email, breaking vendor portal profile/dashboard lookup (which queries `WHERE contact_email = $1`).
 - [x] **Input validation** — inputSanitizer with Zod schemas
-- [x] **Security headers** — Helmet with full CSP, HSTS, X-Frame-Options
+- [x] **Security headers** — Helmet with full CSP (unsafe-inline removed from scriptSrc), HSTS, X-Frame-Options
 - [x] **Audit logging** — auditLogger.ts active
 - [x] **Password policies** — validation on reset/change
 - [x] **Session management** — httpOnly cookies, token blacklist, login lockout after 10 attempts
@@ -66,7 +67,7 @@
 - [x] **Mobile responsiveness**: Responsive CSS grids across all 8 portals (30 files). AdminShell sidebar collapses to hamburger on mobile. DataTable horizontal scroll. Instructor TodayClassesList mobile-friendly buttons.
 - [ ] **Offline support**: Add offline capabilities with service workers
 - [ ] **Push notifications**: Implement browser push notifications
-- [x] **Dark mode**: Dark theme toggle in sidebar (ThemeContext + ThemeToggle)
+- [x] **Dark mode**: Dark theme toggle in sidebar (ThemeContext + ThemeToggle). All screen cards, info boxes, headers, and text use theme.palette for dark mode compatibility (12 files fixed in audit U1).
 - [x] **Accessibility**: WCAG 2.1 AA pass — skip-to-content, ARIA landmarks, semantic table roles, keyboard nav, focus-visible, aria-labels on all interactive elements
 - [ ] **CI: Third-party action Node.js 20 deprecation**: `actions/upload-artifact@v5`, `actions/download-artifact@v5`, `SamKirkland/FTP-Deploy-Action@v4.3.5`, and `dawidd6/action-send-mail@v4` still target Node.js 20 internally. Monitor for new releases that target Node 22+; update when available.
 - [ ] **Multi-language support**: Add internationalization (i18n)
@@ -106,7 +107,7 @@
 ## 🧪 **Testing & Quality Assurance**
 
 ### **Automated Testing**
-- [ ] **Unit tests**: Achieve 80%+ code coverage (currently: 105 backend + 113 frontend = 218 vitest tests covering AuthService, BillingService, HRService, billing lifecycle, InvoiceNumberService, StudentRepository, auditLog, WSIB query builder, DataTable, DetailDrawer, PageHeader, SegmentedToggle, SearchBar, StatusChip, Buttons, UserAvatar, AdminShell, useClientPagination, DateRangeFilter, AuditLogViewer, WSIBReporting)
+- [ ] **Unit tests**: Achieve 80%+ code coverage (currently: 118 backend + 113 frontend = 231 vitest tests covering AuthService, BillingService, HRService, billing lifecycle, InvoiceNumberService, StudentRepository, auditLog, WSIB query builder, BillingFinancial (F1/F2/S3/M3), DataTable, DetailDrawer, PageHeader, SegmentedToggle, SearchBar, StatusChip, Buttons, UserAvatar, AdminShell, useClientPagination, DateRangeFilter, AuditLogViewer, WSIBReporting)
 - [x] **Integration tests** — 51 tests across 4 suites (auth, lockout, reset, recovery)
 - [x] **End-to-end tests** — Playwright suite on staging (2026-06-15): auth.spec.ts + portal.spec.ts cover login, role redirect, dashboard load, navigation, logout for all 8 roles. **36 passed, 0 skipped, 0 failed.** Run: `npx playwright test --project=chromium`.
 - [x] **Performance tests**: Load tested with autocannon on staging (2026-06-28). Health: 1,777 req/s at 100 connections, p99 112ms. Login: 198 req/s at 10 conn. Zero errors/timeouts. Shared hosting supports ~50-100 active users. Results in `backend/load-test-results/`. Script: `backend/load-test.sh`.
@@ -255,6 +256,30 @@ These items are **non-technical blockers** that must be addressed before accepti
 - [x] **Playwright E2E tests** — 36 tests across all 8 portals (4 auth + 32 portal: login/redirect/dashboard/nav/logout per role). Rate-limit resilient with 429 retry, lazy-load tolerant (30s timeouts). Run: `npx playwright test --project=chromium`. Result: **36 passed, 0 skipped, 0 failed.**
 
 ## 📝 **Recent Changes**
+
+### **2026-06-29 — Full Audit Fixes (AUDIT_FULL.md)**
+- **F1 (🔴 CRITICAL)**: Standardized all payment filters to `status = 'verified' AND deleted_at IS NULL` via shared `VERIFIED_PAYMENT_FILTER` constant in InvoiceRepository. Fixed 5 query locations (findAllWithDetails, findByIdWithDetails, findPendingApproval, ar-aging, aging-report).
+- **F2 (🔴 CRITICAL)**: Unified balance_due to use `amount - paid` everywhere. Previously findAllWithDetails used `base_cost + tax_amount - paid` which could drift from the canonical `amount` field.
+- **S1 (🟠 HIGH)**: Removed `'unsafe-inline'` from CSP `scriptSrc` in Helmet config. Kept for `styleSrc` only (MUI inline styles). Eliminates XSS bypass vector.
+- **S2 (🟠 HIGH)**: Documented — vendor invoice uploads live on local disk, not backed up. Tied to BACKUP-2 (offsite backups). Needs S3 or backup job for `uploads/` directory.
+- **S3 (🟠 HIGH)**: Fixed `findPendingApproval` dead status filter — was `'completed'` but payments are written as `'verified'`, so `amount_paid` was always 0.
+- **M1 (🟡)**: Extracted shared `getAgingReport()` method in InvoiceRepository. Deduplicated ~90% overlap between `/reports/ar-aging` and `/aging-report` endpoints.
+- **M2 (🟡)**: Created `backend/src/types/billing.ts` with typed interfaces (InvoiceRow, PaymentRow, AgingInvoiceRow, etc.). Replaced pervasive `any` in billing routes and repositories.
+- **M3 (🟡)**: Added test asserting organization-role token gets 403 on accounting `/dashboard`.
+- **U1 (🟠)**: Fixed dark mode across 12 frontend files. Replaced hardcoded `#fff`, `#F9FAFB`, `#111827`, `#6B7280`, `#EFF6FF` etc. with `theme.palette.background.paper`, `.default`, `.text.primary`, `.text.secondary`.
+- **U2 (🟡)**: Wired CertificationTracking to `useServerPagination` with backend `parsePagination` + `paginatedQuery` on expiring/expired endpoints.
+- **U3 (🟡)**: Already fixed — no inner `<Container>` in portals.
+- **U4 (🟡)**: Already fixed — StatusChip already `3px 10px`.
+- **U5 (🟡)**: Already fixed — HR Reports already labeled "Coming Soon".
+- **13 new tests** in `BillingFinancial.test.ts` (payment filters, balance consistency, pending approval, aging report, 403 auth). Total: 231 tests (118 backend + 113 frontend).
+
+### **2026-06-28**
+- **FEATURES**: Audit log UI (AuditLogViewer + migration v13 + endpoints), WSIB compliance reporting (WSIBReporting + 3 endpoints + CSV), per-org CSV export (courses/roster/invoices), custom date range filters (DateRangeFilter + 3 dashboard integrations), email notifications (course confirmed/cancelled/completed), YoY comparative analytics (StatCard subColor + backend YoY queries).
+- **TESTS**: 45 new tests (auditLog, WSIB query builder, DateRangeFilter, AuditLogViewer, WSIBReporting). Total before audit: 218.
+- **LOAD TESTING**: autocannon on staging — 1,777 req/s at 100 connections, p99 112ms, zero errors/timeouts.
+- **DOCS**: Incident_Response.md, Customer_Offboarding.md, business blockers table in TODO.
+- **RESPONSIVE**: Responsive grids across all 8 portals (30 files).
+- **PROGRAM DOCUMENTATION**: 14 documents — MSA, DPA, Breach SOP, AUP, User Guide, Disaster Recovery, Release Notes, DB Schema Reference, Environment Setup, Deployment Guide, Architecture Diagrams, Security Documentation, Migration Guide, Monitoring & Observability Guide.
 
 ### **2026-06-17**
 - **CERTIFICATION EXPIRY TRACKING**: Migrations v8-v10: `class_types.certification_validity_months`, `course_students` cert fields (number, issued_at, expires_at + index), backfill for attended students. Instructor attendance auto-populates cert dates. 3 API endpoints (expiring, expired, stats). `CertificationTracking.tsx` sysadmin page: stats cards, expiring/expired views, time window filter. Student course history shows cert status column. CourseManagement form maps validity period to DB. Deployed to staging + production.
