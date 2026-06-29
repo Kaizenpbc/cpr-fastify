@@ -189,8 +189,8 @@ const CourseCalendar: React.FC = () => {
       {/* Day Headers */}
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
         {dayNames.map((day) => (
-          <Box key={day} sx={{ textAlign: 'center', py: 1, bgcolor: '#111827', borderRight: day !== 'Sat' ? '1px solid #1F2937' : 'none', '&:first-of-type': { borderTopLeftRadius: '8px' }, '&:last-of-type': { borderTopRightRadius: '8px' } }}>
-            <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{day}</Typography>
+          <Box key={day} sx={{ textAlign: 'center', py: 1, bgcolor: (theme) => theme.palette.mode === 'dark' ? theme.palette.background.paper : '#111827', borderRight: (theme) => day !== 'Sat' ? `1px solid ${theme.palette.mode === 'dark' ? theme.palette.divider : '#1F2937'}` : 'none', '&:first-of-type': { borderTopLeftRadius: '8px' }, '&:last-of-type': { borderTopRightRadius: '8px' } }}>
+            <Typography sx={{ fontSize: 11, fontWeight: 700, color: (theme) => theme.palette.mode === 'dark' ? theme.palette.text.primary : '#fff', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{day}</Typography>
           </Box>
         ))}
       </Box>

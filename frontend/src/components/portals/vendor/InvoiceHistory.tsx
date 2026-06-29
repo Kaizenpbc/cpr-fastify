@@ -506,7 +506,7 @@ const InvoiceHistory: React.FC = () => {
                   {selectedInvoice.adminNotes && (
                     <Grid item xs={12}>
                       <Typography sx={{ fontSize: 11, color: (theme) => theme.palette.text.secondary, textTransform: 'uppercase' }}>Admin Notes</Typography>
-                      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary, mt: 0.5, p: 2, bgcolor: '#FEF3C7', borderRadius: 1 }}>{selectedInvoice.adminNotes}</Typography>
+                      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary, mt: 0.5, p: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.1)' : '#FEF3C7', borderRadius: 1 }}>{selectedInvoice.adminNotes}</Typography>
                     </Grid>
                   )}
                 </Grid>

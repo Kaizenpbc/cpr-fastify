@@ -3,6 +3,10 @@ import { getPool } from '../config/database.js';
 import { RowDataPacket } from 'mysql2/promise';
 import { getHSTRate } from '../utils/taxConfig.js';
 import { PaginationParams, PaginatedResult, paginatedQuery } from '../utils/pagination.js';
+import type { PaymentRow, AgingInvoiceRow } from '../types/billing.js';
+
+/** Canonical WHERE clause for counting verified, non-deleted payments. */
+export const VERIFIED_PAYMENT_FILTER = "status = 'verified' AND deleted_at IS NULL";
 
 export interface Invoice {
   id: number;
@@ -142,9 +146,9 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
          o.name as organization_name, o.contact_email,
          cr.location, ct.name as course_type_name, cr.completed_at as date_completed,
          COALESCE(p.total_paid, 0) as amount_paid,
-         GREATEST(0, (i.base_cost + i.tax_amount) - COALESCE(p.total_paid, 0)) as balance_due,
+         GREATEST(0, i.amount - COALESCE(p.total_paid, 0)) as balance_due,
          CASE
-           WHEN COALESCE(p.total_paid, 0) >= (i.base_cost + i.tax_amount) THEN 'paid'
+           WHEN COALESCE(p.total_paid, 0) >= i.amount THEN 'paid'
            WHEN CURRENT_DATE > i.due_date THEN 'overdue'
            ELSE 'pending'
          END as payment_status,
@@ -160,7 +164,7 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
        LEFT JOIN course_requests cr ON i.course_request_id = cr.id
        LEFT JOIN class_types ct ON cr.course_type_id = ct.id
        LEFT JOIN (SELECT invoice_id, SUM(amount) as total_paid FROM payments
-                  WHERE status = 'verified' GROUP BY invoice_id) p ON p.invoice_id = i.id
+                  WHERE ${VERIFIED_PAYMENT_FILTER} GROUP BY invoice_id) p ON p.invoice_id = i.id
        ORDER BY i.created_at DESC`;
 
     if (pg) {
@@ -193,7 +197,7 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
        LEFT JOIN course_pricing cp ON cr.organization_id = cp.organization_id
          AND cr.course_type_id = cp.course_type_id AND cp.is_active = true
        LEFT JOIN (SELECT invoice_id, SUM(amount) as total_paid FROM payments
-                  WHERE status = 'verified' GROUP BY invoice_id) p ON p.invoice_id = i.id
+                  WHERE ${VERIFIED_PAYMENT_FILTER} GROUP BY invoice_id) p ON p.invoice_id = i.id
        WHERE i.id = ?`,
       [id]
     );
@@ -203,11 +207,11 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
   async findPendingApproval(pg?: PaginationParams): Promise<InvoiceWithDetails[] | PaginatedResult<InvoiceWithDetails>> {
     const dataSQL = `SELECT i.*, o.name as organization_name,
               COALESCE(p.total_paid, 0) as amount_paid,
-              GREATEST(0, (i.base_cost + i.tax_amount) - COALESCE(p.total_paid, 0)) as balance_due
+              GREATEST(0, i.amount - COALESCE(p.total_paid, 0)) as balance_due
        FROM invoices i
        LEFT JOIN organizations o ON i.organization_id = o.id
        LEFT JOIN (SELECT invoice_id, SUM(amount) as total_paid FROM payments
-                  WHERE status = 'completed' GROUP BY invoice_id) p ON p.invoice_id = i.id
+                  WHERE ${VERIFIED_PAYMENT_FILTER} GROUP BY invoice_id) p ON p.invoice_id = i.id
        WHERE i.approval_status = 'pending'
        ORDER BY i.created_at ASC`;
 
@@ -244,10 +248,60 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
     return this.query(`${dataSQL} LIMIT 200`);
   }
 
-  async getPayments(invoiceId: number): Promise<any[]> {
-    return this.query(
+  async getPayments(invoiceId: number): Promise<PaymentRow[]> {
+    return this.query<PaymentRow>(
       `SELECT * FROM payments WHERE invoice_id = ? AND deleted_at IS NULL ORDER BY payment_date DESC`,
       [invoiceId]
     );
+  }
+
+  /**
+   * Shared aging report query used by both /reports/ar-aging and /aging-report.
+   * Returns invoice rows with balance, days overdue, and aging bucket.
+   */
+  async getAgingReport(options: {
+    asOfDate: string;
+    organizationId?: number;
+    postedOnly?: boolean;
+    threshold?: number;
+  }): Promise<AgingInvoiceRow[]> {
+    const { asOfDate, organizationId, postedOnly = false, threshold = 0 } = options;
+    const pool = getPool();
+
+    let orgFilter = '';
+    const params: unknown[] = [asOfDate, asOfDate, asOfDate, asOfDate, asOfDate, asOfDate];
+    if (organizationId) { orgFilter = 'AND i.organization_id = ?'; params.push(organizationId); }
+
+    const postedFilter = postedOnly ? 'AND i.posted_to_org = TRUE' : '';
+
+    const [rows] = await pool.query<(RowDataPacket & AgingInvoiceRow)[]>(
+      `SELECT i.id, i.invoice_number, i.organization_id,
+              o.name as organization_name, i.amount,
+              COALESCE(pp.total_paid, 0) as paid_amount,
+              i.amount - COALESCE(pp.total_paid, 0) as balance_due,
+              i.invoice_date, i.due_date,
+              CASE WHEN i.due_date IS NULL THEN 0
+                   ELSE GREATEST(0, DATEDIFF(?, i.due_date)) END as days_outstanding,
+              i.status,
+              CASE
+                WHEN i.due_date IS NULL OR i.due_date >= ? THEN 'Current'
+                WHEN DATEDIFF(?, i.due_date) BETWEEN 1 AND 30 THEN '1-30 Days'
+                WHEN DATEDIFF(?, i.due_date) BETWEEN 31 AND 60 THEN '31-60 Days'
+                WHEN DATEDIFF(?, i.due_date) BETWEEN 61 AND 90 THEN '61-90 Days'
+                ELSE '90+ Days'
+              END as aging_bucket
+       FROM invoices i
+       LEFT JOIN organizations o ON i.organization_id = o.id
+       LEFT JOIN (SELECT invoice_id, SUM(amount) as total_paid FROM payments
+                  WHERE ${VERIFIED_PAYMENT_FILTER} GROUP BY invoice_id) pp ON pp.invoice_id = i.id
+       WHERE i.status NOT IN ('paid', 'void', 'cancelled')
+         ${postedFilter}
+         AND (i.amount - COALESCE(pp.total_paid, 0)) > ?
+         ${orgFilter}
+       ORDER BY days_outstanding DESC, o.name, i.invoice_date`,
+      [...params.slice(0, 6), threshold, ...(organizationId ? [organizationId] : [])]
+    );
+
+    return rows;
   }
 }

@@ -454,7 +454,7 @@ const EmailTemplateManager: React.FC = () => {
           <Typography sx={{ fontSize: 15, fontWeight: 700, color: (theme) => theme.palette.text.primary, mb: 0.5 }}>
             {template.name}
           </Typography>
-          <Typography sx={{ fontSize: 13, color: '#6B7280', mb: 1 }}>
+          <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary, mb: 1 }}>
             {template.description}
           </Typography>
         </Box>
@@ -490,7 +490,7 @@ const EmailTemplateManager: React.FC = () => {
         </Box>
       )}
 
-      <Typography sx={{ fontSize: 13, color: '#6B7280' }}>
+      <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
         Subject: {template.subject}
       </Typography>
       {template.updatedAt && (
@@ -643,7 +643,7 @@ const EmailTemplateManager: React.FC = () => {
       </Box>
 
       <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.background.default, borderRadius: 1, mb: 2, border: (theme) => `1px solid ${theme.palette.divider}` }}>
-        <Typography sx={{ fontSize: 13, color: '#6B7280' }}>
+        <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
           Showing {sortedTemplates.length} of {templates.length} templates
         </Typography>
       </Box>
@@ -676,14 +676,14 @@ const EmailTemplateManager: React.FC = () => {
                   >
                     {template.name}{getSortIcon('name')}
                   </Box>
-                  <Typography sx={{ fontSize: 13, color: '#374151' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}>
                     {template.category}
                     {template.subCategory && ` (${template.subCategory})`}
                   </Typography>
-                  <Typography sx={{ fontSize: 13, color: '#374151' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary }}>
                     {template.subject}
                   </Typography>
-                  <Typography sx={{ fontSize: 13, color: '#6B7280' }}>
+                  <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                     {template.updatedAt
                       ? new Date(template.updatedAt).toLocaleDateString()
                       : 'N/A'}

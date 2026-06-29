@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { sysAdminApi } from '../../services/api';
 import api from '../../services/api';
@@ -8,7 +8,7 @@ import UserAvatar from '../gtacpr/UserAvatar';
 import DataTable, { DataTableRow } from '../gtacpr/DataTable';
 import SegmentedToggle from '../gtacpr/SegmentedToggle';
 import { GhostButton } from '../gtacpr/Buttons';
-import { useClientPagination } from '../../hooks/useClientPagination';
+import { useServerPagination } from '../../hooks/useServerPagination';
 
 interface CertificationTrackingProps {
   onShowSnackbar: (message: string, severity: 'success' | 'error' | 'warning' | 'info') => void;
@@ -43,10 +43,38 @@ function getStatusChip(view: string, daysValue: number) {
 const CertificationTracking = ({ onShowSnackbar }: CertificationTrackingProps) => {
   const [view, setView] = useState('expiring');
   const [days, setDays] = useState('90');
-  const [certs, setCerts] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const { paged: pagedCerts, page: certPage, hasNextPage: certHasNext, onPrevPage: onCertPrev, onNextPage: onCertNext } = useClientPagination(certs, 25);
+
+  const fetchCerts = useCallback(async ({ page, limit }: { page: number; limit: number }) => {
+    try {
+      if (view === 'expiring') {
+        const response = await api.get(`/sysadmin/certifications/expiring`, {
+          params: { days, page, limit },
+        });
+        return { data: response.data.data || [], pagination: response.data.pagination };
+      } else {
+        const response = await api.get(`/sysadmin/certifications/expired`, {
+          params: { page, limit },
+        });
+        return { data: response.data.data || [], pagination: response.data.pagination };
+      }
+    } catch {
+      onShowSnackbar('Failed to load certifications', 'error');
+      return { data: [], pagination: { page: 1, limit, total: 0, pages: 0 } };
+    }
+  }, [view, days, onShowSnackbar]);
+
+  const {
+    items: certs,
+    loading,
+    page: certPage,
+    totalCount,
+    shownCount,
+    hasNextPage: certHasNext,
+    onPrevPage: onCertPrev,
+    onNextPage: onCertNext,
+    load,
+  } = useServerPagination({ pageSize: 25, fetchFn: fetchCerts });
 
   const loadStats = async () => {
     try {
@@ -54,23 +82,6 @@ const CertificationTracking = ({ onShowSnackbar }: CertificationTrackingProps) =
       setStats(response.data);
     } catch {
       // Stats are optional
-    }
-  };
-
-  const loadCerts = async () => {
-    setLoading(true);
-    try {
-      if (view === 'expiring') {
-        const response = await sysAdminApi.getExpiringCertifications(Number(days));
-        setCerts(response.data || []);
-      } else {
-        const response = await sysAdminApi.getExpiredCertifications();
-        setCerts(response.data || []);
-      }
-    } catch {
-      onShowSnackbar('Failed to load certifications', 'error');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -92,7 +103,7 @@ const CertificationTracking = ({ onShowSnackbar }: CertificationTrackingProps) =
   };
 
   useEffect(() => { loadStats(); }, []);
-  useEffect(() => { loadCerts(); }, [view, days]);
+  useEffect(() => { load(1); }, [view, days, load]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -157,8 +168,8 @@ const CertificationTracking = ({ onShowSnackbar }: CertificationTrackingProps) =
           </Typography>
         </Box>
       ) : (
-        <DataTable columns={columns} shownCount={pagedCerts.length} totalCount={certs.length} page={certPage} onPrevPage={onCertPrev} onNextPage={onCertNext} hasNextPage={certHasNext}>
-          {pagedCerts.map((cert, i) => (
+        <DataTable columns={columns} shownCount={shownCount} totalCount={totalCount} page={certPage} onPrevPage={onCertPrev} onNextPage={onCertNext} hasNextPage={certHasNext}>
+          {certs.map((cert: any, i: number) => (
             <DataTableRow key={`${cert.student_id}-${cert.certificate_issued_at}-${i}`} columns={columns}>
               {/* STUDENT */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>

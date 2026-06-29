@@ -203,11 +203,11 @@ const CourseManagement = ({ onShowSnackbar }: { onShowSnackbar: any }) => {
                 }}
               >
                 {/* Dark head */}
-                <Box sx={{ bgcolor: '#111827', px: 2, pt: 2, pb: 1.75 }}>
-                  <Typography sx={{ fontSize: 14.5, fontWeight: 700, color: '#fff' }}>
+                <Box sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? theme.palette.background.paper : '#111827', px: 2, pt: 2, pb: 1.75 }}>
+                  <Typography sx={{ fontSize: 14.5, fontWeight: 700, color: (theme) => theme.palette.mode === 'dark' ? theme.palette.text.primary : '#fff' }}>
                     {course.name}
                   </Typography>
-                  <Typography sx={{ fontSize: 12, color: 'rgba(255,255,255,.6)', mt: 0.25 }}>
+                  <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.mode === 'dark' ? theme.palette.text.secondary : 'rgba(255,255,255,.6)', mt: 0.25 }}>
                     {formatDuration(dMin)}
                   </Typography>
                 </Box>

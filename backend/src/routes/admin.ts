@@ -591,48 +591,59 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get('/certifications/expiring', { preHandler: adminRole }, async (request) => {
     const { days } = request.query as { days?: string };
     const withinDays = parseInt(days || '90') || 90;
+    const pg = parsePagination(request.query as Record<string, string>);
 
-    const [rows] = await pool.query<any[]>(
-      `SELECT s.id as student_id, s.email, s.first_name, s.last_name, s.phone,
-              o.name as organization_name,
-              ct.name as course_type_name, ct.certification_validity_months,
-              cs.certificate_issued_at, cs.certificate_expires_at,
-              cs.certificate_number,
-              DATEDIFF(cs.certificate_expires_at, NOW()) as days_until_expiry
-       FROM course_students cs
+    const baseFrom = `FROM course_students cs
        JOIN students s ON cs.student_id = s.id
        JOIN course_requests cr ON cs.course_request_id = cr.id
        JOIN class_types ct ON cr.course_type_id = ct.id
        LEFT JOIN organizations o ON s.organization_id = o.id
        WHERE cs.certificate_expires_at IS NOT NULL
          AND cs.certificate_expires_at BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL ? DAY)
-         AND cs.attended = true
-       ORDER BY cs.certificate_expires_at ASC`,
-      [withinDays]
-    );
-    return { success: true, data: rows };
-  });
+         AND cs.attended = true`;
 
-  app.get('/certifications/expired', { preHandler: adminRole }, async () => {
-    const [rows] = await pool.query<any[]>(
+    const result = await paginatedQuery(
       `SELECT s.id as student_id, s.email, s.first_name, s.last_name, s.phone,
               o.name as organization_name,
-              ct.name as course_type_name,
+              ct.name as course_type_name, ct.certification_validity_months,
               cs.certificate_issued_at, cs.certificate_expires_at,
               cs.certificate_number,
-              DATEDIFF(NOW(), cs.certificate_expires_at) as days_expired
-       FROM course_students cs
+              DATEDIFF(cs.certificate_expires_at, NOW()) as days_until_expiry
+       ${baseFrom}
+       ORDER BY cs.certificate_expires_at ASC`,
+      `SELECT COUNT(*) as count ${baseFrom}`,
+      [withinDays],
+      pg,
+    );
+    return { success: true, ...result };
+  });
+
+  app.get('/certifications/expired', { preHandler: adminRole }, async (request) => {
+    const pg = parsePagination(request.query as Record<string, string>);
+
+    const baseFrom = `FROM course_students cs
        JOIN students s ON cs.student_id = s.id
        JOIN course_requests cr ON cs.course_request_id = cr.id
        JOIN class_types ct ON cr.course_type_id = ct.id
        LEFT JOIN organizations o ON s.organization_id = o.id
        WHERE cs.certificate_expires_at IS NOT NULL
          AND cs.certificate_expires_at < NOW()
-         AND cs.attended = true
-       ORDER BY cs.certificate_expires_at DESC
-       LIMIT 200`
+         AND cs.attended = true`;
+
+    const result = await paginatedQuery(
+      `SELECT s.id as student_id, s.email, s.first_name, s.last_name, s.phone,
+              o.name as organization_name,
+              ct.name as course_type_name,
+              cs.certificate_issued_at, cs.certificate_expires_at,
+              cs.certificate_number,
+              DATEDIFF(NOW(), cs.certificate_expires_at) as days_expired
+       ${baseFrom}
+       ORDER BY cs.certificate_expires_at DESC`,
+      `SELECT COUNT(*) as count ${baseFrom}`,
+      [],
+      pg,
     );
-    return { success: true, data: rows };
+    return { success: true, ...result };
   });
 
   // Summary stats for dashboard

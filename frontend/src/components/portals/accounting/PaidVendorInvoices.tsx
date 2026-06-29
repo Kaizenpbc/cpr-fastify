@@ -238,7 +238,7 @@ const PaidVendorInvoices: React.FC = () => {
                   <StatCard label="Amount Paid" value={formatCurrency(selectedInvoice.totalPaid || selectedInvoice.total)} dotColor="#16A34A" />
                   <StatCard label="Balance Due" value="$0.00" dotColor="#16A34A" />
                 </Box>
-                <Box sx={{ p: 1.5, bgcolor: '#F0FDF4', borderRadius: '8px', border: '1px solid #BBF7D0', mt: 2, textAlign: 'center' }}>
+                <Box sx={{ p: 1.5, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(22, 163, 74, 0.1)' : '#F0FDF4', borderRadius: '8px', border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(22, 163, 74, 0.3)' : '#BBF7D0'}`, mt: 2, textAlign: 'center' }}>
                   <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#16A34A' }}>Payment Complete: This invoice has been fully paid</Typography>
                 </Box>
               </Box>

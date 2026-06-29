@@ -5,6 +5,7 @@ import { CoursePricingRepository, CoursePricing } from '../repositories/CoursePr
 import { InvoiceNumberService } from './InvoiceNumberService.js';
 import { getHSTRate } from '../utils/taxConfig.js';
 import { PaginationParams, PaginatedResult } from '../utils/pagination.js';
+import type { PaymentRow } from '../types/billing.js';
 
 const INVOICE_DUE_DAYS = 30;
 
@@ -305,11 +306,11 @@ export class BillingService {
 
   // --- Payments ---
 
-  async getPayments(invoiceId: number): Promise<any[]> {
+  async getPayments(invoiceId: number): Promise<PaymentRow[]> {
     return this.invoiceRepo.getPayments(invoiceId);
   }
 
-  async recordPayment(invoiceId: number, amount: number, paymentMethod: string, reference?: string): Promise<any> {
+  async recordPayment(invoiceId: number, amount: number, paymentMethod: string, reference?: string): Promise<{ id: number; amount: number; totalPaid: number }> {
     if (!amount || amount <= 0) throw new BillingError('Valid payment amount is required');
 
     const pool = getPool();

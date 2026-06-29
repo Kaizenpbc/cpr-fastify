@@ -68,9 +68,9 @@ const OrganizationPricing: React.FC<OrganizationPricingProps> = ({ organizationI
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <Box sx={{ p: 2, bgcolor: '#EFF6FF', borderRadius: '8px', border: '1px solid #BFDBFE' }}>
-        <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#1E40AF', mb: 0.5 }}>Pricing Information</Typography>
-        <Typography sx={{ fontSize: 12, color: '#1E40AF' }}>
+      <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.1)' : '#EFF6FF', borderRadius: '8px', border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.3)' : '#BFDBFE'}` }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.mode === 'dark' ? '#60A5FA' : '#1E40AF', mb: 0.5 }}>Pricing Information</Typography>
+        <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.mode === 'dark' ? '#60A5FA' : '#1E40AF' }}>
           These are your current pricing rates for each course type. Contact your system administrator to update pricing.
         </Typography>
       </Box>
@@ -106,9 +106,9 @@ const OrganizationPricing: React.FC<OrganizationPricingProps> = ({ organizationI
       </DataTable>
 
       {pricingData.length === 0 && (
-        <Box sx={{ p: 2, bgcolor: '#EFF6FF', borderRadius: '8px', border: '1px solid #BFDBFE' }}>
-          <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#1E40AF', mb: 0.5 }}>Pricing Setup Required</Typography>
-          <Typography sx={{ fontSize: 12, color: '#1E40AF' }}>
+        <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.1)' : '#EFF6FF', borderRadius: '8px', border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.3)' : '#BFDBFE'}` }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.mode === 'dark' ? '#60A5FA' : '#1E40AF', mb: 0.5 }}>Pricing Setup Required</Typography>
+          <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.mode === 'dark' ? '#60A5FA' : '#1E40AF' }}>
             Your organization's pricing has not been configured yet. Please contact your system administrator to set up custom pricing.
           </Typography>
         </Box>

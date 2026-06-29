@@ -874,7 +874,7 @@ The course status has been updated to "Confirmed" and moved to the confirmed cou
             mb: 3,
             mt: 2,
             fontSize: '14px',
-            backgroundColor: '#ffebee',
+            backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(224, 74, 74, 0.1)' : '#ffebee',
             '& .MuiAlert-message': { width: '100%' },
           }}
           onClose={() => setError(null)}
@@ -1181,14 +1181,14 @@ The course status has been updated to "Confirmed" and moved to the confirmed cou
             {hasActiveFilters && (
               <Box
                 sx={{
-                  bgcolor: '#EFF6FF',
-                  border: '1px solid #BFDBFE',
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.1)' : '#EFF6FF',
+                  border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.3)' : '#BFDBFE'}`,
                   borderRadius: '12px',
                   px: 1.5,
                   py: 0.25,
                 }}
               >
-                <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#1D4ED8' }}>
+                <Typography sx={{ fontSize: 12, fontWeight: 600, color: (theme) => theme.palette.mode === 'dark' ? '#60A5FA' : '#1D4ED8' }}>
                   {filteredConfirmedCourses.length} of {confirmedCourses.length} courses
                 </Typography>
               </Box>
@@ -1570,7 +1570,7 @@ The course status has been updated to "Confirmed" and moved to the confirmed cou
         </DialogTitle>
         <DialogContent>
           <Box
-            sx={{ p: 2, bgcolor: '#EFF6FF', borderRadius: '8px', border: '1px solid #BFDBFE', mb: 2 }}
+            sx={{ p: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.1)' : '#EFF6FF', borderRadius: '8px', border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.3)' : '#BFDBFE'}`, mb: 2 }}
           >
             <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
               <strong>Course Name:</strong> {selectedCourse?.courseTypeName || selectedCourse?.courseType || '-'}
@@ -1668,7 +1668,7 @@ The course status has been updated to "Confirmed" and moved to the confirmed cou
         </DialogTitle>
         <DialogContent>
           <Box
-            sx={{ p: 2, bgcolor: '#EFF6FF', borderRadius: '8px', border: '1px solid #BFDBFE', mb: 2 }}
+            sx={{ p: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.1)' : '#EFF6FF', borderRadius: '8px', border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.3)' : '#BFDBFE'}`, mb: 2 }}
           >
             <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
               <strong>Course Name:</strong> {courseToEdit?.courseTypeName || courseToEdit?.courseType || '-'}

@@ -86,7 +86,7 @@ const CoursePricingManagement: React.FC = () => {
       ) : (
         Object.entries(groupedPricing).map(([organizationName, pricingList]) => (
           <Box key={organizationName}>
-            <Box sx={{ bgcolor: '#111827', color: '#fff', px: 3, py: 1.5, borderRadius: '10px 10px 0 0' }}>
+            <Box sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? theme.palette.background.paper : '#111827', color: (theme) => theme.palette.mode === 'dark' ? theme.palette.text.primary : '#fff', px: 3, py: 1.5, borderRadius: '10px 10px 0 0' }}>
               <Typography sx={{ fontSize: 14, fontWeight: 700 }}>{organizationName}</Typography>
             </Box>
             <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderTop: 'none', borderRadius: '0 0 10px 10px', bgcolor: (theme) => theme.palette.background.paper }}>
@@ -120,9 +120,9 @@ const CoursePricingManagement: React.FC = () => {
         ))
       )}
 
-      <Box sx={{ p: 2, bgcolor: '#EFF6FF', borderRadius: '8px', border: '1px solid #BFDBFE' }}>
-        <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#1E40AF', mb: 0.5 }}>Instructions</Typography>
-        <Typography sx={{ fontSize: 12, color: '#1E40AF' }}>
+      <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.1)' : '#EFF6FF', borderRadius: '8px', border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.3)' : '#BFDBFE'}` }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.mode === 'dark' ? '#60A5FA' : '#1E40AF', mb: 0.5 }}>Instructions</Typography>
+        <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.mode === 'dark' ? '#60A5FA' : '#1E40AF' }}>
           Click Edit to modify the price per student for any course. Pricing is organization-specific. Changes take effect immediately for future billing.
         </Typography>
       </Box>

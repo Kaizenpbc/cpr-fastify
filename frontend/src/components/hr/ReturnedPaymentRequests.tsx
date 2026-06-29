@@ -141,16 +141,16 @@ const ReturnedPaymentRequestDetailDialog: React.FC<{
 
             {/* Accountant Notes */}
             <Grid item xs={12} md={6}>
-              <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 3, bgcolor: '#FFFBEB' }}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Accountant Notes</Typography>
+              <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 3, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.1)' : '#FFFBEB' }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.mode === 'dark' ? '#FBBF24' : '#92400E', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 1 }}>Accountant Notes</Typography>
                 <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.primary, p: 1, bgcolor: (theme) => theme.palette.background.paper, borderRadius: '6px' }}>{request.notes || 'No notes provided'}</Typography>
               </Box>
             </Grid>
 
             {/* HR Decision */}
             <Grid item xs={12}>
-              <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 3, bgcolor: '#F0F9FF' }}>
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#1E40AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>HR Decision Required</Typography>
+              <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '10px', p: 3, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.1)' : '#F0F9FF' }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: (theme) => theme.palette.mode === 'dark' ? '#60A5FA' : '#1E40AF', textTransform: 'uppercase', letterSpacing: '0.07em', mb: 2 }}>HR Decision Required</Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
                     <FormControl fullWidth>

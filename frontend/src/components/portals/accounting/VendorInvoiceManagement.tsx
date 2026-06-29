@@ -541,8 +541,8 @@ const VendorInvoiceManagement: React.FC = () => {
                   </Grid>
                   {selectedInvoice.adminNotes && (
                     <Grid item xs={12}>
-                      <Typography sx={{ fontSize: 12, color: '#6B7280', mb: 0.5 }}>Admin Notes</Typography>
-                      <Box sx={{ p: 2, bgcolor: '#FFFBEB', borderRadius: '6px', border: '1px solid #FDE68A' }}>
+                      <Typography sx={{ fontSize: 12, color: (theme) => theme.palette.text.secondary, mb: 0.5 }}>Admin Notes</Typography>
+                      <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.1)' : '#FFFBEB', borderRadius: '6px', border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.3)' : '#FDE68A'}` }}>
                         <Typography sx={{ fontSize: 13, color: (theme) => theme.palette.text.secondary }}>
                           {selectedInvoice.adminNotes}
                         </Typography>

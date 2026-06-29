@@ -395,9 +395,9 @@ const ClassAttendanceView: React.FC = () => {
             onChange={(e) => setInstructorComments(e.target.value)}
           />
 
-          <Box sx={{ mt: 2, p: 2, bgcolor: '#EFF6FF', borderRadius: '8px', border: '1px solid #BFDBFE' }}>
-            <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#1E40AF', mb: 0.5 }}>This action will:</Typography>
-            <Box component="ul" sx={{ m: 0, pl: 2.5, '& li': { fontSize: 12.5, color: '#1E40AF', mb: 0.25 } }}>
+          <Box sx={{ mt: 2, p: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.1)' : '#EFF6FF', borderRadius: '8px', border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.3)' : '#BFDBFE'}` }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 600, color: (theme) => theme.palette.mode === 'dark' ? '#60A5FA' : '#1E40AF', mb: 0.5 }}>This action will:</Typography>
+            <Box component="ul" sx={{ m: 0, pl: 2.5, '& li': { fontSize: 12.5, color: (theme) => theme.palette.mode === 'dark' ? '#60A5FA' : '#1E40AF', mb: 0.25 } }}>
               <li>Mark the class as completed</li>
               <li>Move it to your archive</li>
               <li>Update the organization and admin portals</li>
